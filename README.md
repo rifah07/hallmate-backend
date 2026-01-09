@@ -15,6 +15,8 @@
 HallMate is a comprehensive backend system for managing university women's residential halls. Built with modern technologies, it handles everything from seat allocation to payment processing, ensuring transparency, efficiency, and safety for 1000+ students.
 
 **Key Highlights:**
+
+- 🎯 Solo project by passionate developer
 - 💰 100% free deployment stack (no credit card required)
 - 🚀 Production-ready architecture
 - 🇧🇩 Designed for Bangladesh university context
@@ -24,6 +26,7 @@ HallMate is a comprehensive backend system for managing university women's resid
 ## ✨ **Features**
 
 ### **For Students:**
+
 - 🔐 Secure authentication with university ID
 - 📱 Digital hall ID card (QR code-based)
 - 🏠 Online seat application & allocation
@@ -37,6 +40,7 @@ HallMate is a comprehensive backend system for managing university women's resid
 - ⭐ Facility rating & feedback
 
 ### **For Administration:**
+
 - 📊 Role-based dashboards (Provost, House Tutors, Staff)
 - 👁️ Full transparency: Provost oversight of all operations
 - 💵 Automated billing & payment tracking
@@ -48,12 +52,14 @@ HallMate is a comprehensive backend system for managing university women's resid
 - ⚡ Priority-based complaint handling (P0/P1/P2/P3 with SLA)
 
 ### **For Parents/Guardians:**
+
 - 📱 Dedicated parent portal (read-only)
 - 📊 View attendance & payment status
 - 📧 Monthly automated reports
 - 🔔 Emergency notifications
 
 ### **Public Website APIs:**
+
 - 🌐 Hall information & history
 - 👥 Provost & House Tutors directory
 - 📰 News, events, announcements
@@ -81,7 +87,7 @@ HallMate is a comprehensive backend system for managing university women's resid
 | **Testing** | Jest + Supertest | Unit & integration tests |
 | **API Docs** | Swagger/OpenAPI 3.0 | Interactive documentation |
 | **Hosting** | Render.com | Backend (free tier) |
-| **DB Hosting** | Neon | PostgreSQL |
+| **DB Hosting** | Neon | PostgreSQL (3GB free) |
 | **CI/CD** | GitHub Actions | Automated deployment |
 
 ---
@@ -97,6 +103,7 @@ Features: 51 total (37 MVP + 14 Phase 2)
 ```
 
 **Room Distribution (Per Floor):**
+
 - Single rooms: 2 (1 bed each)
 - Double rooms: 2 (2 beds each)
 - Triple rooms: 6 (3 beds each)
@@ -108,6 +115,7 @@ Features: 51 total (37 MVP + 14 Phase 2)
 ## 🚀 **Quick Start**
 
 ### **Prerequisites**
+
 - Node.js 20+
 - PostgreSQL (or free Neon account)
 - Git
@@ -389,6 +397,7 @@ Request → Controller → Service → Repository → Database
 ```
 
 **Key Benefits:**
+
 - ✅ **Separation of Concerns**: Each layer has single responsibility
 - ✅ **Testability**: Services can be tested without database
 - ✅ **Maintainability**: Easy to locate and modify code
@@ -397,6 +406,7 @@ Request → Controller → Service → Repository → Database
 - ✅ **Type Safety**: Full TypeScript + Zod + Prisma
 
 **Example Flow:**
+
 ```typescript
 // 1. Controller receives request
 userController.getById(req, res) 
@@ -538,11 +548,548 @@ npm test -- auth.test.ts
 
 ---
 
+<!-- 
+  ============================================================================
+  SECTION BELOW TO BE ADDED AFTER PROJECT COMPLETION
+  ============================================================================
+  Uncomment and fill in with actual data when project is ready for showcase
+  ============================================================================
+-->
+
+<!--
+
+## 🎨 **System Architecture**
+
+### **High-Level Architecture Diagram**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         CLIENT LAYER                            │
+│  (React/Next.js Frontend, Mobile App, Third-party Services)    │
+└────────────────────────┬────────────────────────────────────────┘
+                         │ HTTPS/REST
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      API GATEWAY LAYER                          │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │ Rate Limiter │  │ CORS Handler │  │ Auth Gateway │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+└────────────────────────┬────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   APPLICATION LAYER (Express)                   │
+│                                                                 │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐            │
+│  │ Controllers │→ │  Services   │→ │Repositories │            │
+│  └─────────────┘  └─────────────┘  └─────────────┘            │
+│                           │                                     │
+│                           ▼                                     │
+│  ┌──────────────────────────────────────────────┐              │
+│  │        Business Logic & Validation           │              │
+│  │  • Zod Schemas  • RBAC  • Workflows          │              │
+│  └──────────────────────────────────────────────┘              │
+└────────────┬────────────────────────┬────────────────────────┘
+             │                        │
+             ▼                        ▼
+┌─────────────────────┐    ┌──────────────────────┐
+│   DATA LAYER        │    │  EXTERNAL SERVICES   │
+│                     │    │                      │
+│  ┌──────────────┐   │    │  ┌────────────────┐ │
+│  │  PostgreSQL  │   │    │  │   Cloudinary   │ │
+│  │   (Prisma)   │   │    │  │  (File Storage)│ │
+│  └──────────────┘   │    │  └────────────────┘ │
+│                     │    │                      │
+│  ┌──────────────┐   │    │  ┌────────────────┐ │
+│  │ Redis Queue  │   │    │  │  Resend/Email  │ │
+│  │  (Bull Jobs) │   │    │  │  Service       │ │
+│  └──────────────┘   │    │  └────────────────┘ │
+│                     │    │                      │
+│                     │    │  ┌────────────────┐ │
+│                     │    │  │  SSLCommerz    │ │
+│                     │    │  │  (Payments)    │ │
+│                     │    │  └────────────────┘ │
+└─────────────────────┘    └──────────────────────┘
+```
+
+---
+
+## 🔥 **Key Technical Achievements**
+
+### **1. Concurrent Payment Processing with Redis Queue**
+**Problem**: Multiple students paying bills simultaneously could cause race conditions and duplicate charges.
+
+**Solution**: 
+- Implemented **Redis-based job queue** using Bull
+- Each payment request becomes a job in the queue
+- Jobs processed sequentially to prevent race conditions
+- **Idempotency keys** ensure same request never processed twice
+- Failed payments automatically retry (3 attempts with exponential backoff)
+
+**Code Example**:
+```typescript
+import Queue from 'bull';
+import { prisma } from '@/config/database';
+
+const paymentQueue = new Queue('payments', {
+  redis: { host: process.env.REDIS_HOST, port: 6379 }
+});
+
+// Producer: Add payment job (in controller)
+export const initiatePayment = async (billId: string, studentId: string) => {
+  const idempotencyKey = `pay_${billId}_${Date.now()}`;
+  
+  await paymentQueue.add('process-payment', {
+    billId,
+    studentId,
+    idempotencyKey
+  }, {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 2000 }
+  });
+  
+  return { message: 'Payment queued', idempotencyKey };
+};
+
+// Consumer: Process payment (background worker)
+paymentQueue.process('process-payment', async (job) => {
+  const { billId, studentId, idempotencyKey } = job.data;
+  
+  // Check idempotency (prevent duplicate processing)
+  const existing = await redis.get(`payment:${idempotencyKey}`);
+  if (existing) {
+    return { status: 'already_processed', transactionId: existing };
+  }
+  
+  // Atomic transaction with database locks
+  return await prisma.$transaction(async (tx) => {
+    // Lock the bill row (prevents concurrent updates)
+    const bill = await tx.bill.update({
+      where: { id: billId, status: 'UNPAID' },
+      data: { status: 'PROCESSING' }
+    });
+    
+    // Call payment gateway (SSLCommerz)
+    const result = await sslCommerz.initiatePayment({
+      amount: bill.amount,
+      studentId,
+      billId
+    });
+    
+    // Update bill status
+    await tx.bill.update({
+      where: { id: billId },
+      data: { 
+        status: 'PAID', 
+        transactionId: result.transactionId,
+        paidAt: new Date()
+      }
+    });
+    
+    // Store idempotency key (24-hour expiry)
+    await redis.setex(`payment:${idempotencyKey}`, 86400, result.transactionId);
+    
+    return result;
+  });
+});
+```
+
+**Result**: 
+- ✅ Handles 100+ concurrent payments safely
+- ✅ Zero duplicate charges
+- ✅ 99.8% success rate with auto-retry
+
+---
+
+### **2. Optimized Seat Allocation Algorithm**
+**Problem**: Allocate 280 rooms to 1000+ applicants fairly with multiple constraints (merit, seniority, department, special needs).
+
+**Solution**: 
+- Implemented **weighted priority queue** with scoring algorithm
+- Scoring: Merit (70%) + Seniority (20%) + Department clustering (5%) + Special needs (5%)
+- **Greedy algorithm** with constraint satisfaction
+- Time complexity: O(n log n) for sorting + O(n × m) for matching
+
+**Code Example**:
+```typescript
+interface Applicant {
+  id: string;
+  cgpa: number;
+  year: number;
+  department: string;
+  hasSpecialNeeds: boolean;
+}
+
+function calculateScore(applicant: Applicant): number {
+  const meritScore = (applicant.cgpa / 4.0) * 70; // 70% weight
+  const seniorityScore = (applicant.year / 5) * 20; // 20% weight
+  const specialNeedsBonus = applicant.hasSpecialNeeds ? 5 : 0;
+  
+  return meritScore + seniorityScore + specialNeedsBonus;
+}
+
+async function allocateSeats(applicants: Applicant[], rooms: Room[]) {
+  // 1. Calculate priority scores
+  const scored = applicants.map(student => ({
+    ...student,
+    score: calculateScore(student)
+  }));
+  
+  // 2. Sort by priority (O(n log n))
+  scored.sort((a, b) => b.score - a.score);
+  
+  // 3. Group rooms by type for efficient matching
+  const roomsByType = groupBy(rooms, 'roomType');
+  
+  // 4. Assign rooms with constraints
+  const allocations: Allocation[] = [];
+  
+  for (const student of scored) {
+    // Special needs → ground floor only
+    if (student.hasSpecialNeeds) {
+      const groundFloorRoom = rooms.find(r => 
+        r.floor === 1 && r.availableSeats > 0
+      );
+      if (groundFloorRoom) {
+        allocations.push({ studentId: student.id, roomId: groundFloorRoom.id });
+        groundFloorRoom.availableSeats--;
+        continue;
+      }
+    }
+    
+    // Try to match with same department students (clustering)
+    let assigned = false;
+    for (const room of rooms) {
+      if (room.availableSeats === 0) continue;
+      
+      const roommates = await getRoommates(room.id);
+      const sameDept = roommates.some(r => r.department === student.department);
+      
+      if (sameDept || room.currentOccupancy === 0) {
+        allocations.push({ studentId: student.id, roomId: room.id });
+        room.availableSeats--;
+        assigned = true;
+        break;
+      }
+    }
+    
+    // Fallback: assign to any available room
+    if (!assigned) {
+      const anyRoom = rooms.find(r => r.availableSeats > 0);
+      if (anyRoom) {
+        allocations.push({ studentId: student.id, roomId: anyRoom.id });
+        anyRoom.availableSeats--;
+      }
+    }
+  }
+  
+  return allocations;
+}
+```
+
+**Result**: 
+- ✅ Allocation completes in < 5 seconds for 1000+ applicants
+- ✅ 95% department clustering achieved
+- ✅ 100% special needs accommodated
+
+---
+
+### **3. Real-Time Entry/Exit Tracking**
+**Problem**: Track 1000+ students entering/exiting hall with minimal latency.
+
+**Solution**:
+- QR code system with optimized scan-to-database pipeline
+- **Composite database index** on (studentId, timestamp) for fast queries
+- Guard app caches student data for offline scanning
+- WebSocket for real-time dashboard updates
+
+**Performance**:
+- ✅ Scan latency: < 200ms (QR scan → DB update → dashboard update)
+- ✅ Handles 50+ scans per minute
+- ✅ 99.9% uptime (offline mode for network failures)
+
+---
+
+### **4. Automated Bill Generation with Batch Processing**
+**Problem**: Calculate mess bills for 1000+ students with variable meal counts efficiently.
+
+**Solution**:
+- **Cron job** runs on 1st of each month at 2:00 AM
+- Batch processing (processes 100 students at a time)
+- Mess bill formula: `(totalExpenses / totalMeals) × studentMeals + fixedCharge`
+- Parallel processing with Promise.all for independent batches
+
+**Code Example**:
+```typescript
+import cron from 'node-cron';
+
+// Schedule: 1st of month at 2 AM
+cron.schedule('0 2 1 * *', async () => {
+  console.log('Starting monthly bill generation...');
+  
+  const students = await prisma.user.findMany({
+    where: { role: 'STUDENT', accountStatus: 'ACTIVE' }
+  });
+  
+  const batchSize = 100;
+  const batches = chunk(students, batchSize);
+  
+  for (const batch of batches) {
+    await Promise.all(
+      batch.map(student => generateBillForStudent(student.id))
+    );
+  }
+  
+  console.log(`Bills generated for ${students.length} students`);
+});
+
+async function generateBillForStudent(studentId: string) {
+  const lastMonth = getLastMonth();
+  
+  // Get meal count
+  const mealCount = await prisma.mealLog.count({
+    where: { studentId, date: { gte: lastMonth.start, lte: lastMonth.end } }
+  });
+  
+  // Get hall's total expenses and meals
+  const { totalExpenses, totalMeals } = await getMonthlyStats(lastMonth);
+  
+  // Calculate per-meal cost
+  const costPerMeal = totalExpenses / totalMeals;
+  const variableCost = costPerMeal * mealCount;
+  const fixedCost = 500; // BDT
+  
+  // Create bill
+  await prisma.bill.create({
+    data: {
+      studentId,
+      month: lastMonth.month,
+      year: lastMonth.year,
+      type: 'MESS',
+      amount: variableCost + fixedCost,
+      dueDate: new Date(lastMonth.year, lastMonth.month, 10), // 10th of month
+      status: 'UNPAID'
+    }
+  });
+}
+```
+
+**Result**: 
+- ✅ Generates 1000 bills in < 2 minutes
+- ✅ 100% accuracy (automated, no human error)
+- ✅ Email notifications sent automatically
+
+---
+
+### **5. Advanced RBAC with Permission Caching**
+**Problem**: Complex permission matrix (10 roles, 60+ permissions) with high-frequency checks.
+
+**Solution**:
+- **Hierarchical permission system** with inheritance
+- Redis caching (TTL: 1 hour) to avoid repeated DB queries
+- Bitwise operations for fast permission checks
+- Middleware intercepts requests and validates permissions
+
+**Code Example**:
+```typescript
+import { Redis } from 'ioredis';
+const redis = new Redis();
+
+// Permission enum (bitwise flags)
+enum Permission {
+  USER_READ = 1 << 0,      // 1
+  USER_CREATE = 1 << 1,    // 2
+  USER_UPDATE = 1 << 2,    // 4
+  USER_DELETE = 1 << 3,    // 8
+  BILL_READ = 1 << 4,      // 16
+  BILL_CREATE = 1 << 5,    // 32
+  // ... more permissions
+}
+
+// Role permissions (bitwise OR)
+const rolePermissions = {
+  SUPER_ADMIN: Permission.USER_READ | Permission.USER_CREATE | Permission.USER_UPDATE | Permission.USER_DELETE | Permission.BILL_READ | Permission.BILL_CREATE,
+  PROVOST: Permission.USER_READ | Permission.BILL_READ | Permission.BILL_CREATE,
+  STUDENT: Permission.USER_READ
+};
+
+// Authorization middleware
+export const authorize = (requiredPermissions: Permission[]) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user;
+    
+    // Check cache first
+    const cacheKey = `permissions:${user.id}`;
+    let userPermissions = await redis.get(cacheKey);
+    
+    if (!userPermissions) {
+      // Fetch from DB
+      userPermissions = rolePermissions[user.role];
+      // Cache for 1 hour
+      await redis.setex(cacheKey, 3600, userPermissions.toString());
+    } else {
+      userPermissions = parseInt(userPermissions);
+    }
+    
+    // Check if user has ALL required permissions (bitwise AND)
+    const hasPermission = requiredPermissions.every(perm => 
+      (userPermissions & perm) === perm
+    );
+    
+    if (!hasPermission) {
+      throw new ForbiddenError('Insufficient permissions');
+    }
+    
+    next();
+  };
+};
+
+// Usage in routes
+router.post('/users', 
+  authenticate,
+  authorize([Permission.USER_CREATE]),
+  createUser
+);
+```
+
+**Result**: 
+- ✅ Authorization check: < 5ms (with cache)
+- ✅ Cache hit rate: 98%
+- ✅ Scalable to 100+ permissions
+
+---
+
+## 📈 **Performance Metrics**
+
+| Metric | Target | Achieved | Optimization Method |
+|--------|--------|----------|---------------------|
+| **API Response Time (avg)** | < 200ms | **~135ms** | Database indexing, query optimization, Redis caching |
+| **API Response Time (p95)** | < 500ms | **~280ms** | Query optimization, connection pooling |
+| **Payment Success Rate** | 99%+ | **99.8%** | Retry mechanism, idempotency, error handling |
+| **Concurrent Users** | 500+ | **850+** | Stateless architecture, load testing validated |
+| **Database Query Time** | < 100ms | **~45ms** | Composite indexes, selective field fetching |
+| **File Upload (5MB)** | < 10s | **~4s** | Direct upload to Cloudinary, presigned URLs |
+| **Bill Generation (1000)** | < 5 min | **~1.8 min** | Batch processing, parallel execution |
+| **QR Scan Latency** | < 300ms | **~180ms** | Indexed queries, optimized database connection |
+| **Test Coverage** | 80%+ | **87%** | Unit tests, integration tests, E2E tests |
+| **Production Uptime** | 99%+ | **99.7%** | Health checks, auto-restart, monitoring |
+
+**Load Testing Results** (Artillery):
+- ✅ Sustained 500 req/sec for 10 minutes without errors
+- ✅ Max latency: 450ms under peak load
+- ✅ Zero failed requests during stress test
+
+---
+
+## 🛡️ **Security Implementations**
+
+### **1. Authentication & Authorization**
+- JWT with **RS256** asymmetric encryption
+- Access token: 15 min expiry | Refresh token: 7 days
+- Refresh token rotation (prevents token replay attacks)
+- Account lockout: 5 failed attempts → 15-minute lockout
+- **Rate limiting**: 100 requests/15 min per IP
+
+### **2. Input Validation**
+- **Two-layer validation**: Zod (API) + Prisma (database)
+- SQL injection prevention via Prisma ORM (parameterized queries)
+- XSS protection via input sanitization
+- File upload validation: Type, size, virus scanning (ClamAV)
+
+### **3. Data Protection**
+- Passwords: bcrypt with 10 salt rounds
+- Sensitive data: AES-256 encryption at rest
+- HTTPS enforced (TLS 1.3)
+- Database credentials stored in environment variables (never committed)
+
+### **4. Payment Security**
+- PCI DSS Level 1 compliant gateway (SSLCommerz)
+- No card data stored on server (gateway handles)
+- Idempotency keys prevent duplicate charges
+- Webhook signature verification
+
+### **5. Audit & Compliance**
+- All critical actions logged (Winston)
+- Tamper-proof logs (append-only files)
+- GDPR-compliant data handling
+- Logs retained for 90 days
+
+---
+
+## 📊 **API Documentation**
+
+**Interactive documentation available at:**
+- 🔗 **Production**: `https://hallmate-api.onrender.com/api-docs`
+- 🔗 **Local**: `http://localhost:5000/api-docs`
+
+Built with **Swagger UI** following **OpenAPI 3.0** specification.
+
+### **API Overview:**
+
+**Total Endpoints**: 68  
+**Authentication**: JWT Bearer Token  
+**Response Format**: JSON  
+**Rate Limit**: 100 requests/15 minutes  
+
+**Sample Request/Response:**
+
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "universityId": "2020123456",
+  "password": "SecurePass@123"
+}
+
+Response 200 OK:
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "uuid-here",
+      "universityId": "2020123456",
+      "name": "Fatema Ahmed",
+      "email": "fatema@uni.edu.bd",
+      "role": "STUDENT",
+      "accountStatus": "ACTIVE"
+    },
+    "accessToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+  },
+  "message": "Login successful"
+}
+```
+
+**Postman Collection**: [Download here](docs/postman-collection.json)
+
+---
+
+## 🎯 **Key Differentiators**
+
+What makes this project stand out:
+
+1. ✅ **Production-Ready**: Deployed to Render, handling real traffic, tested under load
+2. ✅ **Clean Architecture**: Repository pattern, SOLID principles, separation of concerns
+3. ✅ **Comprehensive Testing**: 87% code coverage (unit + integration + E2E)
+4. ✅ **Security-First Design**: Multiple layers (authentication, authorization, validation, rate limiting, encryption)
+5. ✅ **Performance Optimized**: Sub-200ms response times, handles 850+ concurrent users
+6. ✅ **Well-Documented**: README, API docs (Swagger), inline code comments, architecture diagrams
+7. ✅ **Scalable Design**: Can handle 10x current load with minimal infrastructure changes
+8. ✅ **Real-World Impact**: Solves actual problems for 1000+ students daily
+9. ✅ **Modern Tech Stack**: TypeScript, Prisma, Redis, PostgreSQL - industry-standard tools
+10. ✅ **Solo Project**: Demonstrates end-to-end ownership from requirements to deployment
+
+---
+
+-->
+
 ## 🤝 **Contributing**
 
 This is a solo project, but contributions, suggestions, and feedback are welcome!
 
 **If you'd like to contribute:**
+
 1. Fork the repository
 2. Create feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit changes (`git commit -m 'feat: add amazing feature'`)
@@ -550,6 +1097,7 @@ This is a solo project, but contributions, suggestions, and feedback are welcome
 5. Open Pull Request
 
 **Commit Convention** (Conventional Commits):
+
 - `feat:` New feature
 - `fix:` Bug fix
 - `docs:` Documentation
@@ -574,7 +1122,7 @@ This project is licensed under the **MIT License**.
 Solo Developer | Backend Engineer
 
 - 🌐 Portfolio: [[rifah-sajida-deya.com](https://rifah-sajida-deya-portfolio.vercel.app/)]
-- 📧 Email: rifahsajida7@gmail.com
+- 📧 Email: <rifahsajida7@gmail.com>
 - 💼 LinkedIn: [linkedin.com/in/rifah-sajida-deya-1011](https://www.linkedin.com/in/rifah-sajida-deya-1011/)
 - 🐙 GitHub: [@rifah07](https://github.com/rifah07)
 
@@ -583,11 +1131,13 @@ Solo Developer | Backend Engineer
 ## 🙏 **Acknowledgments**
 
 ### **Inspiration:**
+
 - BUET Hall Management System (technical excellence)
 - Dhaka University Halls (operational insights)
 - KUET Digital Hall System (innovation)
 
 ### **Technologies:**
+
 - [Prisma](https://prisma.io) - Amazing ORM
 - [Neon](https://neon.tech) - Serverless PostgreSQL
 - [Render](https://render.com) - Easy deployment
@@ -598,6 +1148,7 @@ Solo Developer | Backend Engineer
 ## 💡 **Why This Project?**
 
 ### **Problems Solved:**
+
 - ❌ Paper-based processes → ✅ 100% digital
 - ❌ Manual payment tracking → ✅ Automated billing
 - ❌ Lack of transparency → ✅ Real-time updates
@@ -606,6 +1157,7 @@ Solo Developer | Backend Engineer
 - ❌ Inefficient allocation → ✅ Smart algorithms
 
 ### **Impact:**
+
 - ⏱️ **80% reduction** in administrative workload
 - 📈 **100x faster** approvals (minutes vs. days)
 - 💰 **Transparent** financial tracking
@@ -628,11 +1180,13 @@ Solo Developer | Backend Engineer
 ## 📞 **Support & Contact**
 
 ### **For Technical Issues:**
+
 - 🐛 [Report Bug](https://github.com/rifah07/hallmate-backend/issues)
 - 💡 [Request Feature](https://github.com/rifah07/hallmate-backend/issues)
-- 📧 Email: rifahsajida7@gmail.com
+- 📧 Email: <rifahsajida7@gmail.com>
 
 ### **For Collaboration:**
+
 - 💼 Institutional partnerships welcome
 - 🤝 Open to freelance/contract work
 
@@ -652,6 +1206,6 @@ _Building technology for education, one line of code at a time._
 
 ---
 
-**Last Updated**: January 2026   
+**Last Updated**: January 2026  
 **Version**: 1.0.0  
 **Status**: Active Development
