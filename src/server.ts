@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 // Load env variables
 dotenv.config();
 
-console.log("HallMate Backend Server");
+console.log('HallMate Backend Server');
 console.log(`Environment : ${process.env.NODE_ENV || 'development'}`);
 console.log(`Node version: ${process.version}`);
 
