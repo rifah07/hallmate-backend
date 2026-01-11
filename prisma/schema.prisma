@@ -1,0 +1,558 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// ENUMS
+
+enum UserRole {
+  SUPER_ADMIN
+  PROVOST
+  HOUSE_TUTOR
+  ASSISTANT_WARDEN
+  OFFICE_STAFF
+  DINING_STAFF
+  MAINTENANCE_STAFF
+  GUARD
+  STUDENT
+  PARENT
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  SEAT_CANCELLED
+  INACTIVE
+  GRADUATED
+}
+
+enum Program {
+  UNDERGRADUATE
+  MASTERS
+  PHD
+}
+
+enum BloodGroup {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+}
+
+enum RoomType {
+  SINGLE
+  DOUBLE
+  TRIPLE
+  FOUR_SHARING
+}
+
+enum RoomStatus {
+  AVAILABLE
+  OCCUPIED
+  PARTIALLY_OCCUPIED
+  MAINTENANCE
+  RESERVED
+}
+
+enum Wing {
+  A
+  B
+}
+
+enum ApplicationType {
+  SEAT_APPLICATION
+  SEAT_CANCELLATION
+  SEAT_TRANSFER
+  SEAT_SWAP
+  LEAVE
+  COMPLAINT
+  MAINTENANCE
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum LeaveType {
+  SHORT_LEAVE
+  LONG_LEAVE
+  OVERNIGHT
+  MEDICAL
+  EMERGENCY
+}
+
+enum ComplaintCategory {
+  ELECTRICAL
+  PLUMBING
+  FURNITURE
+  CLEANLINESS
+  MESS_FOOD
+  NOISE
+  SECURITY
+  HARASSMENT
+  OTHER
+}
+
+enum ComplaintPriority {
+  LOW
+  NORMAL
+  URGENT
+  EMERGENCY
+}
+
+enum ComplaintStatus {
+  SUBMITTED
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum BillType {
+  RENT
+  MESS
+  ELECTRICITY
+  FINE
+  CAUTION_MONEY
+  OTHER
+}
+
+enum BillStatus {
+  UNPAID
+  PROCESSING
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentGateway {
+  BKASH
+  NAGAD
+  BANK_TRANSFER
+  CASH
+  SSLCOMMERZ
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+
+// MAIN MODELS
+
+
+model User {
+  id            String        @id @default(uuid())
+  universityId  String        @unique
+  role          UserRole
+  
+  // Basic Info
+  name          String
+  email         String        @unique
+  phone         String
+  photo         String?
+  
+  // Authentication
+  password      String
+  accountStatus AccountStatus @default(ACTIVE)
+  isFirstLogin  Boolean       @default(true)
+  oneTimePassword String?
+  otpExpiresAt  DateTime?
+  passwordChangedAt DateTime?
+  passwordResetToken String?
+  passwordResetExpires DateTime?
+  
+  // Seat Cancellation Info
+  cancellationReason String?
+  cancelledBy   String?       // userId who cancelled
+  cancelledAt   DateTime?
+  
+  // Student-specific fields
+  department    String?
+  year          Int?
+  program       Program?
+  session       String?
+  bloodGroup    BloodGroup?
+  nationalId    String?
+  studentPhoto  String?
+  medicalConditions String?
+  allergies     String?
+  
+  // Room assignment
+  currentRoomId String?
+  currentRoom   Room?         @relation("CurrentResidents", fields: [currentRoomId], references: [id])
+  
+  // Provost-specific
+  provostMessage String?      @db.Text
+  tenureStart   DateTime?
+  tenureEnd     DateTime?
+  
+  // House Tutor-specific
+  assignedFloor Int?
+  
+  // Staff-specific
+  designation   String?
+  joiningDate   DateTime?
+  
+  // Relations
+  emergencyContacts EmergencyContact[]
+  guardianInfo  GuardianInfo?
+  applications  Application[]
+  complaints    Complaint[]
+  bills         Bill[]
+  payments      Payment[]
+  mealLogs      MealLog[]
+  gateEntries   GateEntry[]
+  visitors      Visitor[]
+  notifications Notification[]
+  seatAllocations SeatAllocation[]
+  
+  // Audit
+  createdBy     String?
+  isDeleted     Boolean       @default(false)
+  deletedAt     DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  @@index([email])
+  @@index([universityId])
+  @@index([role, accountStatus])
+  @@index([currentRoomId])
+  @@index([assignedFloor])
+}
+
+model EmergencyContact {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name      String
+  phone     String
+  relation  String
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId])
+}
+
+model GuardianInfo {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name      String
+  phone     String
+  relation  String
+  address   String   @db.Text
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Room {
+  id                String      @id @default(uuid())
+  roomNumber        String      @unique
+  floor             Int
+  wing              Wing
+  roomType          RoomType
+  capacity          Int
+  currentOccupancy  Int         @default(0)
+  status            RoomStatus  @default(AVAILABLE)
+  
+  // Furniture inventory (JSON)
+  furnitureInventory Json?
+  
+  // Relations
+  currentResidents  User[]      @relation("CurrentResidents")
+  seatAllocations   SeatAllocation[]
+  complaints        Complaint[]
+  
+  // Audit
+  isDeleted         Boolean     @default(false)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  
+  @@index([floor, wing])
+  @@index([status])
+  @@index([roomType])
+}
+
+model SeatAllocation {
+  id            String   @id @default(uuid())
+  studentId     String
+  student       User     @relation(fields: [studentId], references: [id])
+  roomId        String
+  room          Room     @relation(fields: [roomId], references: [id])
+  
+  allocatedAt   DateTime @default(now())
+  vacatedAt     DateTime?
+  isActive      Boolean  @default(true)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([studentId])
+  @@index([roomId])
+  @@index([isActive])
+}
+
+model Application {
+  id              String            @id @default(uuid())
+  type            ApplicationType
+  status          ApplicationStatus @default(PENDING)
+  
+  studentId       String
+  student         User              @relation(fields: [studentId], references: [id])
+  
+  // Application data (JSON - flexible for different types)
+  data            Json
+  
+  // File attachments
+  attachments     String[]
+  
+  // Assignment
+  assignedTo      String?
+  assignedToRole  UserRole?
+  
+  // Response
+  responseNote    String?           @db.Text
+  respondedAt     DateTime?
+  
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  @@index([studentId])
+  @@index([type, status])
+  @@index([assignedTo])
+}
+
+model Complaint {
+  id              String            @id @default(uuid())
+  category        ComplaintCategory
+  priority        ComplaintPriority @default(NORMAL)
+  status          ComplaintStatus   @default(SUBMITTED)
+  
+  studentId       String
+  student         User              @relation(fields: [studentId], references: [id])
+  
+  roomId          String?
+  room            Room?             @relation(fields: [roomId], references: [id])
+  
+  title           String
+  description     String            @db.Text
+  attachments     String[]
+  
+  // Assignment
+  assignedTo      String?
+  assignedAt      DateTime?
+  
+  // Resolution
+  resolutionNote  String?           @db.Text
+  resolvedAt      DateTime?
+  
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  @@index([studentId])
+  @@index([status, priority])
+  @@index([assignedTo])
+}
+
+model Bill {
+  id          String     @id @default(uuid())
+  type        BillType
+  status      BillStatus @default(UNPAID)
+  
+  studentId   String
+  student     User       @relation(fields: [studentId], references: [id])
+  
+  amount      Float
+  month       Int
+  year        Int
+  dueDate     DateTime
+  paidAt      DateTime?
+  
+  // Fine calculation
+  lateFee     Float      @default(0)
+  
+  // Relations
+  payments    Payment[]
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  @@index([studentId])
+  @@index([status])
+  @@index([dueDate])
+  @@unique([studentId, type, month, year])
+}
+
+model Payment {
+  id              String         @id @default(uuid())
+  billId          String
+  bill            Bill           @relation(fields: [billId], references: [id])
+  
+  studentId       String
+  student         User           @relation(fields: [studentId], references: [id])
+  
+  amount          Float
+  gateway         PaymentGateway
+  status          PaymentStatus  @default(PENDING)
+  
+  transactionId   String?        @unique
+  gatewayResponse Json?
+  
+  paidAt          DateTime?
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  @@index([billId])
+  @@index([studentId])
+  @@index([status])
+  @@index([transactionId])
+}
+
+model Notice {
+  id            String   @id @default(uuid())
+  title         String
+  content       String   @db.Text
+  
+  // Attachments
+  pdfUrl        String?
+  imageUrl      String?
+  
+  // Targeting
+  targetAudience String  // ALL, FLOOR_SPECIFIC, YEAR_SPECIFIC, PROGRAM_SPECIFIC
+  targetValue   String?
+  
+  priority      String   @default("NORMAL")
+  category      String   @default("GENERAL")
+  
+  isPublic      Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  expiresAt     DateTime?
+  
+  createdBy     String
+  createdByRole UserRole
+  views         Int      @default(0)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([isActive, isPublic])
+  @@index([createdAt])
+}
+
+model MealLog {
+  id          String   @id @default(uuid())
+  studentId   String
+  student     User     @relation(fields: [studentId], references: [id])
+  
+  date        DateTime @db.Date
+  breakfast   Boolean  @default(false)
+  lunch       Boolean  @default(false)
+  dinner      Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  
+  @@unique([studentId, date])
+  @@index([studentId])
+  @@index([date])
+}
+
+model GateEntry {
+  id          String   @id @default(uuid())
+  studentId   String
+  student     User     @relation(fields: [studentId], references: [id])
+  
+  entryTime   DateTime?
+  exitTime    DateTime?
+  isLateReturn Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([studentId])
+  @@index([createdAt])
+}
+
+model Visitor {
+  id              String   @id @default(uuid())
+  name            String
+  nidNumber       String
+  phone           String
+  relation        String
+  purpose         String
+  photo           String?
+  
+  studentId       String
+  student         User     @relation(fields: [studentId], references: [id])
+  
+  approved        Boolean  @default(false)
+  approvedAt      DateTime?
+  
+  entryTime       DateTime
+  exitTime        DateTime?
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([studentId])
+  @@index([entryTime])
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  type        String
+  title       String
+  message     String   @db.Text
+  
+  relatedEntityType String?
+  relatedEntityId   String?
+  
+  isRead      Boolean  @default(false)
+  readAt      DateTime?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
+
+
+// AUDIT LOG
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  action      String
+  entity      String
+  entityId    String?
+  changes     Json?
+  ipAddress   String?
+  userAgent   String?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
