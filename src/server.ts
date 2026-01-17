@@ -24,13 +24,11 @@ const startServer = async () => {
       logger.info(`Health Check: http://localhost:${PORT}/health`);
       // logger.info(`API Documentation: http://localhost:${PORT}/api-docs`);
     });
-
   } catch (error) {
     logger.error('Failed to start the server ', error);
     process.exit(1);
-  } 
+  }
 };
-
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
