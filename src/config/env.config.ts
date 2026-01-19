@@ -18,7 +18,7 @@ const envValidation = envSchema.safeParse(process.env);
 
 if (!envValidation.success) {
   console.error('Invalid environment variables:');
-  console.error(envValidation.error.format);
+  console.error(envValidation.error.format());
   process.exit(1);
 }
 
