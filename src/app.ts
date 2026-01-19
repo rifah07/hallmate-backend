@@ -5,6 +5,8 @@ import rateLimit from 'express-rate-limit';
 import { corsOptions } from './config/cors.config';
 import { errorHandler } from './shared/middleware/errorHandler';
 import logger from './shared/utils/logger.util';
+import authRoutes from './modules/auth/routes/auth.routes';
+import cookieParser from 'cookie-parser';
 
 const app: Application = express();
 
@@ -30,6 +32,7 @@ app.use('/api', limiter);
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Request logging
 app.use((req: Request, _res: Response, next) => {
@@ -55,6 +58,10 @@ app.get('/', (_req: Request, res: Response) => {
     documentation: '/api-docs',
   });
 });
+
+// API routes
+app.use('/api/auth', authRoutes);
+
 
 // 404 handler
 app.use((_req: Request, res: Response) => {
