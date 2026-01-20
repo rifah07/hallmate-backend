@@ -3,7 +3,7 @@ import authService from '../services/auth.service';
 import { sendSuccess } from '@/shared/utils/response.util';
 
 class AuthController {
-  async login(req: Request, res: Response, next: NextFunction) {
+  async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await authService.login(req.body);
 
@@ -15,7 +15,7 @@ class AuthController {
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
-      return sendSuccess(
+      sendSuccess(
         res,
         {
           user: result.user,
@@ -28,7 +28,7 @@ class AuthController {
     }
   }
 
-  async firstTimeLogin(req: Request, res: Response, next: NextFunction) {
+  async firstTimeLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await authService.firstTimeLogin(req.body);
 
@@ -40,7 +40,7 @@ class AuthController {
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
-      return sendSuccess(
+      sendSuccess(
         res,
         {
           user: result.user,
@@ -53,12 +53,12 @@ class AuthController {
     }
   }
 
-  async logout(req: Request, res: Response, next: NextFunction) {
+  async logout(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       // Clear refresh token cookie
       res.clearCookie('refreshToken');
 
-      return sendSuccess(res, null, 'Logged out successfully');
+      sendSuccess(res, null, 'Logged out successfully');
     } catch (error) {
       next(error);
     }
