@@ -17,7 +17,7 @@ async function main() {
     create: {
       universityId: '2020123456',
       name: 'Test Student',
-      email: 'student@test.com',
+      email: 'student1@test.com',
       phone: '01712345678',
       role: 'STUDENT',
       password: 'dummy', // Will be set on first login
@@ -59,7 +59,7 @@ async function main() {
     create: {
       universityId: '1990111111',
       name: 'Test Provost',
-      email: 'provost@test.com',
+      email: 'provost1@test.com',
       phone: '01812345678',
       role: 'PROVOST',
       password: await bcrypt.hash('Provost@123', 10),
