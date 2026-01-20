@@ -39,10 +39,7 @@ class AuthService {
 
     // Check if first login
     if (user.isFirstLogin) {
-      throw new AppError(
-        'First-time login required. Please use your one-time password.',
-        403,
-      );
+      throw new AppError('First-time login required. Please use your one-time password.', 403);
     }
 
     // Verify password

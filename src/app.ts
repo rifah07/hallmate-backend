@@ -62,7 +62,6 @@ app.get('/', (_req: Request, res: Response) => {
 // API routes
 app.use('/api/auth', authRoutes);
 
-
 // 404 handler
 app.use((_req: Request, res: Response) => {
   res.status(404).json({

@@ -4,11 +4,7 @@ import { sendError } from '@/shared/utils/response.util';
 
 export const validate =
   (schema: z.ZodTypeAny) =>
-  async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       await schema.parseAsync({
         body: req.body,
@@ -24,13 +20,7 @@ export const validate =
           message: issue.message,
         }));
 
-        sendError(
-          res,
-          'Validation failed',
-          400,
-          'VALIDATION_ERROR',
-          errors,
-        );
+        sendError(res, 'Validation failed', 400, 'VALIDATION_ERROR', errors);
         return;
       }
 
