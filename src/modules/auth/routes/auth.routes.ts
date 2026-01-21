@@ -2,6 +2,9 @@ import { Router } from 'express';
 import authController from '../controllers/auth.controller';
 import { validate } from '@/shared/middleware/validate';
 import { loginSchema, firstTimeLoginSchema } from '../schemas/auth.schema';
+import { authenticate } from '@/shared/middleware/authenticate';
+import profileController from '../controllers/profile.controller';
+import { authorize } from '@/shared/middleware/authorize';
 
 const router = Router();
 
@@ -25,5 +28,28 @@ router.post('/first-time-login', validate(firstTimeLoginSchema), authController.
  * @access  Public
  */
 router.post('/logout', authController.logout);
+
+// ============================================================================
+// PROTECTED ROUTES (Authentication required)
+// ============================================================================
+
+/**
+ * @route   GET /api/auth/profile
+ * @desc    Get current user profile
+ * @access  Private (All authenticated users)
+ */
+router.get('/profile', authenticate, profileController.getProfile);
+
+/**
+ * @route GET /api/auth/users/:id
+ * @desc GET users by Id
+ * @access Private (Super Admin, Provost only)
+ */
+router.get(
+  '/users/:universityId',
+  authenticate,
+  authorize('SUPER_ADMIN', 'PROVOST'),
+  profileController.getUserByUniversityId,
+);
 
 export default router;
