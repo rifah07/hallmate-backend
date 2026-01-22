@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import authService from '../services/auth.service';
 import { sendSuccess } from '@/shared/utils/response.util';
+import { AppError } from '@/shared/middleware/errorHandler';
 
 class AuthController {
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -59,6 +60,46 @@ class AuthController {
       res.clearCookie('refreshToken');
 
       sendSuccess(res, null, 'Logged out successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Forgot Password
+   */
+  async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await authService.forgotPassword(req.body);
+      sendSuccess(res, null, result.message);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Reset Password
+   */
+  async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await authService.resetPassword(req.body);
+      sendSuccess(res, null, result.message);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Change Password
+   */
+  async changePassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        throw new AppError('User not authenticated', 401);
+      }
+
+      const result = await authService.changePassword(req.user.userId, req.body);
+      sendSuccess(res, null, result.message);
     } catch (error) {
       next(error);
     }

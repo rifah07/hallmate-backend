@@ -1,7 +1,13 @@
 import { Router } from 'express';
 import authController from '../controllers/auth.controller';
 import { validate } from '@/shared/middleware/validate';
-import { loginSchema, firstTimeLoginSchema } from '../schemas/auth.schema';
+import {
+  loginSchema,
+  firstTimeLoginSchema,
+  changePasswordSchema,
+  resetPasswordSchema,
+  forgotPasswordSchema,
+} from '../schemas/auth.schema';
 import { authenticate } from '@/shared/middleware/authenticate';
 import profileController from '../controllers/profile.controller';
 import { authorize } from '@/shared/middleware/authorize';
@@ -28,6 +34,32 @@ router.post('/first-time-login', validate(firstTimeLoginSchema), authController.
  * @access  Public
  */
 router.post('/logout', authController.logout);
+
+/**
+ * @route   POST /api/auth/forgot-password
+ * @desc    Request password reset OTP
+ * @access  Public
+ */
+router.post('/forgot-password', validate(forgotPasswordSchema), authController.forgotPassword);
+
+/**
+ * @route   POST /api/auth/reset-password
+ * @desc    Reset password with OTP
+ * @access  Public
+ */
+router.post('/reset-password', validate(resetPasswordSchema), authController.resetPassword);
+
+/**
+ * @route   POST /api/auth/change-password
+ * @desc    Change password (logged-in user)
+ * @access  Private (All authenticated users)
+ */
+router.post(
+  '/change-password',
+  authenticate,
+  validate(changePasswordSchema),
+  authController.changePassword,
+);
 
 // ============================================================================
 // PROTECTED ROUTES (Authentication required)

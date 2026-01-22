@@ -86,4 +86,3 @@ export type FirstTimeLoginInput = z.infer<typeof firstTimeLoginSchema>['body'];
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>['body'];
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>['body'];
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>['body'];
-
