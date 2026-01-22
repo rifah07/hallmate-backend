@@ -160,13 +160,129 @@
 					"response": []
 				},
 				{
+					"name": "Get Profile (with token)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJiMGY5MTEwOS05ZTEwLTQwM2EtOWRiNC00NWIzMWQ5NTk3YmMiLCJ1bml2ZXJzaXR5SWQiOiIxOTkwMTExMTExIiwicm9sZSI6IlBST1ZPU1QiLCJhY2NvdW50U3RhdHVzIjoiQUNUSVZFIiwiaWF0IjoxNzY4OTg2MDUyLCJleHAiOjE3Njg5ODY5NTJ9.dNnGajVWtPpMH_tIX3rtySrAUchnsIhK_OJsvxfrJqs",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5000/api/auth/profile",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"auth",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by ID (as provost - should succeed)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJiMGY5MTEwOS05ZTEwLTQwM2EtOWRiNC00NWIzMWQ5NTk3YmMiLCJ1bml2ZXJzaXR5SWQiOiIxOTkwMTExMTExIiwicm9sZSI6IlBST1ZPU1QiLCJhY2NvdW50U3RhdHVzIjoiQUNUSVZFIiwiaWF0IjoxNzY4OTg2MDUyLCJleHAiOjE3Njg5ODY5NTJ9.dNnGajVWtPpMH_tIX3rtySrAUchnsIhK_OJsvxfrJqs",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5000/api/auth/users/2020123456",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"auth",
+								"users",
+								"2020123456"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile (without token)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5000/api/auth/profile",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"auth",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by ID (as student- should fail)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIwNDQ4MjQyNy1mNzAwLTRkYjEtYmQ0Mi1hYTliZDgxYjBlOTQiLCJ1bml2ZXJzaXR5SWQiOiIyMDIwMTIzNDU2Iiwicm9sZSI6IlNUVURFTlQiLCJhY2NvdW50U3RhdHVzIjoiQUNUSVZFIiwiaWF0IjoxNzY4OTg1MzYwLCJleHAiOjE3Njg5ODYyNjB9.jqQ5CxO_zoqHTIXuXHiLCyMW8sOjMNKGMnOQeCRxPJg",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5000/api/auth/users/some-user-id",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"auth",
+								"users",
+								"some-user-id"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Login with Provost Account",
 					"request": {
 						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"universityId\": \"1990111111\",\n  \"password\": \"Provost@123\"\n}",
+							"raw": "{\n  \"universityId\": \"1990111111\",\n  \"password\": \"12$#AbCd\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -184,6 +300,36 @@
 								"api",
 								"auth",
 								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Recover Forgotten Password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"universityId\": \"1990111111\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/auth/forgot-password",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"auth",
+								"forgot-password"
 							]
 						}
 					},
@@ -211,6 +357,13 @@
 					"response": []
 				}
 			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseURL",
+			"value": "",
+			"type": "default"
 		}
 	]
 }
