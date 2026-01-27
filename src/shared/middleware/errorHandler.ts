@@ -15,7 +15,7 @@ class AppError extends Error {
 
 export const errorHandler = (
   err: Error | AppError,
-  _eq: Request,
+  _req: Request,
   res: Response,
   _next: NextFunction,
 ) => {
