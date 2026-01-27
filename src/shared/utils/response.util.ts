@@ -1,8 +1,9 @@
 import { Response } from 'express';
 
-interface SuccessResponse {
+// T is a placeholder for actual data type (like UserResponse)
+interface SuccessResponse<T> {
   success: true;
-  data: any;
+  data: T;
   message?: string;
 }
 
@@ -11,16 +12,17 @@ interface ErrorResponse {
   error: {
     message: string;
     code?: string;
-    details?: any;
+    details?: unknown; // 'unknown' is the professional version of 'any'
   };
 }
 
-export const sendSuccess = (
+// We add <T> here so the function is "Generic"
+export const sendSuccess = <T>(
   res: Response,
-  data: any,
+  data: T,
   message?: string,
   statusCode: number = 200,
-): Response<SuccessResponse> => {
+): Response<SuccessResponse<T>> => {
   return res.status(statusCode).json({
     success: true,
     data,
@@ -33,21 +35,22 @@ export const sendError = (
   message: string,
   statusCode: number = 500,
   code?: string,
-  details?: any,
+  details?: unknown,
 ): Response<ErrorResponse> => {
   return res.status(statusCode).json({
     success: false,
     error: {
       message,
-      ...(code && { code }),
-      ...(details && { details }),
+      ...(code ? { code } : {}),
+      // This ensures we only add 'details' if it's not undefined or null
+      ...(details !== undefined && details !== null ? { details } : {}),
     },
   });
 };
 
-export const sendPaginatedSuccess = (
+export const sendPaginatedSuccess = <T>(
   res: Response,
-  data: any[],
+  data: T[],
   meta: {
     page: number;
     limit: number;
