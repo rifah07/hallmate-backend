@@ -16,7 +16,7 @@ interface ErrorResponse {
   };
 }
 
-// We add <T> here so the function is "Generic"
+// added <T> here so the function is "Generic"
 export const sendSuccess = <T>(
   res: Response,
   data: T,
