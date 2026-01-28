@@ -52,20 +52,20 @@ export interface UserResponse {
 /**
  * User List Response with Pagination
  */
-export interface UserListResponse{
+export interface UserListResponse {
   users: UserResponse[];
   pagination: {
     page: number;
     limit: number;
     total: number;
     totalPages: number;
-  }
+  };
 }
 
 /**
  * User Statistics Response
  */
-export interface UserStatistics{
+export interface UserStatistics {
   totalUsers: number;
   activeUsers: number;
   inactiveUsers: number;
@@ -88,5 +88,37 @@ export interface UserStatistics{
 
   newUsersThisMonth: number;
   newUsersThisYear: number;
+}
 
+/**
+ * User Create Input
+ */
+export interface CreateUserInput {
+  universityId: string;
+  role: UserRole;
+  name: string;
+  email: string;
+  phone: string;
+
+  // Student-specific
+  department?: string;
+  year?: number;
+  program?: Program;
+  session?: string;
+  bloodGroup?: BloodGroup;
+  nationalId?: string;
+  medicalConditions?: string;
+  allergies?: string;
+
+  // Provost-specific
+  provostMessage?: string;
+  tenureStart?: Date;
+  tenureEnd?: Date;
+
+  // House Tutor-specific
+  assignedFloor?: number;
+
+  // Staff-specific
+  designation?: string;
+  joiningDate?: Date;
 }
