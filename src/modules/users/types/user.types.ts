@@ -48,3 +48,45 @@ export interface UserResponse {
   createdAt: Date;
   updatedAt: Date;
 }
+
+/**
+ * User List Response with Pagination
+ */
+export interface UserListResponse{
+  users: UserResponse[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  }
+}
+
+/**
+ * User Statistics Response
+ */
+export interface UserStatistics{
+  totalUsers: number;
+  activeUsers: number;
+  inactiveUsers: number;
+  suspendedUsers: number;
+
+  byRole: {
+    role: UserRole;
+    count: number;
+  }[];
+
+  byDepartment: {
+    department: string;
+    count: number;
+  }[];
+
+  byYear: {
+    year: number;
+    count: number;
+  }[];
+
+  newUsersThisMonth: number;
+  newUsersThisYear: number;
+
+}
