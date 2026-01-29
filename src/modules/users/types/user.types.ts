@@ -148,3 +148,16 @@ export interface UpdateUserInput {
   // Staff-specific
   designation?: string;
 }
+
+/**
+ * User Filter Options
+ */
+export interface UserFilterOptions {
+  role?: UserRole;
+  accountStatus?: AccountStatus;
+  department?: string;
+  year?: number;
+  program?: Program;
+  assignedFloor?: number;
+  search?: string; // Search by name, email, universityId
+}
