@@ -122,3 +122,29 @@ export interface CreateUserInput {
   designation?: string;
   joiningDate?: Date;
 }
+
+/**
+ * User Update Input
+ */
+export interface UpdateUserInput {
+  name?: string;
+  email?: string;
+  phone?: string;
+  photo?: string;
+
+  // Student-specific
+  department?: string;
+  year?: number;
+  bloodGroup?: BloodGroup;
+  medicalConditions?: string;
+  allergies?: string;
+
+  // Provost-specific
+  provostMessage?: string;
+
+  // House Tutor-specific
+  assignedFloor?: number;
+
+  // Staff-specific
+  designation?: string;
+}
