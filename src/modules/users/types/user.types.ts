@@ -161,3 +161,20 @@ export interface UserFilterOptions {
   assignedFloor?: number;
   search?: string; // Search by name, email, universityId
 }
+
+/**
+ * Pagination Options
+ */
+export interface PaginationOptions {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+/**
+ * Bulk User Create Input
+ */
+export interface BulkCreateUsersInput {
+  users: CreateUserInput[];
+}
