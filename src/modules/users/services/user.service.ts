@@ -1,4 +1,6 @@
+import prisma from '@/config/database.config';
 import { UserResponse } from '../types/user.types';
+import { AppError } from '@/shared/middleware/errorHandler';
 
 class UserService {
   /**
@@ -28,6 +30,33 @@ class UserService {
           }
         : undefined,
     } as UserResponse;
+  }
+
+  /**
+   * Get user by ID
+   */
+  async getUserById(userId: string): Promise<UserResponse> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId, isDeleted: false },
+      include: {
+        currentRoom: {
+          select: {
+            id: true,
+            roomNumber: true,
+            floor: true,
+            wing: true,
+            roomType: true,
+          },
+        },
+        emergencyContacts: true,
+        guardianInfo: true,
+      },
+    });
+
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+    return this.toUserResponse(user);
   }
 }
 
