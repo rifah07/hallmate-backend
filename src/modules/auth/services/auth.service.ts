@@ -10,26 +10,14 @@ import {
   ForgotPasswordInput,
 } from '../schemas/auth.schema';
 import emailService from '@/shared/utils/email/email.service';
+import authRepository from '../repositories/auth.repository';
 
 class AuthService {
   async login(data: LoginInput) {
     const { universityId, password } = data;
 
     // Find user with password field
-    const user = await prisma.user.findUnique({
-      where: { universityId },
-      select: {
-        id: true,
-        universityId: true,
-        name: true,
-        email: true,
-        role: true,
-        accountStatus: true,
-        password: true,
-        isFirstLogin: true,
-        photo: true,
-      },
-    });
+    const user = await authRepository.findByUniversityId(universityId);
 
     if (!user) {
       throw new AppError('Invalid credentials', 401);
@@ -81,20 +69,7 @@ class AuthService {
     const { universityId, oneTimePassword, newPassword } = data;
 
     // Find user
-    const user = await prisma.user.findUnique({
-      where: { universityId },
-      select: {
-        id: true,
-        universityId: true,
-        name: true,
-        email: true,
-        role: true,
-        accountStatus: true,
-        isFirstLogin: true,
-        oneTimePassword: true,
-        otpExpiresAt: true,
-      },
-    });
+    const user = await authRepository.findByUniversityId(universityId);
 
     if (!user) {
       throw new AppError('User not found', 404);
@@ -125,25 +100,7 @@ class AuthService {
     const hashedPassword = await hashPassword(newPassword);
 
     // Update user
-    const updatedUser = await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        password: hashedPassword,
-        isFirstLogin: false,
-        oneTimePassword: null,
-        otpExpiresAt: null,
-        passwordChangedAt: new Date(),
-      },
-      select: {
-        id: true,
-        universityId: true,
-        name: true,
-        email: true,
-        role: true,
-        accountStatus: true,
-        photo: true,
-      },
-    });
+    const updatedUser = await authRepository.completeFirstLogin(user.id, hashedPassword);
 
     // Generate tokens
     const payload = {
@@ -156,8 +113,10 @@ class AuthService {
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
 
+    const { password: _, oneTimePassword: __, ...userWithoutPassword } = updatedUser;
+
     return {
-      user: updatedUser,
+      user: userWithoutPassword,
       accessToken,
       refreshToken,
     };
@@ -170,16 +129,7 @@ class AuthService {
     const { universityId } = data;
 
     // Find user
-    const user = await prisma.user.findUnique({
-      where: { universityId },
-      select: {
-        id: true,
-        universityId: true,
-        name: true,
-        email: true,
-        accountStatus: true,
-      },
-    });
+    const user = await authRepository.findByUniversityId(universityId);
 
     // Don't reveal if user exists or not (security)
     if (!user) {
@@ -198,15 +148,10 @@ class AuthService {
 
     // Hash OTP
     const hashedOTP = await hashPassword(otp);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
     // Store OTP with 15-minute expiry
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        passwordResetToken: hashedOTP,
-        passwordResetExpires: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
-      },
-    });
+    await authRepository.setPasswordResetToken(user.id, hashedOTP, expiresAt);
 
     // Send OTP via email
     await emailService.sendPasswordResetOTP(user.email, user.name, otp);
@@ -223,28 +168,13 @@ class AuthService {
     const { universityId, otp, newPassword } = data;
 
     // Find user
-    const user = await prisma.user.findUnique({
-      where: { universityId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        passwordResetToken: true,
-        passwordResetExpires: true,
-      },
-    });
+    const user = await authRepository.findByUniversityId(universityId);
 
-    if (!user) {
+    if (!user || !user.passwordResetToken || !user.passwordResetExpires) {
       throw new AppError('Invalid or expired OTP', 400);
     }
 
-    // Check if OTP exists
-    if (!user.passwordResetToken) {
-      throw new AppError('No password reset request found', 400);
-    }
-
-    // Check if OTP expired
-    if (!user.passwordResetExpires || new Date() > user.passwordResetExpires) {
+    if (new Date() > user.passwordResetExpires) {
       throw new AppError('OTP has expired. Please request a new one.', 400);
     }
 
@@ -258,15 +188,8 @@ class AuthService {
     const hashedPassword = await hashPassword(newPassword);
 
     // Update password and clear reset token
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        password: hashedPassword,
-        passwordResetToken: null,
-        passwordResetExpires: null,
-        passwordChangedAt: new Date(),
-      },
-    });
+    await authRepository.updatePassword(user.id, hashedPassword);
+    await authRepository.clearPasswordResetToken(user.id);
 
     // Send confirmation email
     await emailService.sendPasswordChangedConfirmation(user.email, user.name);
@@ -283,15 +206,7 @@ class AuthService {
     const { oldPassword, newPassword } = data;
 
     // Get user with password
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        password: true,
-      },
-    });
+    const user = await authRepository.findById(userId);
 
     if (!user) {
       throw new AppError('User not found', 404);
@@ -313,13 +228,7 @@ class AuthService {
     const hashedPassword = await hashPassword(newPassword);
 
     // Update password
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        password: hashedPassword,
-        passwordChangedAt: new Date(),
-      },
-    });
+    await authRepository.updatePassword(user.id, hashedPassword);
 
     // Send confirmation email
     await emailService.sendPasswordChangedConfirmation(user.email, user.name);
