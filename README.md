@@ -16,8 +16,7 @@ HallMate is a comprehensive backend system for managing university women's resid
 
 **Key Highlights:**
 
-- 🎯 Solo project by passionate developer
-- 💰 100% free deployment stack (no credit card required)
+- 💰 100% free deployment stack
 - 🚀 Production-ready architecture
 - 🇧🇩 Designed for Bangladesh university context
 
