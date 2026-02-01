@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { sendSuccess } from '@/shared/utils/response.util';
-import prisma from '@/config/database.config';
 import { AppError } from '@/shared/middleware/errorHandler';
 import authRepository from '../repositories/auth.repository';
 
