@@ -1,5 +1,5 @@
 import { Prisma, PrismaClient, User } from '@prisma/client';
-import { UserFilterOptions, PaginationOptions } from '../types/user.types';
+import { UserFilterOptions, PaginationOptions, CreateUserInput } from '../types/user.types';
 
 /**
  * User Repository
@@ -112,5 +112,27 @@ export class UserRepository {
     ]);
 
     return { users, total };
+  }
+
+  /**
+   * Create new user
+   */
+  async create(
+    data: CreateUserInput,
+    hashedPassword: string,
+    oneTimePassword: string,
+  ): Promise<User> {
+    return await this.prisma.user.create({
+      data: {
+        ...data,
+        password: hashedPassword,
+        oneTimePassword,
+        isFirstLogin: true,
+        accountStatus: 'ACTIVE',
+      },
+      include: {
+        currentRoom: true,
+      },
+    });
   }
 }
