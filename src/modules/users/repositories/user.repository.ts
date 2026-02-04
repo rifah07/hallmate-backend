@@ -1,5 +1,10 @@
 import { Prisma, PrismaClient, User } from '@prisma/client';
-import { UserFilterOptions, PaginationOptions, CreateUserInput } from '../types/user.types';
+import {
+  UserFilterOptions,
+  PaginationOptions,
+  CreateUserInput,
+  UpdateUserInput,
+} from '../types/user.types';
 
 /**
  * User Repository
@@ -132,6 +137,30 @@ export class UserRepository {
       },
       include: {
         currentRoom: true,
+      },
+    });
+  }
+
+  /**
+   * Update user
+   */
+  async update(userId: string, data: UpdateUserInput): Promise<User> {
+    return await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...data,
+        updatedAt: new Date(),
+      },
+      include: {
+        currentRoom: {
+          select: {
+            id: true,
+            roomNumber: true,
+            floor: true,
+            wing: true,
+            roomType: true,
+          },
+        },
       },
     });
   }
