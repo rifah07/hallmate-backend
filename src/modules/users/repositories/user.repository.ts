@@ -215,4 +215,35 @@ export class UserRepository {
       },
     });
   }
+
+  /**
+   * Hard delete user (use with extreme caution!)
+   */
+  async hardDelete(userId: string): Promise<User> {
+    return await this.prisma.user.delete({
+      where: { id: userId },
+    });
+  }
+
+  /**
+   * Check if university ID exists
+   */
+  async universityIdExists(universityId: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { universityId },
+      select: { id: true },
+    });
+    return !!user;
+  }
+
+  /**
+   * Check if email exists
+   */
+  async emailExists(email: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+    return !!user;
+  }
 }
