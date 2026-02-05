@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient, User } from '@prisma/client';
+import { AccountStatus, Prisma, PrismaClient, User, UserRole } from '@prisma/client';
 import {
   UserFilterOptions,
   PaginationOptions,
@@ -162,6 +162,26 @@ export class UserRepository {
           },
         },
       },
+    });
+  }
+
+  /**
+   * Update user role (admin only)
+   */
+  async updateRole(userId: string, role: UserRole): Promise<User> {
+    return await this.prisma.user.update({
+      where: { id: userId },
+      data: { role, updatedAt: new Date() },
+    });
+  }
+
+  /**
+   * Update account status
+   */
+  async updateAccountStatus(userId: string, accountStatus: AccountStatus): Promise<User> {
+    return await this.prisma.user.update({
+      where: { id: userId },
+      data: { accountStatus, updatedAt: new Date() },
     });
   }
 }
