@@ -184,4 +184,35 @@ export class UserRepository {
       data: { accountStatus, updatedAt: new Date() },
     });
   }
+
+  /**
+   * Soft delete user
+   */
+  async softDelete(userId: string, _deletedBy: string): Promise<User> {
+    return await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+        accountStatus: 'INACTIVE',
+        // Anonymize sensitive data
+        email: `deleted_${userId}@deleted.com`,
+        phone: 'DELETED',
+      },
+    });
+  }
+
+  /**
+   * Restore soft-deleted user
+   */
+  async restore(userId: string): Promise<User> {
+    return await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        isDeleted: false,
+        deletedAt: null,
+        accountStatus: 'ACTIVE',
+      },
+    });
+  }
 }
