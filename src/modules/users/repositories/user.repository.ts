@@ -246,4 +246,109 @@ export class UserRepository {
     });
     return !!user;
   }
+
+  /**
+   * Get user statistics
+   */
+  async getStatistics() {
+    const [
+      totalUsers,
+      activeUsers,
+      inactiveUsers,
+      suspendedUsers,
+      roleDistribution,
+      departmentDistribution,
+      yearDistribution,
+      newUsersThisMonth,
+      newUsersThisYear,
+    ] = await Promise.all([
+      // Total users
+      this.prisma.user.count({ where: { isDeleted: false } }),
+
+      // Active users
+      this.prisma.user.count({
+        where: { accountStatus: 'ACTIVE', isDeleted: false },
+      }),
+
+      // Inactive users
+      this.prisma.user.count({
+        where: { accountStatus: 'INACTIVE', isDeleted: false },
+      }),
+
+      // Suspended users
+      this.prisma.user.count({
+        where: { accountStatus: 'SUSPENDED', isDeleted: false },
+      }),
+
+      // Role distribution
+      this.prisma.user.groupBy({
+        by: ['role'],
+        where: { isDeleted: false },
+        _count: { role: true },
+      }),
+
+      // Department distribution (students only)
+      this.prisma.user.groupBy({
+        by: ['department'],
+        where: {
+          role: 'STUDENT',
+          isDeleted: false,
+          department: { not: null },
+        },
+        _count: { department: true },
+      }),
+
+      // Year distribution (students only)
+      this.prisma.user.groupBy({
+        by: ['year'],
+        where: {
+          role: 'STUDENT',
+          isDeleted: false,
+          year: { not: null },
+        },
+        _count: { year: true },
+      }),
+
+      // New users this month
+      this.prisma.user.count({
+        where: {
+          isDeleted: false,
+          createdAt: {
+            gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+          },
+        },
+      }),
+
+      // New users this year
+      this.prisma.user.count({
+        where: {
+          isDeleted: false,
+          createdAt: {
+            gte: new Date(new Date().getFullYear(), 0, 1),
+          },
+        },
+      }),
+    ]);
+
+    return {
+      totalUsers,
+      activeUsers,
+      inactiveUsers,
+      suspendedUsers,
+      byRole: roleDistribution.map((r) => ({
+        role: r.role,
+        count: r._count.role,
+      })),
+      byDepartment: departmentDistribution.map((d) => ({
+        department: d.department!,
+        count: d._count.department,
+      })),
+      byYear: yearDistribution.map((y) => ({
+        year: y.year!,
+        count: y._count.year,
+      })),
+      newUsersThisMonth,
+      newUsersThisYear,
+    };
+  }
 }
