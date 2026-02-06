@@ -318,6 +318,11 @@ export class UserRepository {
           },
         },
       }),
+      /** 'gte' means "Greater Than or Equal To" (>=).
+       * new Date(year, month, 1): This creates a timestamp for the 1st day of the current month at 12:00 AM.
+       * gte: Tells the database to look for any user whose createdAt date is Greater Than or Equal to that 1st day.
+       * In JavaScript, months start at 0. So, January is 0, and December is 11
+       */
 
       // New users this year
       this.prisma.user.count({
@@ -350,5 +355,29 @@ export class UserRepository {
       newUsersThisMonth,
       newUsersThisYear,
     };
+  }
+
+  /**
+   * Bulk create users (for admin/seeding)
+   */
+  async bulkCreate(
+    users: CreateUserInput[],
+    hashedPasswords: string[],
+    otps: string[],
+  ): Promise<number> {
+    const data = users.map((user, index) => ({
+      ...user,
+      password: hashedPasswords[index],
+      oneTimePassword: otps[index],
+      isFirstLogin: true,
+      accountStatus: 'ACTIVE' as AccountStatus,
+    }));
+
+    const result = await this.prisma.user.createMany({
+      data,
+      skipDuplicates: true, // Skip if university ID or email already exists
+    });
+
+    return result.count;
   }
 }
