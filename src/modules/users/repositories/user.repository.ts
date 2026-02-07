@@ -380,4 +380,24 @@ export class UserRepository {
 
     return result.count;
   }
+
+  /**
+   * Update profile picture
+   */
+  async updateProfilePicture(userId: string, photoUrl: string): Promise<User> {
+    return await this.prisma.user.update({
+      where: { id: userId },
+      data: { photo: photoUrl, updatedAt: new Date() },
+    });
+  }
+  
+  /**
+   * Delete profile picture
+   */
+  async deleteProfilePicture(userId: string): Promise<User> {
+    return await this.prisma.user.update({
+      where: { id: userId },
+      data: { photo: null, updatedAt: new Date() },
+    });
+  }
 }
