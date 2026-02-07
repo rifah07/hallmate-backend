@@ -390,7 +390,7 @@ export class UserRepository {
       data: { photo: photoUrl, updatedAt: new Date() },
     });
   }
-  
+
   /**
    * Delete profile picture
    */
@@ -398,6 +398,44 @@ export class UserRepository {
     return await this.prisma.user.update({
       where: { id: userId },
       data: { photo: null, updatedAt: new Date() },
+    });
+  }
+
+  /**
+   * Get users by role
+   */
+  async findByRole(role: UserRole): Promise<User[]> {
+    return await this.prisma.user.findMany({
+      where: { role, isDeleted: false, accountStatus: 'ACTIVE' },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  /**
+   * Get users by floor (for house tutors)
+   */
+  async findByFloor(floor: number): Promise<User[]> {
+    return await this.prisma.user.findMany({
+      where: {
+        role: 'STUDENT',
+        isDeleted: false,
+        accountStatus: 'ACTIVE',
+        currentRoom: {
+          floor,
+        },
+      },
+      include: {
+        currentRoom: {
+          select: {
+            id: true,
+            roomNumber: true,
+            floor: true,
+            wing: true,
+            roomType: true,
+          },
+        },
+      },
+      orderBy: { name: 'asc' },
     });
   }
 }
