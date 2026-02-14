@@ -38,3 +38,32 @@ const bloodGroupEnum = z.enum([
   'AB_POSITIVE',
   'AB_NEGATIVE',
 ] as const);
+
+
+export const getUserByIdSchema = z.object({
+  params: z.object({
+    userId: z.string().uuid('Invalid user ID format'),
+  }),
+});
+
+/**
+ * Get all users schema (with filters and pagination)
+ */
+export const getAllUsersSchema = z.object({
+  query: z.object({
+    // Filters
+    role: userRoleEnum.optional(),
+    accountStatus: accountStatusEnum.optional(),
+    department: z.string().optional(),
+    year: z.coerce.number().int().min(1).max(5).optional(),
+    program: programEnum.optional(),
+    assignedFloor: z.coerce.number().int().min(1).max(14).optional(),
+    search: z.string().optional(),
+
+    // Pagination
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(10),
+    sortBy: z.string().default('createdAt'),
+    sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  }),
+});
