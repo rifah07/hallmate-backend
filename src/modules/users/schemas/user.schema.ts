@@ -170,3 +170,15 @@ export const updateUserSchema = z.object({
     designation: z.string().optional(),
   }),
 });
+
+/**
+ * Update user role schema
+ */
+export const updateUserRoleSchema = z.object({
+  params: z.object({
+    userId: z.string().uuid('Invalid user ID format'),
+  }),
+  body: z.object({
+    role: userRoleEnum,
+  }),
+});
