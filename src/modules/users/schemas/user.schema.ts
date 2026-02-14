@@ -182,3 +182,15 @@ export const updateUserRoleSchema = z.object({
     role: userRoleEnum,
   }),
 });
+
+/**
+ * Update account status schema
+ */
+export const updateAccountStatusSchema = z.object({
+  params: z.object({
+    userId: z.string().uuid('Invalid user ID format'),
+  }),
+  body: z.object({
+    accountStatus: accountStatusEnum,
+  }),
+});
