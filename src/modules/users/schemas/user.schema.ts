@@ -39,7 +39,6 @@ const bloodGroupEnum = z.enum([
   'AB_NEGATIVE',
 ] as const);
 
-
 export const getUserByIdSchema = z.object({
   params: z.object({
     userId: z.string().uuid('Invalid user ID format'),
@@ -66,4 +65,70 @@ export const getAllUsersSchema = z.object({
     sortBy: z.string().default('createdAt'),
     sortOrder: z.enum(['asc', 'desc']).default('desc'),
   }),
+});
+
+/**
+ * Create user schema
+ */
+export const createUserSchema = z.object({
+  body: z
+    .object({
+      universityId: z
+        .string()
+        .min(10, 'University ID must be at least 10 characters')
+        .max(20, 'University ID must not exceed 20 characters'),
+      role: userRoleEnum,
+      name: z
+        .string()
+        .min(2, 'Name must be at least 2 characters')
+        .max(100, 'Name must not exceed 100 characters'),
+      email: z.string().email('Invalid email format'),
+      phone: z.string().regex(/^(\+88)?01[3-9]\d{8}$/, 'Invalid Bangladesh phone number'),
+
+      // Student-specific (optional)
+      department: z.string().optional(),
+      year: z.number().int().min(1).max(5).optional(),
+      program: programEnum.optional(),
+      session: z.string().optional(),
+      bloodGroup: bloodGroupEnum.optional(),
+      nationalId: z.string().optional(),
+      medicalConditions: z.string().optional(),
+      allergies: z.string().optional(),
+
+      // Provost-specific (optional)
+      provostMessage: z.string().optional(),
+      tenureStart: z.coerce.date().optional(),
+      tenureEnd: z.coerce.date().optional(),
+
+      // House Tutor-specific (optional)
+      assignedFloor: z.number().int().min(1).max(14).optional(),
+
+      // Staff-specific (optional)
+      designation: z.string().optional(),
+      joiningDate: z.coerce.date().optional(),
+    })
+    .refine(
+      (data) => {
+        // If role is STUDENT, require student-specific fields
+        if (data.role === 'STUDENT') {
+          return !!(data.department && data.year && data.program && data.session);
+        }
+        return true;
+      },
+      {
+        message: 'Students must have department, year, program, and session',
+      },
+    )
+    .refine(
+      (data) => {
+        // If role is HOUSE_TUTOR, require assignedFloor
+        if (data.role === 'HOUSE_TUTOR') {
+          return !!data.assignedFloor;
+        }
+        return true;
+      },
+      {
+        message: 'House tutors must have an assigned floor',
+      },
+    ),
 });
