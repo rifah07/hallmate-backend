@@ -132,3 +132,41 @@ export const createUserSchema = z.object({
       },
     ),
 });
+
+/**
+ * Update user schema
+ */
+export const updateUserSchema = z.object({
+  params: z.object({
+    userId: z.string().uuid('Invalid user ID format'),
+  }),
+  body: z.object({
+    name: z
+      .string()
+      .min(2, 'Name must be at least 2 characters')
+      .max(100, 'Name must not exceed 100 characters')
+      .optional(),
+    email: z.string().email('Invalid email format').optional(),
+    phone: z
+      .string()
+      .regex(/^(\+88)?01[3-9]\d{8}$/, 'Invalid Bangladesh phone number')
+      .optional(),
+    photo: z.string().url('Invalid photo URL').optional(),
+
+    // Student-specific
+    department: z.string().optional(),
+    year: z.number().int().min(1).max(5).optional(),
+    bloodGroup: bloodGroupEnum.optional(),
+    medicalConditions: z.string().optional(),
+    allergies: z.string().optional(),
+
+    // Provost-specific
+    provostMessage: z.string().optional(),
+
+    // House Tutor-specific
+    assignedFloor: z.number().int().min(1).max(14).optional(),
+
+    // Staff-specific
+    designation: z.string().optional(),
+  }),
+});
