@@ -214,3 +214,12 @@ export const searchUsersSchema = z.object({
     limit: z.coerce.number().int().min(1).max(100).default(10),
   }),
 });
+
+/**
+ * Get users by role schema
+ */
+export const getUsersByRoleSchema = z.object({
+  params: z.object({
+    role: userRoleEnum,
+  }),
+});
