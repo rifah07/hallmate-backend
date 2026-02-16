@@ -223,3 +223,48 @@ export const getUsersByRoleSchema = z.object({
     role: userRoleEnum,
   }),
 });
+
+/**
+ * Get users by floor schema
+ */
+export const getUsersByFloorSchema = z.object({
+  params: z.object({
+    floor: z.coerce.number().int().min(1).max(14, 'Floor must be between 1 and 14'),
+  }),
+});
+
+/**
+ * Bulk create users schema
+ */
+export const bulkCreateUsersSchema = z.object({
+  body: z.object({
+    users: z
+      .array(
+        z.object({
+          universityId: z.string().min(10).max(20),
+          role: userRoleEnum,
+          name: z.string().min(2).max(100),
+          email: z.string().email(),
+          phone: z.string().regex(/^(\+88)?01[3-9]\d{8}$/),
+
+          // Optional fields
+          department: z.string().optional(),
+          year: z.number().int().min(1).max(5).optional(),
+          program: programEnum.optional(),
+          session: z.string().optional(),
+          bloodGroup: bloodGroupEnum.optional(),
+          nationalId: z.string().optional(),
+          medicalConditions: z.string().optional(),
+          allergies: z.string().optional(),
+          provostMessage: z.string().optional(),
+          tenureStart: z.coerce.date().optional(),
+          tenureEnd: z.coerce.date().optional(),
+          assignedFloor: z.number().int().min(1).max(14).optional(),
+          designation: z.string().optional(),
+          joiningDate: z.coerce.date().optional(),
+        }),
+      )
+      .min(1, 'At least one user is required')
+      .max(100, 'Cannot create more than 100 users at once'),
+  }),
+});
