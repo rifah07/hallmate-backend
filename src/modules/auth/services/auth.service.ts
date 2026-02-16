@@ -1,6 +1,6 @@
 import { hashPassword, comparePassword } from '@/shared/utils/crypto/password.util';
 import { generateAccessToken, generateRefreshToken } from '@/shared/utils/crypto/jwt.util';
-import { AppError } from '@/shared/middleware/errorHandler';
+import { AppError } from 'shared/errors';
 import {
   LoginInput,
   FirstTimeLoginInput,

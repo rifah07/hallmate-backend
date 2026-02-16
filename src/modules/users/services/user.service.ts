@@ -1,7 +1,6 @@
 import prisma from '@/config/database.config';
 import { UserResponse } from '../types/user.types';
-import { AppError } from '@/shared/middleware/errorHandler';
-
+import { AppError } from 'shared/errors';
 class UserService {
   /**
    * Transform User entity to UserResponse (exclude sensitive data)
@@ -9,12 +8,12 @@ class UserService {
 
   private toUserResponse(user: any): UserResponse {
     const {
-      password,
-      oneTimePassword,
-      otpExpiresAt,
-      passwordResetToken,
-      passwordResetExpires,
-      isDeleted,
+      _password,
+      _oneTimePassword,
+      _otpExpiresAt,
+      _passwordResetToken,
+      _passwordResetExpires,
+      _isDeleted,
       ...safeUser
     } = user;
 
