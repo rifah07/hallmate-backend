@@ -194,3 +194,12 @@ export const updateAccountStatusSchema = z.object({
     accountStatus: accountStatusEnum,
   }),
 });
+
+/**
+ * Delete user schema
+ */
+export const deleteUserSchema = z.object({
+  params: z.object({
+    userId: z.string().uuid('Invalid user ID format'),
+  }),
+});
