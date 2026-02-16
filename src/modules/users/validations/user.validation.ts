@@ -268,3 +268,21 @@ export const bulkCreateUsersSchema = z.object({
       .max(100, 'Cannot create more than 100 users at once'),
   }),
 });
+
+/**
+ * Upload profile picture schema
+ */
+export const uploadProfilePictureSchema = z.object({
+  params: z.object({
+    userId: z.string().uuid('Invalid user ID format'),
+  }),
+});
+
+/**
+ * Delete profile picture schema
+ */
+export const deleteProfilePictureSchema = z.object({
+  params: z.object({
+    userId: z.string().uuid('Invalid user ID format'),
+  }),
+});
