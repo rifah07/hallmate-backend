@@ -203,3 +203,14 @@ export const deleteUserSchema = z.object({
     userId: z.string().uuid('Invalid user ID format'),
   }),
 });
+
+/**
+ * Search users schema
+ */
+export const searchUsersSchema = z.object({
+  query: z.object({
+    q: z.string().min(1, 'Search query is required'),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(10),
+  }),
+});
