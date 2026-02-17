@@ -1,28 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
-import { AppError } from './errorHandler';
 import { UserRole } from '@prisma/client';
+import { AppError, ForbiddenError, UnauthorizedError } from '../errors';
 
 /**
  * Authorization middleware - checks if user has required role(s)
  */
 export const authorize = (...allowedRoles: UserRole[]) => {
   return (req: Request, _res: Response, next: NextFunction): void => {
-    try {
-      // Check if user is authenticated
-      if (!req.user) {
-        throw new AppError('Authentication required', 401);
-      }
-
-      // Check if user has required role
-      const hasRole = allowedRoles.includes(req.user.role as UserRole);
-
-      if (!hasRole) {
-        throw new AppError('You do not have permission to access this resource', 403);
-      }
-      next();
-    } catch (error) {
-      next(error);
+    if (!req.user) {
+      return next(new UnauthorizedError('Authentication required'));
     }
+    const hasRole = allowedRoles.includes(req.user.role as UserRole);
+
+    if (!hasRole) {
+      return next(new ForbiddenError('You do not have permission to perform this action'));
+    }
+
+    next();
   };
 };
 

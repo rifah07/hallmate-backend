@@ -1,21 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken } from '../utils/crypto/jwt.util';
-import { AppError } from '@/shared/middleware/errorHandler';
+import { ForbiddenError, TokenError, UnauthorizedError } from '@/shared/errors';
 import prisma from '@/config/database.config';
+import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 
-// Extend Express Request type to include user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        userId: string;
-        universityId: string;
-        role: string;
-        accountStatus: string;
-      };
-    }
-  }
-}
+// Statuses that must be refused even with a valid token
+const BLOCKED_STATUSES = ['SUSPENDED', 'SEAT_CANCELLED', 'INACTIVE', 'GRADUATED'] as const;
 
 export const authenticate = async (
   req: Request,
@@ -27,13 +17,13 @@ export const authenticate = async (
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new AppError('Authentication token missing or malformed', 401);
+      throw new UnauthorizedError('Authentication token missing or malformed');
     }
 
     const token = authHeader.split(' ')[1];
 
     if (!token) {
-      throw new AppError('No token provided', 402);
+      throw new UnauthorizedError('No token provided');
     }
 
     // verify token
@@ -51,23 +41,16 @@ export const authenticate = async (
       },
     });
 
-    if (!user) {
-      throw new AppError('User no longer exists', 401);
+    // Account deleted after token was issued
+    if (!user || user.isDeleted) {
+      throw new UnauthorizedError('Account no longer exists');
     }
 
-    // Check if user is deleted
-    if (user.isDeleted) {
-      throw new AppError('User account has been deleted', 401);
+     // Account status changed after token was issued — single check, all statuses
+    if (BLOCKED_STATUSES.includes(user.accountStatus as any)) {
+      throw new ForbiddenError('Your account is not active. Please contact the hall office.');
     }
 
-    // Check account status
-    if (user.accountStatus === 'SUSPENDED') {
-      throw new AppError('Your account has been suspended', 403);
-    }
-
-    if (user.accountStatus === 'SEAT_CANCELLED') {
-      throw new AppError('Your seat has been cancelled', 403);
-    }
 
     // Attach user to request
     req.user = {
@@ -78,12 +61,10 @@ export const authenticate = async (
     };
     next();
   } catch (error) {
-    if (error instanceof AppError) {
-      next(error);
-    } else if ((error as any).name === 'JsonWebTokenError') {
-      next(new AppError('Invalid token. Please log in again.', 401));
-    } else if ((error as any).name === 'TokenExpiredError') {
-      next(new AppError('Token expired. Please log in again.', 401));
+   if (error instanceof TokenExpiredError) {
+      next(new TokenError('Token expired. Please log in again.'));
+    } else if (error instanceof JsonWebTokenError) {
+      next(new TokenError('Invalid token. Please log in again.'));
     } else {
       next(error);
     }
