@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { UserRole } from '@prisma/client';
-import { AppError, ForbiddenError, UnauthorizedError } from '../errors';
+import { ForbiddenError, UnauthorizedError } from '../errors';
 
 /**
  * Authorization middleware - checks if user has required role(s)
