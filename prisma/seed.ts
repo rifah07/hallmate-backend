@@ -40,7 +40,7 @@ console.log('Password: Admin@123');
       email: 'student1@test.com',
       phone: '01712345678',
       role: 'STUDENT',
-      password: 'dummy', // Will be set on first login
+      password: await bcrypt.hash('dummy', 10), // Will be set on first login
       isFirstLogin: true,
       oneTimePassword: hashedOTP,
       otpExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
