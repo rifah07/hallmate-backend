@@ -21,15 +21,16 @@ export const firstTimeLoginSchema = z
       newPassword: z
         .string()
         .min(8, 'Password must be at least 8 characters')
+        .max(100, 'Password is too long')
         .regex(/[A-Z]/, 'Password must contain at least 1 uppercase letter')
         .regex(/[a-z]/, 'Password must contain at least 1 lowercase letter')
         .regex(/[0-9]/, 'Password must contain at least 1 number')
-        .regex(/[@$!%*?&]/, 'Password must contain at least 1 special character'),
-      confirmPassword: z.string().min(1, 'Confirm password is required'),
+        .regex(/[^A-Za-z0-9]/, 'Password must contain at least 1 special character'),
+      confirmPassword: z.string().min(8, 'Confirm password must also be 8+ characters'),
     }),
   })
   .refine((data) => data.body.newPassword === data.body.confirmPassword, {
-    message: 'Password do not match',
+    message: 'Passwords do not match',
     path: ['body', 'confirmPassword'],
   });
 
