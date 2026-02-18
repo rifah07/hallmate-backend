@@ -19,7 +19,7 @@ interface ErrorResponse {
 // added <T> here so the function is "Generic"
 export const sendSuccess = <T>(
   res: Response,
-  data: T = null as T,  // allow null data
+  data?: T, // allow null data
   message?: string,
   statusCode: number = 200,
 ): Response<SuccessResponse<T>> => {
