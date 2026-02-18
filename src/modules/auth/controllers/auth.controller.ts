@@ -4,26 +4,18 @@ import { sendSuccess } from '@/shared/utils/response.util';
 import { UnauthorizedError } from '@/shared/errors';
 
 class AuthController {
+  private readonly cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: (process.env.NODE_ENV === 'production' ? 'none' : 'strict') as 'none' | 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  };
+
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await authService.login(req.body);
-
-      // Set refresh token as httpOnly cookie
-      res.cookie('refreshToken', result.refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      });
-
-      sendSuccess(
-        res,
-        {
-          user: result.user,
-          accessToken: result.accessToken,
-        },
-        'Login successful',
-      );
+      res.cookie('refreshToken', result.refreshToken, this.cookieOptions);
+      sendSuccess(res, { user: result.user, accessToken: result.accessToken }, 'Login successful');
     } catch (error) {
       next(error);
     }
@@ -32,21 +24,10 @@ class AuthController {
   async firstTimeLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await authService.firstTimeLogin(req.body);
-
-      // Set refresh token as httpOnly cookie
-      res.cookie('refreshToken', result.refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      });
-
+      res.cookie('refreshToken', result.refreshToken, this.cookieOptions);
       sendSuccess(
         res,
-        {
-          user: result.user,
-          accessToken: result.accessToken,
-        },
+        { user: result.user, accessToken: result.accessToken },
         'Password set successfully. Welcome!',
       );
     } catch (error) {
@@ -54,17 +35,39 @@ class AuthController {
     }
   }
 
-  async logout(_req: Request, res: Response, next: NextFunction): Promise<void> {
+  async refreshToken(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      // Clear refresh token cookie
-      res.clearCookie('refreshToken');
+      const refreshToken = req.cookies?.refreshToken;
 
-      sendSuccess(res, null, 'Logged out successfully');
+      if (!refreshToken) {
+        throw new UnauthorizedError('Refresh token missing');
+      }
+
+      const result = await authService.refreshToken(refreshToken);
+
+      // Set new refresh token cookie
+      res.cookie('refreshToken', result.refreshToken, this.cookieOptions);
+
+      sendSuccess(res, { accessToken: result.accessToken }, 'Token refreshed successfully');
     } catch (error) {
       next(error);
     }
   }
 
+  async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const refreshToken = req.cookies?.refreshToken;
+
+      if (refreshToken) {
+        await authService.logout(refreshToken);
+      }
+
+      res.clearCookie('refreshToken');
+      sendSuccess(res, null, 'Logged out successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
   /**
    * Forgot Password
    */

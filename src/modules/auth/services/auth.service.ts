@@ -1,6 +1,7 @@
+import { createHash, randomInt } from 'crypto';
 import { hashPassword, comparePassword } from '@/shared/utils/crypto/password.util';
 import { generateAccessToken, generateRefreshToken } from '@/shared/utils/crypto/jwt.util';
-import { AppError } from 'shared/errors';
+import { AppError, ForbiddenError, UnauthorizedError } from 'shared/errors';
 import {
   LoginInput,
   FirstTimeLoginInput,
@@ -12,14 +13,18 @@ import emailService from '@/shared/utils/email/email.service';
 import authRepository from '../repositories/auth.repository';
 
 class AuthService {
+  // Helper to hash refresh token before storing
+  private hashToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
+  }
   async login(data: LoginInput) {
     const { universityId, password } = data;
 
     // Find user with password field
-    const user = await authRepository.findByUniversityId(universityId);
+    const user = await authRepository.findByUniversityIdForAuth(universityId);
 
-    if (!user) {
-      throw new AppError('Invalid credentials', 401);
+    if (!user || user.isDeleted) {
+      throw new UnauthorizedError('Invalid credentials');
     }
 
     // Check account status
@@ -39,7 +44,6 @@ class AuthService {
     // Verify password
     const isPasswordValid = await comparePassword(password, user.password);
     if (!isPasswordValid) {
-      // TODO: Implement failed login attempt tracking
       throw new AppError('Invalid credentials', 401);
     }
 
@@ -54,32 +58,35 @@ class AuthService {
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
 
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
+    // Save hashed refresh token to DB
+    const hashedRefreshToken = this.hashToken(refreshToken);
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await authRepository.saveRefreshToken(user.id, hashedRefreshToken, expiresAt);
 
-    return {
-      user: userWithoutPassword,
-      accessToken,
-      refreshToken,
-    };
+    const {
+      password: _,
+      oneTimePassword: __,
+      passwordResetToken: ___,
+      ...userWithoutPassword
+    } = user;
+
+    return { user: userWithoutPassword, accessToken, refreshToken };
   }
 
   async firstTimeLogin(data: FirstTimeLoginInput) {
     const { universityId, oneTimePassword, newPassword } = data;
 
     // Find user
-    const user = await authRepository.findByUniversityId(universityId);
+    const user = await authRepository.findByUniversityIdForAuth(universityId);
 
     if (!user) {
       throw new AppError('User not found', 404);
     }
 
-    // Check if already completed first login
     if (!user.isFirstLogin) {
       throw new AppError('First-time login already completed. Use regular login.', 400);
     }
 
-    // Check if OTP exists
     if (!user.oneTimePassword) {
       throw new AppError('No OTP found. Contact administrator.', 400);
     }
@@ -90,6 +97,7 @@ class AuthService {
     }
 
     // Verify OTP
+
     const isOTPValid = await comparePassword(oneTimePassword, user.oneTimePassword);
     if (!isOTPValid) {
       throw new AppError('Invalid OTP', 401);
@@ -112,13 +120,93 @@ class AuthService {
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
 
-    const { password: _, oneTimePassword: __, ...userWithoutPassword } = updatedUser;
+    // Save hashed refresh token to DB
+    const hashedRefreshToken = this.hashToken(refreshToken);
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await authRepository.saveRefreshToken(updatedUser.id, hashedRefreshToken, expiresAt);
+
+    const {
+      password: _,
+      oneTimePassword: __,
+      passwordResetToken: ___,
+      ...userWithoutPassword
+    } = updatedUser;
+
+    return { user: userWithoutPassword, accessToken, refreshToken };
+  }
+
+   /**
+   * RefreshToken - Rotate refresh token and issue new access token
+   */
+  async refreshToken(token: string) {
+    if (!token) {
+      throw new UnauthorizedError('Refresh token missing');
+    }
+
+    // Hash the incoming token to compare with DB
+    const hashedToken = this.hashToken(token);
+    const tokenRecord = await authRepository.findRefreshToken(hashedToken);
+
+    if (!tokenRecord) {
+      throw new UnauthorizedError('Invalid refresh token');
+    }
+
+    if (tokenRecord.isRevoked) {
+      // Token reuse detected — revoke all tokens for this user (security)
+      await authRepository.revokeAllUserRefreshTokens(tokenRecord.userId);
+      throw new UnauthorizedError('Refresh token reuse detected. Please log in again.');
+    }
+
+    if (new Date() > tokenRecord.expiresAt) {
+      throw new UnauthorizedError('Refresh token expired. Please log in again.');
+    }
+
+    const user = tokenRecord.user;
+
+    if (!user || user.isDeleted) {
+      throw new UnauthorizedError('Account no longer exists');
+    }
+
+    if (['SUSPENDED', 'SEAT_CANCELLED', 'INACTIVE', 'GRADUATED'].includes(user.accountStatus)) {
+      throw new ForbiddenError('Your account is not active. Please contact the hall office.');
+    }
+
+    // Revoke old token (rotation)
+    await authRepository.revokeRefreshToken(tokenRecord.id);
+
+    // Issue new tokens
+    const payload = {
+      userId: user.id,
+      universityId: user.universityId,
+      role: user.role,
+      accountStatus: user.accountStatus,
+    };
+
+    const newAccessToken = generateAccessToken(payload);
+    const newRefreshToken = generateRefreshToken(payload);
+
+    // Save new refresh token
+    const hashedNewToken = this.hashToken(newRefreshToken);
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await authRepository.saveRefreshToken(user.id, hashedNewToken, expiresAt);
 
     return {
-      user: userWithoutPassword,
-      accessToken,
-      refreshToken,
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
     };
+  }
+
+  /**
+   * Logout - Revoke refresh token
+   */
+  async logout(refreshToken: string): Promise<void> {
+    const hashedToken = this.hashToken(refreshToken);
+    const tokenRecord = await authRepository.findRefreshToken(hashedToken);
+
+    // Revoke if exists — don't throw if not found (token may have expired)
+    if (tokenRecord && !tokenRecord.isRevoked) {
+      await authRepository.revokeRefreshToken(tokenRecord.id);
+    }
   }
 
   /**
@@ -128,13 +216,11 @@ class AuthService {
     const { universityId } = data;
 
     // Find user
-    const user = await authRepository.findByUniversityId(universityId);
+    const user = await authRepository.findByUniversityIdForAuth(universityId);
 
     // Don't reveal if user exists or not (security)
     if (!user) {
-      return {
-        message: 'If this account exists, an OTP has been sent to your email',
-      };
+      return { message: 'If this account exists, an OTP has been sent to your email' };
     }
 
     // Check account status
@@ -143,7 +229,7 @@ class AuthService {
     }
 
     // Generate 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = randomInt(100000, 999999).toString();
 
     // Hash OTP
     const hashedOTP = await hashPassword(otp);
@@ -155,9 +241,7 @@ class AuthService {
     // Send OTP via email
     await emailService.sendPasswordResetOTP(user.email, user.name, otp);
 
-    return {
-      message: 'If this account exists, an OTP has been sent to your email',
-    };
+    return { message: 'If this account exists, an OTP has been sent to your email' };
   }
 
   /**
@@ -165,9 +249,7 @@ class AuthService {
    */
   async resetPassword(data: ResetPasswordInput) {
     const { universityId, otp, newPassword } = data;
-
-    // Find user
-    const user = await authRepository.findByUniversityId(universityId);
+    const user = await authRepository.findByUniversityIdForAuth(universityId);
 
     if (!user || !user.passwordResetToken || !user.passwordResetExpires) {
       throw new AppError('Invalid or expired OTP', 400);
@@ -190,6 +272,9 @@ class AuthService {
     await authRepository.updatePassword(user.id, hashedPassword);
     await authRepository.clearPasswordResetToken(user.id);
 
+    // Revoke all refresh tokens on password reset (security)
+    await authRepository.revokeAllUserRefreshTokens(user.id);
+
     // Send confirmation email
     await emailService.sendPasswordChangedConfirmation(user.email, user.name);
 
@@ -203,9 +288,7 @@ class AuthService {
    */
   async changePassword(userId: string, data: ChangePasswordInput) {
     const { oldPassword, newPassword } = data;
-
-    // Get user with password
-    const user = await authRepository.findById(userId);
+    const user = await authRepository.findByIdForAuth(userId);
 
     if (!user) {
       throw new AppError('User not found', 404);

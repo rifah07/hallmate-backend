@@ -29,11 +29,11 @@ router.post('/login', validate(loginSchema), authController.login);
 router.post('/first-time-login', validate(firstTimeLoginSchema), authController.firstTimeLogin);
 
 /**
- * @route   POST /api/auth/logout
- * @desc    Logout user
- * @access  Public
+ * @route   POST /api/auth/refresh-token
+ * @desc    Refresh access token using refresh token cookie
+ * @access  Public (uses cookie, no Bearer token needed)
  */
-router.post('/logout', authController.logout);
+router.post('/refresh-token', authController.refreshToken);
 
 /**
  * @route   POST /api/auth/forgot-password
@@ -71,6 +71,13 @@ router.post(
  * @access  Private (All authenticated users)
  */
 router.get('/profile', authenticate, profileController.getProfile);
+
+/**
+ * @route   POST /api/auth/logout
+ * @desc    Logout user
+ * @access  Private (All authenticated users)
+ */
+router.post('/logout', authenticate, authController.logout);
 
 /**
  * @route GET /api/auth/users/:id

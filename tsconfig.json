@@ -46,8 +46,11 @@
       "@/config/*": ["./config/*"],
       "@/modules/*": ["./modules/*"],
       "@/shared/*": ["./shared/*"]
-    }
+    },
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests"]
+  "include": ["src/**/*", "src/shared/types/**/*"],
+  "exclude": ["node_modules", "dist", "tests"],
+  "ts-node": {
+    "files": true
+  }
 }

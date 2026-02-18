@@ -5,26 +5,27 @@ class AuthRepository {
   /**
    * Find user by university ID
    */
-  async findByUniversityId(universityId: string): Promise<User | null> {
+
+  // Used ONLY for auth operations that need sensitive fields
+  async findByUniversityIdForAuth(universityId: string): Promise<User | null> {
     return await prisma.user.findUnique({
-      where: { universityId },
+      where: { universityId, isDeleted: false },
     });
   }
 
   /**
    * Find user by ID
    */
-  async findById(userId: string): Promise<User | null> {
+  async findByIdForAuth(userId: string): Promise<User | null> {
     return await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: userId, isDeleted: false },
     });
   }
-
   /**
    * Update user password
    */
-  async updatePassword(userId: string, hashedPassword: string): Promise<User> {
-    return await prisma.user.update({
+  async updatePassword(userId: string, hashedPassword: string): Promise<void> {
+    await prisma.user.update({
       where: { id: userId },
       data: {
         password: hashedPassword,
@@ -52,8 +53,8 @@ class AuthRepository {
   /**
    * Set password reset token
    */
-  async setPasswordResetToken(userId: string, hashedToken: string, expiresAt: Date): Promise<User> {
-    return await prisma.user.update({
+  async setPasswordResetToken(userId: string, hashedToken: string, expiresAt: Date): Promise<void> {
+    await prisma.user.update({
       where: { id: userId },
       data: {
         passwordResetToken: hashedToken,
@@ -65,13 +66,53 @@ class AuthRepository {
   /**
    * Clear password reset token
    */
-  async clearPasswordResetToken(userId: string): Promise<User> {
-    return await prisma.user.update({
+  async clearPasswordResetToken(userId: string): Promise<void> {
+    await prisma.user.update({
       where: { id: userId },
       data: {
         passwordResetToken: null,
         passwordResetExpires: null,
       },
+    });
+  }
+
+  // Refresh token operations
+  async saveRefreshToken(
+    userId: string,
+    hashedToken: string,
+    expiresAt: Date,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<void> {
+    await prisma.refreshToken.create({
+      data: {
+        token: hashedToken,
+        userId,
+        expiresAt,
+        ipAddress,
+        userAgent,
+      },
+    });
+  }
+
+  async findRefreshToken(hashedToken: string) {
+    return await prisma.refreshToken.findUnique({
+      where: { token: hashedToken },
+      include: { user: true },
+    });
+  }
+
+  async revokeRefreshToken(tokenId: string): Promise<void> {
+    await prisma.refreshToken.update({
+      where: { id: tokenId },
+      data: { isRevoked: true, revokedAt: new Date() },
+    });
+  }
+
+  async revokeAllUserRefreshTokens(userId: string): Promise<void> {
+    await prisma.refreshToken.updateMany({
+      where: { userId, isRevoked: false },
+      data: { isRevoked: true, revokedAt: new Date() },
     });
   }
 }

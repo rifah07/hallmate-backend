@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { sendSuccess } from '@/shared/utils/response.util';
-import authRepository from '../repositories/auth.repository';
+import profileRepository from '../repositories/profile.repository';
 import { BadRequestError, NotFoundError, UnauthorizedError } from '@/shared/errors';
 
 class ProfileController {
@@ -13,7 +13,7 @@ class ProfileController {
         throw new UnauthorizedError('User not authenticated');
       }
 
-      const profile = await authRepository.findById(req.user.userId);
+      const profile = await profileRepository.getProfileById(req.user.userId);
 
       if (!profile) {
         throw new NotFoundError('User not found');
@@ -37,7 +37,7 @@ class ProfileController {
         throw new BadRequestError('Invalid user ID');
       }
 
-      const user = await authRepository.findByUniversityId(universityId);
+      const user = await profileRepository.getUserByUniversityId(universityId);
       if (!user) {
         throw new NotFoundError('User not found');
       }
