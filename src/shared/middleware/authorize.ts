@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { UserRole } from '@prisma/client';
-import { ForbiddenError, UnauthorizedError } from '../errors';
+import { BadRequestError, ForbiddenError, UnauthorizedError } from '../errors';
 
 /**
  * Authorization middleware - checks if user has required role(s)
@@ -30,6 +30,9 @@ export const authorizeOwner = (req: Request, _res: Response, next: NextFunction)
 
   // Get userId from params or body
   const targetUserId = req.params.userId || req.params.id || req.body.userId;
+  if (!targetUserId) {
+    return next(new BadRequestError('Target user ID not found in request'));
+  }
 
   // Super admin and provost can access any resource
   if (req.user.role === 'SUPER_ADMIN' || req.user.role === 'PROVOST') {
