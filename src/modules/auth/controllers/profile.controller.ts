@@ -3,7 +3,6 @@ import { sendSuccess } from '@/shared/utils/response.util';
 import authRepository from '../repositories/auth.repository';
 import { BadRequestError, NotFoundError, UnauthorizedError } from '@/shared/errors';
 
-
 class ProfileController {
   /**
    * Get current user profile

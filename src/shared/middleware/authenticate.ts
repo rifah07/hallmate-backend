@@ -46,11 +46,10 @@ export const authenticate = async (
       throw new UnauthorizedError('Account no longer exists');
     }
 
-     // Account status changed after token was issued — single check, all statuses
+    // Account status changed after token was issued — single check, all statuses
     if (BLOCKED_STATUSES.includes(user.accountStatus as any)) {
       throw new ForbiddenError('Your account is not active. Please contact the hall office.');
     }
-
 
     // Attach user to request
     req.user = {
@@ -61,7 +60,7 @@ export const authenticate = async (
     };
     next();
   } catch (error) {
-   if (error instanceof TokenExpiredError) {
+    if (error instanceof TokenExpiredError) {
       next(new TokenError('Token expired. Please log in again.'));
     } else if (error instanceof JsonWebTokenError) {
       next(new TokenError('Invalid token. Please log in again.'));

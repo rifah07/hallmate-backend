@@ -1,4 +1,4 @@
-import express, { Application, Request, Response } from 'express';
+import express, { Application, NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -63,7 +63,7 @@ app.get('/', (_req: Request, res: Response) => {
 app.use('/api/auth', authRoutes);
 
 // 404 handler
-app.use((_req: Request, res: Response) => {
+app.use((_req: Request, res: Response, _next: NextFunction) => {
   res.status(404).json({
     success: false,
     message: 'Resource not found',
