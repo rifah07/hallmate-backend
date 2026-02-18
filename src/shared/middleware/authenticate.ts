@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken } from '../utils/crypto/jwt.util';
 import { ForbiddenError, TokenError, UnauthorizedError } from '@/shared/errors';
@@ -38,6 +39,7 @@ export const authenticate = async (
         role: true,
         accountStatus: true,
         isDeleted: true,
+        passwordChangedAt: true,
       },
     });
 
@@ -46,6 +48,12 @@ export const authenticate = async (
       throw new UnauthorizedError('Account no longer exists');
     }
 
+    if (user.passwordChangedAt && decoded.iat) {
+      const changedAt = Math.floor(user.passwordChangedAt.getTime() / 1000);
+      if (decoded.iat < changedAt) {
+        throw new UnauthorizedError('Password recently changed. Please log in again.');
+      }
+    }
     // Account status changed after token was issued — single check, all statuses
     if (BLOCKED_STATUSES.includes(user.accountStatus as any)) {
       throw new ForbiddenError('Your account is not active. Please contact the hall office.');

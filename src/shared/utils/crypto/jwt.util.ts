@@ -6,6 +6,7 @@ export interface JWTPayload {
   universityId: string;
   role: string;
   accountStatus: string;
+  iat?: number; // issued at - JWT adds this automatically
 }
 
 /**

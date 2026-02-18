@@ -171,17 +171,6 @@ function handlePrismaError(err: Prisma.PrismaClientKnownRequestError, res: Respo
   }
 }
 
-/**
- * Handle async errors (wrapper for async route handlers)
- */
-export const asyncHandler = (
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<any>,
-) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-};
-
 export const notFoundHandler = (_req: Request, res: Response) => {
   res.status(404).json({
     success: false,
