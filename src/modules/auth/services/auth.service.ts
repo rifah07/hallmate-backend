@@ -1,7 +1,7 @@
 import { createHash, randomInt } from 'crypto';
 import { hashPassword, comparePassword } from '@/shared/utils/crypto/password.util';
 import { generateAccessToken, generateRefreshToken } from '@/shared/utils/crypto/jwt.util';
-import { AppError, ForbiddenError, UnauthorizedError } from 'shared/errors';
+import { AppError, ForbiddenError, UnauthorizedError } from '@/shared/errors';
 import {
   LoginInput,
   FirstTimeLoginInput,
@@ -135,7 +135,7 @@ class AuthService {
     return { user: userWithoutPassword, accessToken, refreshToken };
   }
 
-   /**
+  /**
    * RefreshToken - Rotate refresh token and issue new access token
    */
   async refreshToken(token: string) {

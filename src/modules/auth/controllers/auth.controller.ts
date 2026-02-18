@@ -11,6 +11,17 @@ class AuthController {
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 
+   constructor() {
+    this.login = this.login.bind(this);
+    this.firstTimeLogin = this.firstTimeLogin.bind(this);
+    this.logout = this.logout.bind(this);
+    this.refreshToken = this.refreshToken.bind(this);
+    this.forgotPassword = this.forgotPassword.bind(this);
+    this.resetPassword = this.resetPassword.bind(this);
+    this.changePassword = this.changePassword.bind(this);
+  }
+
+
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await authService.login(req.body);
