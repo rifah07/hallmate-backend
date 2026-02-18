@@ -1,11 +1,12 @@
 import dotenv from 'dotenv';
+
+// Load env variables
+dotenv.config();
+
 import app from './app';
 import { env } from './config/env.config';
 import prisma from './config/database.config';
 import logger from './shared/utils/logger.util';
-
-// Load env variables
-dotenv.config();
 
 const PORT = parseInt(env.PORT, 10);
 
@@ -36,4 +37,11 @@ process.on('SIGINT', async () => {
   await prisma.$disconnect();
   process.exit(0);
 });
+
+process.on('SIGTERM', async () => {
+  logger.info('Shutting down gracefully...');
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
 startServer();
