@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import { env } from '@/config/env.config';
+import { randomBytes } from 'crypto';
 
 const SALT_ROUNDS = parseInt(env.BCRYPT_ROUNDS, 10);
 
@@ -13,9 +14,8 @@ export const comparePassword = async (password: string, hashPassword: string): P
 
 export const generateOTP = (): string => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let otp = '';
-  for (let i = 0; i < 8; i++) {
-    otp += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return otp;
+  const bytes = randomBytes(8);
+  return Array.from(bytes)
+    .map((byte) => chars[byte % chars.length])
+    .join('');
 };
