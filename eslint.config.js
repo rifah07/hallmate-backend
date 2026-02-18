@@ -47,7 +47,6 @@ module.exports = [
       'dist/**',
       'coverage/**',
       '*.config.js',
-      'prisma/**',
-    ],
+      'prisma/**',    ],
   },
 ];

@@ -7,7 +7,7 @@ import {
   ChangePasswordInput,
   ResetPasswordInput,
   ForgotPasswordInput,
-} from '../schemas/auth.schema';
+} from '../validations/auth.validation';
 import emailService from '@/shared/utils/email/email.service';
 import authRepository from '../repositories/auth.repository';
 

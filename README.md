@@ -169,8 +169,8 @@ hallmate-backend/
 │   │   │   │   └── auth.repository.ts    # Database queries (Prisma)
 │   │   │   ├── routes/
 │   │   │   │   └── auth.routes.ts        # Route definitions
-│   │   │   ├── schemas/
-│   │   │   │   └── auth.schema.ts        # Zod validation schemas
+│   │   │   ├── validations/
+│   │   │   │   └── auth.validation.ts        # Zod validation schemas
 │   │   │   ├── tests/
 │   │   │   │   └── auth.test.ts          # Unit & integration tests
 │   │   │   └── index.ts                  # Module exports
@@ -184,8 +184,8 @@ hallmate-backend/
 │   │   │   │   └── user.repository.ts
 │   │   │   ├── routes/
 │   │   │   │   └── user.routes.ts
-│   │   │   ├── schemas/
-│   │   │   │   └── user.schema.ts
+│   │   │   ├── validations/
+│   │   │   │   └── user.validation.ts
 │   │   │   ├── tests/
 │   │   │   │   └── user.test.ts
 │   │   │   └── index.ts
@@ -195,7 +195,7 @@ hallmate-backend/
 │   │   │   ├── services/
 │   │   │   ├── repositories/
 │   │   │   ├── routes/
-│   │   │   ├── schemas/
+│   │   │   ├── validations/
 │   │   │   ├── tests/
 │   │   │   └── index.ts
 │   │   │
@@ -383,7 +383,7 @@ hallmate-backend/
    - Provide data access abstraction
    - Makes it easy to switch databases later
 
-4. **Schemas** (`*.schema.ts`):
+4. **Validations** (`*.validation.ts`):
    - Zod validation schemas
    - Request/response validation
    - Type inference for TypeScript

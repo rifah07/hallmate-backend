@@ -7,7 +7,7 @@ import {
   changePasswordSchema,
   resetPasswordSchema,
   forgotPasswordSchema,
-} from '../schemas/auth.schema';
+} from '../validations/auth.validation';
 import { authenticate } from '@/shared/middleware/authenticate';
 import profileController from '../controllers/profile.controller';
 import { authorize } from '@/shared/middleware/authorize';

@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { sendSuccess } from '@/shared/utils/response.util';
-import { AppError } from '@/shared/middleware/errorHandler';
 import authRepository from '../repositories/auth.repository';
+import { BadRequestError, NotFoundError, UnauthorizedError } from '@/shared/errors';
+
 
 class ProfileController {
   /**
@@ -10,13 +11,13 @@ class ProfileController {
   async getProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       if (!req.user) {
-        throw new AppError('User not authenticated', 401);
+        throw new UnauthorizedError('User not authenticated');
       }
 
       const profile = await authRepository.findById(req.user.userId);
 
       if (!profile) {
-        throw new AppError('User not found', 404);
+        throw new NotFoundError('User not found');
       }
 
       sendSuccess(res, profile, 'Profile retrieved successfully');
@@ -34,12 +35,12 @@ class ProfileController {
 
       // Ensure universityId is a string
       if (!universityId || typeof universityId !== 'string') {
-        throw new AppError('Invalid user ID', 400);
+        throw new BadRequestError('Invalid user ID');
       }
 
       const user = await authRepository.findByUniversityId(universityId);
       if (!user) {
-        throw new AppError('User not found', 404);
+        throw new NotFoundError('User not found');
       }
 
       sendSuccess(res, user, 'User retrieved successfully');

@@ -1,14 +1,34 @@
-import { PrismaClient } from '@prisma/client';
+//import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient();
+//const prisma = new PrismaClient();
+import prisma from '../src/database/prisma/client';
+
+
 
 async function main() {
   console.log('Seeding database...');
 
   // Hash OTP
-  const otp = 'TestOTP1';
+  const otp = '123456';
   const hashedOTP = await bcrypt.hash(otp, 10);
+
+  const superAdmin = await prisma.user.upsert({
+  where: { universityId: 'ADMIN001' },
+  update: {},
+  create: {
+    universityId: 'ADMIN001',
+    name: 'Super Admin',
+    email: 'admin@hall.edu.bd',
+    phone: '01700000000',
+    role: 'SUPER_ADMIN',
+    password: await bcrypt.hash('Admin@123', 10),
+    isFirstLogin: false,
+  },
+});
+
+console.log('✅ Super admin created:', superAdmin.universityId);
+console.log('Password: Admin@123');
 
   // Create test student
   const student = await prisma.user.upsert({
@@ -50,7 +70,9 @@ async function main() {
   });
 
   console.log('✅ Test student created:', student.universityId);
-  console.log('OTP for first login:', otp);
+console.log('=================================');
+console.log('Student OTP for first login:', otp);
+console.log('=================================');
 
   // Create test provost
   const provost = await prisma.user.upsert({

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import authService from '../services/auth.service';
 import { sendSuccess } from '@/shared/utils/response.util';
-import { AppError } from '@/shared/middleware/errorHandler';
+import { UnauthorizedError } from '@/shared/errors';
 
 class AuthController {
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -95,7 +95,7 @@ class AuthController {
   async changePassword(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       if (!req.user) {
-        throw new AppError('User not authenticated', 401);
+        throw new UnauthorizedError('User not authenticated');
       }
 
       const result = await authService.changePassword(req.user.userId, req.body);

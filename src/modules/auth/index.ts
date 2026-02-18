@@ -4,4 +4,4 @@ export {default as profileController} from './controllers/profile.controller';
 export {default as authRepository} from './repositories/auth.repository';
 export {default as profileRepository} from './repositories/profile.repository';
 export {default as authRoutes} from './routes/auth.routes';
-export * from './schemas/auth.schema';
+export * from './validations/auth.validation';
