@@ -7,6 +7,7 @@ import { errorHandler } from './shared/middleware/errorHandler';
 import logger from './shared/utils/logger.util';
 import authRoutes from './modules/auth/routes/auth.routes';
 import cookieParser from 'cookie-parser';
+import { setupSwagger } from './config/swagger.config';
 
 const app: Application = express();
 
@@ -39,6 +40,8 @@ app.use((req: Request, _res: Response, next) => {
   logger.http(`${req.method} ${req.path}`);
   next();
 });
+
+setupSwagger(app); 
 
 // Health check route
 app.get('/health', (_req: Request, res: Response) => {
