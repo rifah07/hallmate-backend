@@ -473,6 +473,136 @@
  *       500:
  *         $ref: '#/components/responses/InternalError'
  */
+
+// ============================================================================
+// PASSWORD ROUTES
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     tags: [Password]
+ *     summary: Request a password reset OTP via email
+ *     description: |
+ *       Sends a 6-digit OTP to the user's registered email address.
+ *       OTP expires in 15 minutes.
+ *
+ *       **Security:** Always returns the same success response regardless of
+ *       whether the university ID exists — prevents user enumeration attacks.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [universityId]
+ *             properties:
+ *               universityId:
+ *                 type: string
+ *                 pattern: '^\d{10}$'
+ *                 example: "2020123456"
+ *     responses:
+ *       200:
+ *         description: OTP sent (or silently skipped if user does not exist)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     message:
+ *                       example: "If this account exists, an OTP has been sent to your email"
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       403:
+ *         description: Account is suspended or cancelled
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error:
+ *                 message: "Your account is not active. Contact hall office."
+ *       500:
+ *         $ref: '#/components/responses/InternalError'
+ */
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     tags: [Password]
+ *     summary: Reset password using OTP from email
+ *     description: |
+ *       Verifies the 6-digit OTP sent to the user's email and sets a new password.
+ *       On success, all existing refresh tokens are revoked for security.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [universityId, otp, newPassword]
+ *             properties:
+ *               universityId:
+ *                 type: string
+ *                 pattern: '^\d{10}$'
+ *                 example: "2020123456"
+ *               otp:
+ *                 type: string
+ *                 pattern: '^\d{6}$'
+ *                 example: "483920"
+ *                 description: 6-digit numeric OTP from email
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 8
+ *                 example: "NewSecure@789"
+ *                 description: |
+ *                   Must contain: uppercase, lowercase, number, special character (@$!%*?&)
+ *     responses:
+ *       200:
+ *         description: Password reset successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     message:
+ *                       example: "Password reset successfully"
+ *       400:
+ *         description: Invalid or expired OTP
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               invalidOtp:
+ *                 summary: Wrong OTP
+ *                 value:
+ *                   success: false
+ *                   error:
+ *                     message: "Invalid OTP"
+ *               expiredOtp:
+ *                 summary: OTP expired
+ *                 value:
+ *                   success: false
+ *                   error:
+ *                     message: "OTP has expired. Please request a new one."
+ *               noToken:
+ *                 summary: No reset was requested
+ *                 value:
+ *                   success: false
+ *                   error:
+ *                     message: "Invalid or expired OTP"
+ *       500:
+ *         $ref: '#/components/responses/InternalError'
+ */
+
 /**
  * @swagger
  * /api/auth/change-password:
@@ -539,6 +669,98 @@
  *                     message: "New password cannot be same as current"
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
+ *       500:
+ *         $ref: '#/components/responses/InternalError'
+ */
+
+// ============================================================================
+// PROFILE ROUTES
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/auth/profile:
+ *   get:
+ *     tags: [Profile]
+ *     summary: Get current user's profile
+ *     description: |
+ *       Returns the full profile of the authenticated user including room,
+ *       emergency contacts, and guardian info where applicable.
+ *       Sensitive fields (password, tokens) are never returned.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/User'
+ *                     message:
+ *                       example: "Profile retrieved successfully"
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       500:
+ *         $ref: '#/components/responses/InternalError'
+ */
+
+/**
+ * @swagger
+ * /api/auth/users/{universityId}:
+ *   get:
+ *     tags: [Profile]
+ *     summary: Get user by university ID
+ *     description: |
+ *       Returns a user's profile by their university ID.
+ *       Restricted to SUPER_ADMIN and PROVOST only.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: universityId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^\d{10}$'
+ *         example: "2020123456"
+ *         description: 10-digit university ID of the target user
+ *     responses:
+ *       200:
+ *         description: User retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/User'
+ *                     message:
+ *                       example: "User retrieved successfully"
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         description: Insufficient permissions — SUPER_ADMIN or PROVOST only
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error:
+ *                 message: "You do not have permission to perform this action"
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
  *       500:
  *         $ref: '#/components/responses/InternalError'
  */
