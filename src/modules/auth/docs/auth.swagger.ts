@@ -473,3 +473,72 @@
  *       500:
  *         $ref: '#/components/responses/InternalError'
  */
+/**
+ * @swagger
+ * /api/auth/change-password:
+ *   post:
+ *     tags: [Password]
+ *     summary: Change password for logged-in user
+ *     description: |
+ *       Allows authenticated users to change their own password.
+ *       On success, all existing refresh tokens are revoked — user must log in again
+ *       on other devices.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [oldPassword, newPassword, confirmPassword]
+ *             properties:
+ *               oldPassword:
+ *                 type: string
+ *                 example: "CurrentPass@123"
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 8
+ *                 example: "NewSecure@456"
+ *                 description: |
+ *                   Must contain: uppercase, lowercase, number, special character (@$!%*?&).
+ *                   Cannot be the same as the current password.
+ *               confirmPassword:
+ *                 type: string
+ *                 example: "NewSecure@456"
+ *     responses:
+ *       200:
+ *         description: Password changed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     message:
+ *                       example: "Password changed successfully"
+ *       400:
+ *         description: Validation error or password rules violated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               wrongOld:
+ *                 summary: Current password incorrect
+ *                 value:
+ *                   success: false
+ *                   error:
+ *                     message: "Current password is incorrect"
+ *               samePassword:
+ *                 summary: New password same as current
+ *                 value:
+ *                   success: false
+ *                   error:
+ *                     message: "New password cannot be same as current"
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       500:
+ *         $ref: '#/components/responses/InternalError'
+ */
