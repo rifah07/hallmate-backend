@@ -23,7 +23,7 @@ const startServer = async () => {
       logger.info(`Node version: ${process.version}`);
       logger.info(`Server running on: http://localhost:${PORT}`);
       logger.info(`Health Check: http://localhost:${PORT}/health`);
-      // logger.info(`API Documentation: http://localhost:${PORT}/api-docs`);
+      logger.info(`API Documentation: http://localhost:${PORT}/api-docs`);
     });
   } catch (error) {
     logger.error('Failed to start the server ', error);
