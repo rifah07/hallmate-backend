@@ -1,34 +1,27 @@
-import { AccountStatus, Prisma, PrismaClient, User, UserRole } from '@prisma/client';
+import { AccountStatus, Prisma, User, UserRole } from '@prisma/client';
 import {
   UserFilterOptions,
   PaginationOptions,
   CreateUserInput,
   UpdateUserInput,
 } from '../types/user.types';
+import prisma from '@/config/database.config';
 
 /**
  * User Repository
  * Handles all database operations for users
  * This is the ONLY place where Prisma queries exist for users
  */
-export class UserRepository {
-  constructor(private prisma: PrismaClient) {}
-
+class UserRepository {
   /**
    * Find user by ID
    */
-  async findById(userId: string): Promise<User | null> {
-    return await this.prisma.user.findUnique({
+  async findById(userId: string) {
+    return await prisma.user.findUnique({
       where: { id: userId, isDeleted: false },
       include: {
         currentRoom: {
-          select: {
-            id: true,
-            roomNumber: true,
-            floor: true,
-            wing: true,
-            roomType: true,
-          },
+          select: { id: true, roomNumber: true, floor: true, wing: true, roomType: true },
         },
         emergencyContacts: true,
         guardianInfo: true,
@@ -39,8 +32,8 @@ export class UserRepository {
   /**
    * Find user by university ID
    */
-  async findByUniversityId(universityId: string): Promise<User | null> {
-    return await this.prisma.user.findUnique({
+  async findByUniversityId(universityId: string) {
+    return await prisma.user.findUnique({
       where: { universityId, isDeleted: false },
       include: {
         currentRoom: {
@@ -62,7 +55,7 @@ export class UserRepository {
    * Find user by email
    */
   async findByEmail(email: string): Promise<User | null> {
-    return await this.prisma.user.findUnique({
+    return await prisma.user.findUnique({
       where: { email, isDeleted: false },
     });
   }
@@ -96,7 +89,7 @@ export class UserRepository {
     };
     // Execute queries in parallel
     const [users, total] = await Promise.all([
-      this.prisma.user.findMany({
+      prisma.user.findMany({
         where,
         skip,
         take: limit,
@@ -113,7 +106,7 @@ export class UserRepository {
           },
         },
       }),
-      this.prisma.user.count({ where }),
+      prisma.user.count({ where }),
     ]);
 
     return { users, total };
@@ -126,17 +119,16 @@ export class UserRepository {
     data: CreateUserInput,
     hashedPassword: string,
     oneTimePassword: string,
+    otpExpiresAt: Date,
   ): Promise<User> {
-    return await this.prisma.user.create({
+    return await prisma.user.create({
       data: {
         ...data,
         password: hashedPassword,
         oneTimePassword,
+        otpExpiresAt,
         isFirstLogin: true,
         accountStatus: 'ACTIVE',
-      },
-      include: {
-        currentRoom: true,
       },
     });
   }
@@ -145,7 +137,7 @@ export class UserRepository {
    * Update user
    */
   async update(userId: string, data: UpdateUserInput): Promise<User> {
-    return await this.prisma.user.update({
+    return await prisma.user.update({
       where: { id: userId },
       data: {
         ...data,
@@ -169,7 +161,7 @@ export class UserRepository {
    * Update user role (admin only)
    */
   async updateRole(userId: string, role: UserRole): Promise<User> {
-    return await this.prisma.user.update({
+    return await prisma.user.update({
       where: { id: userId },
       data: { role, updatedAt: new Date() },
     });
@@ -179,7 +171,7 @@ export class UserRepository {
    * Update account status
    */
   async updateAccountStatus(userId: string, accountStatus: AccountStatus): Promise<User> {
-    return await this.prisma.user.update({
+    return await prisma.user.update({
       where: { id: userId },
       data: { accountStatus, updatedAt: new Date() },
     });
@@ -188,25 +180,32 @@ export class UserRepository {
   /**
    * Soft delete user
    */
-  async softDelete(userId: string, _deletedBy: string): Promise<User> {
-    return await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        isDeleted: true,
-        deletedAt: new Date(),
-        accountStatus: 'INACTIVE',
-        // Anonymize sensitive data
-        email: `deleted_${userId}@deleted.com`,
-        phone: 'DELETED',
-      },
-    });
+  async softDelete(userId: string, deletedBy: string): Promise<void> {
+    await prisma.$transaction([
+      prisma.refreshToken.updateMany({
+        where: { userId },
+        data: { isRevoked: true, revokedAt: new Date() },
+      }),
+      prisma.user.update({
+        where: { id: userId },
+        data: {
+          isDeleted: true,
+          deletedAt: new Date(),
+          accountStatus: 'INACTIVE',
+          email: `deleted_${userId}@deleted.com`,
+          phone: 'DELETED',
+          cancelledBy: deletedBy,
+          cancelledAt: new Date(),
+        },
+      }),
+    ]);
   }
 
   /**
    * Restore soft-deleted user
    */
   async restore(userId: string): Promise<User> {
-    return await this.prisma.user.update({
+    return await prisma.user.update({
       where: { id: userId },
       data: {
         isDeleted: false,
@@ -220,7 +219,7 @@ export class UserRepository {
    * Hard delete user (use with extreme caution!)
    */
   async hardDelete(userId: string): Promise<User> {
-    return await this.prisma.user.delete({
+    return await prisma.user.delete({
       where: { id: userId },
     });
   }
@@ -229,7 +228,7 @@ export class UserRepository {
    * Check if university ID exists
    */
   async universityIdExists(universityId: string): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { universityId },
       select: { id: true },
     });
@@ -240,7 +239,7 @@ export class UserRepository {
    * Check if email exists
    */
   async emailExists(email: string): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { email },
       select: { id: true },
     });
@@ -263,32 +262,32 @@ export class UserRepository {
       newUsersThisYear,
     ] = await Promise.all([
       // Total users
-      this.prisma.user.count({ where: { isDeleted: false } }),
+      prisma.user.count({ where: { isDeleted: false } }),
 
       // Active users
-      this.prisma.user.count({
+      prisma.user.count({
         where: { accountStatus: 'ACTIVE', isDeleted: false },
       }),
 
       // Inactive users
-      this.prisma.user.count({
+      prisma.user.count({
         where: { accountStatus: 'INACTIVE', isDeleted: false },
       }),
 
       // Suspended users
-      this.prisma.user.count({
+      prisma.user.count({
         where: { accountStatus: 'SUSPENDED', isDeleted: false },
       }),
 
       // Role distribution
-      this.prisma.user.groupBy({
+      prisma.user.groupBy({
         by: ['role'],
         where: { isDeleted: false },
         _count: { role: true },
       }),
 
       // Department distribution (students only)
-      this.prisma.user.groupBy({
+      prisma.user.groupBy({
         by: ['department'],
         where: {
           role: 'STUDENT',
@@ -299,7 +298,7 @@ export class UserRepository {
       }),
 
       // Year distribution (students only)
-      this.prisma.user.groupBy({
+      prisma.user.groupBy({
         by: ['year'],
         where: {
           role: 'STUDENT',
@@ -310,7 +309,7 @@ export class UserRepository {
       }),
 
       // New users this month
-      this.prisma.user.count({
+      prisma.user.count({
         where: {
           isDeleted: false,
           createdAt: {
@@ -325,7 +324,7 @@ export class UserRepository {
        */
 
       // New users this year
-      this.prisma.user.count({
+      prisma.user.count({
         where: {
           isDeleted: false,
           createdAt: {
@@ -373,7 +372,7 @@ export class UserRepository {
       accountStatus: 'ACTIVE' as AccountStatus,
     }));
 
-    const result = await this.prisma.user.createMany({
+    const result = await prisma.user.createMany({
       data,
       skipDuplicates: true, // Skip if university ID or email already exists
     });
@@ -385,7 +384,7 @@ export class UserRepository {
    * Update profile picture
    */
   async updateProfilePicture(userId: string, photoUrl: string): Promise<User> {
-    return await this.prisma.user.update({
+    return await prisma.user.update({
       where: { id: userId },
       data: { photo: photoUrl, updatedAt: new Date() },
     });
@@ -395,7 +394,7 @@ export class UserRepository {
    * Delete profile picture
    */
   async deleteProfilePicture(userId: string): Promise<User> {
-    return await this.prisma.user.update({
+    return await prisma.user.update({
       where: { id: userId },
       data: { photo: null, updatedAt: new Date() },
     });
@@ -405,7 +404,7 @@ export class UserRepository {
    * Get users by role
    */
   async findByRole(role: UserRole): Promise<User[]> {
-    return await this.prisma.user.findMany({
+    return await prisma.user.findMany({
       where: { role, isDeleted: false, accountStatus: 'ACTIVE' },
       orderBy: { name: 'asc' },
     });
@@ -415,7 +414,7 @@ export class UserRepository {
    * Get users by floor (for house tutors)
    */
   async findByFloor(floor: number): Promise<User[]> {
-    return await this.prisma.user.findMany({
+    return await prisma.user.findMany({
       where: {
         role: 'STUDENT',
         isDeleted: false,
@@ -439,3 +438,5 @@ export class UserRepository {
     });
   }
 }
+
+export default new UserRepository();
