@@ -1,369 +1,645 @@
 {
-	"info": {
-		"_postman_id": "1e9cb445-9ad4-46da-9248-1d53258a7bf6",
-		"name": "HallMate",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "37629327"
-	},
-	"item": [
-		{
-			"name": "Auth",
-			"item": [
-				{
-					"name": "First-Time Login (Set Password)",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"universityId\": \"2020123456\",\n  \"oneTimePassword\": \"TestOTP1\",\n  \"newPassword\": \"Student@123\",\n  \"confirmPassword\": \"Student@123\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "http://localhost:5000/api/auth/first-time-login",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "5000",
-							"path": [
-								"api",
-								"auth",
-								"first-time-login"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Test Error Cases",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"universityId\": \"2020123456\",\n  \"password\": \"WrongPassword\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "http://localhost:5000/api/auth/login",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "5000",
-							"path": [
-								"api",
-								"auth",
-								"login"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Validation Error",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"universityId\": \"123\",\n  \"password\": \"Student@123\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "http://localhost:5000/api/auth/login",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "5000",
-							"path": [
-								"api",
-								"auth",
-								"login"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Weak Password",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"universityId\": \"2020123456\",\n  \"oneTimePassword\": \"TestOTP1\",\n  \"newPassword\": \"weak\",\n  \"confirmPassword\": \"weak\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "http://localhost:5000/api/auth/first-time-login",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "5000",
-							"path": [
-								"api",
-								"auth",
-								"first-time-login"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Login with New Password",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"universityId\": \"2020123456\",\n  \"password\": \"Student@123\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "http://localhost:5000/api/auth/login",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "5000",
-							"path": [
-								"api",
-								"auth",
-								"login"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get Profile (with token)",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJiMGY5MTEwOS05ZTEwLTQwM2EtOWRiNC00NWIzMWQ5NTk3YmMiLCJ1bml2ZXJzaXR5SWQiOiIxOTkwMTExMTExIiwicm9sZSI6IlBST1ZPU1QiLCJhY2NvdW50U3RhdHVzIjoiQUNUSVZFIiwiaWF0IjoxNzY4OTg2MDUyLCJleHAiOjE3Njg5ODY5NTJ9.dNnGajVWtPpMH_tIX3rtySrAUchnsIhK_OJsvxfrJqs",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "http://localhost:5000/api/auth/profile",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "5000",
-							"path": [
-								"api",
-								"auth",
-								"profile"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get User by ID (as provost - should succeed)",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJiMGY5MTEwOS05ZTEwLTQwM2EtOWRiNC00NWIzMWQ5NTk3YmMiLCJ1bml2ZXJzaXR5SWQiOiIxOTkwMTExMTExIiwicm9sZSI6IlBST1ZPU1QiLCJhY2NvdW50U3RhdHVzIjoiQUNUSVZFIiwiaWF0IjoxNzY4OTg2MDUyLCJleHAiOjE3Njg5ODY5NTJ9.dNnGajVWtPpMH_tIX3rtySrAUchnsIhK_OJsvxfrJqs",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "http://localhost:5000/api/auth/users/2020123456",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "5000",
-							"path": [
-								"api",
-								"auth",
-								"users",
-								"2020123456"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get Profile (without token)",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "http://localhost:5000/api/auth/profile",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "5000",
-							"path": [
-								"api",
-								"auth",
-								"profile"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get User by ID (as student- should fail)",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIwNDQ4MjQyNy1mNzAwLTRkYjEtYmQ0Mi1hYTliZDgxYjBlOTQiLCJ1bml2ZXJzaXR5SWQiOiIyMDIwMTIzNDU2Iiwicm9sZSI6IlNUVURFTlQiLCJhY2NvdW50U3RhdHVzIjoiQUNUSVZFIiwiaWF0IjoxNzY4OTg1MzYwLCJleHAiOjE3Njg5ODYyNjB9.jqQ5CxO_zoqHTIXuXHiLCyMW8sOjMNKGMnOQeCRxPJg",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "http://localhost:5000/api/auth/users/some-user-id",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "5000",
-							"path": [
-								"api",
-								"auth",
-								"users",
-								"some-user-id"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Login with Provost Account",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"universityId\": \"1990111111\",\n  \"password\": \"12$#AbCd\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "http://localhost:5000/api/auth/login",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "5000",
-							"path": [
-								"api",
-								"auth",
-								"login"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Recover Forgotten Password",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"universityId\": \"1990111111\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "http://localhost:5000/api/auth/forgot-password",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "5000",
-							"path": [
-								"api",
-								"auth",
-								"forgot-password"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Logout",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "http://localhost:5000/api/auth/logout",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "5000",
-							"path": [
-								"api",
-								"auth",
-								"logout"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		}
-	],
-	"variable": [
-		{
-			"key": "baseURL",
-			"value": "",
-			"type": "default"
-		}
-	]
+  "info": {
+    "name": "HallMate API - Auth Module",
+    "description": "Complete auth module collection for HallMate Backend. \n\nSetup:\n1. Set `baseUrl` variable to `http://localhost:5000`\n2. Run 'Login' or 'First Time Login' — accessToken is auto-saved\n3. All protected routes use the saved token automatically",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "universityId",
+      "value": "2020123456",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "description": "Login, logout, and token management",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "  console.log('✅ Access token saved');",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has accessToken', () => {",
+                  "  pm.expect(pm.response.json().data).to.have.property('accessToken');",
+                  "});",
+                  "pm.test('No password in response', () => {",
+                  "  pm.expect(pm.response.json().data.user).to.not.have.property('password');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"universityId\": \"{{universityId}}\",\n  \"password\": \"MyPass@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Standard login. Returns access token (15min) and sets httpOnly refresh token cookie (7 days)."
+          },
+          "response": [
+            {
+              "name": "200 - Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"user\": {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n      \"universityId\": \"2020123456\",\n      \"role\": \"STUDENT\",\n      \"name\": \"Fatema Ahmed\",\n      \"email\": \"fatema@uni.edu.bd\",\n      \"accountStatus\": \"ACTIVE\"\n    },\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n  },\n  \"message\": \"Login successful\"\n}"
+            },
+            {
+              "name": "401 - Invalid Credentials",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"message\": \"Invalid credentials\"\n  }\n}"
+            },
+            {
+              "name": "403 - Account Suspended",
+              "status": "Forbidden",
+              "code": 403,
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"message\": \"Your account has been suspended. Contact hall office.\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login - Invalid Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"universityId\": \"{{universityId}}\",\n  \"password\": \"WrongPass@999\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Validation Error",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Has validation details', () => {",
+                  "  pm.expect(pm.response.json().error).to.have.property('details');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"universityId\": \"INVALID\",\n  \"password\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "First Time Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "  console.log('✅ First time login complete. Access token saved.');",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has accessToken', () => {",
+                  "  pm.expect(pm.response.json().data).to.have.property('accessToken');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"universityId\": \"{{universityId}}\",\n  \"oneTimePassword\": \"Ab3Xy9Qz\",\n  \"newPassword\": \"MyPass@123\",\n  \"confirmPassword\": \"MyPass@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/first-time-login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "first-time-login"]
+            },
+            "description": "First-time login with OTP. Use the OTP provided by the administrator. Sets permanent password."
+          },
+          "response": [
+            {
+              "name": "200 - Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"user\": {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n      \"universityId\": \"2020123456\",\n      \"role\": \"STUDENT\",\n      \"name\": \"Fatema Ahmed\"\n    },\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n  },\n  \"message\": \"Password set successfully. Welcome!\"\n}"
+            },
+            {
+              "name": "400 - Already Completed",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"message\": \"First-time login already completed. Use regular login.\"\n  }\n}"
+            },
+            {
+              "name": "401 - Invalid OTP",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"message\": \"Invalid OTP\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "  console.log('✅ Access token refreshed and saved');",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has new accessToken', () => {",
+                  "  pm.expect(pm.response.json().data).to.have.property('accessToken');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh-token"]
+            },
+            "description": "Uses httpOnly refresh token cookie automatically. No body needed.\n\nToken rotation: old token is revoked, new one is issued.\nReuse detection: using an old token revokes ALL tokens for the user."
+          },
+          "response": [
+            {
+              "name": "200 - Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n  },\n  \"message\": \"Token refreshed successfully\"\n}"
+            },
+            {
+              "name": "401 - No Cookie",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"message\": \"Refresh token missing\"\n  }\n}"
+            },
+            {
+              "name": "401 - Reuse Detected",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"message\": \"Refresh token reuse detected. Please log in again.\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  pm.collectionVariables.set('accessToken', '');",
+                  "  console.log('✅ Logged out. Token cleared.');",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "Revokes refresh token cookie. Access token remains valid until expiry (15min) — expected JWT behavior."
+          },
+          "response": [
+            {
+              "name": "200 - Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": null,\n  \"message\": \"Logged out successfully\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Password",
+      "description": "Password reset and change flows",
+      "item": [
+        {
+          "name": "Forgot Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Same message regardless of user existence', () => {",
+                  "  const msg = pm.response.json().message;",
+                  "  pm.expect(msg).to.include('If this account exists');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"universityId\": \"{{universityId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "forgot-password"]
+            },
+            "description": "Sends 6-digit OTP to registered email. OTP expires in 15 minutes.\n\nAlways returns the same message — prevents user enumeration attacks."
+          },
+          "response": [
+            {
+              "name": "200 - Success (user exists or not)",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": null,\n  \"message\": \"If this account exists, an OTP has been sent to your email\"\n}"
+            },
+            {
+              "name": "400 - Validation Error",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"message\": \"Validation failed\",\n    \"code\": \"VALIDATION_ERROR\",\n    \"details\": [\n      {\n        \"field\": \"body.universityId\",\n        \"message\": \"University ID must be 10 digits\"\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Reset Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"universityId\": \"{{universityId}}\",\n  \"otp\": \"483920\",\n  \"newPassword\": \"NewSecure@789\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "reset-password"]
+            },
+            "description": "Verify OTP from email and set new password. On success, all refresh tokens are revoked."
+          },
+          "response": [
+            {
+              "name": "200 - Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": null,\n  \"message\": \"Password reset successfully\"\n}"
+            },
+            {
+              "name": "400 - Invalid OTP",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"message\": \"Invalid OTP\"\n  }\n}"
+            },
+            {
+              "name": "400 - OTP Expired",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"message\": \"OTP has expired. Please request a new one.\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Change Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"MyPass@123\",\n  \"newPassword\": \"Updated@456\",\n  \"confirmPassword\": \"Updated@456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "change-password"]
+            },
+            "description": "Change password for logged-in user. Requires Bearer token.\n\nOn success, all refresh tokens are revoked — re-login required on other devices."
+          },
+          "response": [
+            {
+              "name": "200 - Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": null,\n  \"message\": \"Password changed successfully\"\n}"
+            },
+            {
+              "name": "400 - Wrong Old Password",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"message\": \"Current password is incorrect\"\n  }\n}"
+            },
+            {
+              "name": "400 - Same Password",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"message\": \"New password cannot be same as current\"\n  }\n}"
+            },
+            {
+              "name": "401 - No Token",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"message\": \"Authentication token missing or malformed\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "description": "User profile access",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has universityId', () => {",
+                  "  pm.expect(pm.response.json().data).to.have.property('universityId');",
+                  "});",
+                  "pm.test('No password in response', () => {",
+                  "  pm.expect(pm.response.json().data).to.not.have.property('password');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "profile"]
+            },
+            "description": "Get full profile of the currently authenticated user. Includes room, emergency contacts, guardian info."
+          },
+          "response": [
+            {
+              "name": "200 - Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"universityId\": \"2020123456\",\n    \"role\": \"STUDENT\",\n    \"name\": \"Fatema Ahmed\",\n    \"email\": \"fatema@uni.edu.bd\",\n    \"phone\": \"01712345678\",\n    \"accountStatus\": \"ACTIVE\",\n    \"department\": \"Computer Science\",\n    \"year\": 3,\n    \"program\": \"UNDERGRADUATE\",\n    \"currentRoom\": {\n      \"roomNumber\": \"301A\",\n      \"floor\": 3,\n      \"wing\": \"A\",\n      \"roomType\": \"TRIPLE\"\n    },\n    \"emergencyContacts\": [],\n    \"guardianInfo\": null\n  },\n  \"message\": \"Profile retrieved successfully\"\n}"
+            },
+            {
+              "name": "401 - No Token",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"message\": \"Authentication token missing or malformed\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get User by University ID (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has user data', () => {",
+                  "  pm.expect(pm.response.json().data).to.have.property('universityId');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/users/{{universityId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "users", "{{universityId}}"]
+            },
+            "description": "Get any user's profile by university ID.\n\nRestricted to SUPER_ADMIN and PROVOST only."
+          },
+          "response": [
+            {
+              "name": "200 - Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"universityId\": \"2020123456\",\n    \"role\": \"STUDENT\",\n    \"name\": \"Fatema Ahmed\",\n    \"accountStatus\": \"ACTIVE\"\n  },\n  \"message\": \"User retrieved successfully\"\n}"
+            },
+            {
+              "name": "403 - Insufficient Permissions",
+              "status": "Forbidden",
+              "code": 403,
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"message\": \"You do not have permission to perform this action\"\n  }\n}"
+            },
+            {
+              "name": "404 - Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"message\": \"User not found\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Server is running', () => {",
+                  "  pm.expect(pm.response.json().success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 - Healthy",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"message\": \"Server is running smoothly\",\n  \"timestamp\": \"2026-02-18T10:30:00.000Z\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }
