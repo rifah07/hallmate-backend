@@ -64,7 +64,13 @@ export const getAllUsersValidation = z.object({
   params: z.object({}).optional(),
   query: z.object({
     page: z.string().regex(/^\d+$/).optional().default('1'),
-    limit: z.string().regex(/^\d+$/).optional().default('20'),
+    limit: z
+      .string()
+      .regex(/^\d+$/)
+      .optional()
+      .default('20')
+      .transform(Number)
+      .pipe(z.number().min(1).max(100)),
     role: userRoleEnum.optional(),
     accountStatus: accountStatusEnum.optional(),
     department: z.string().optional(),
@@ -90,17 +96,14 @@ export const createUserValidation = z.object({
   query: z.object({}).optional(),
   body: z
     .object({
-      universityId: z
-        .string()
-        .min(10, 'University ID must be at least 10 characters')
-        .max(20, 'University ID must not exceed 20 characters'),
+      universityId: z.string().regex(/^\d{10}$/, 'University ID must be exactly 10 digits'),
       role: userRoleEnum,
       name: z
         .string()
         .min(2, 'Name must be at least 2 characters')
         .max(100, 'Name must not exceed 100 characters'),
       email: z.string().email('Invalid email format'),
-      phone: z.string().regex(bdPhoneRegex, 'Invalid Bangladeshi phone number').optional(),
+      phone: z.string().regex(bdPhoneRegex, 'Invalid Bangladeshi phone number'),
 
       // Student-specific (optional)
       department: z.string().optional(),
@@ -286,7 +289,7 @@ export const bulkCreateUsersValidation = z.object({
     users: z
       .array(
         z.object({
-          universityId: z.string().min(10).max(20),
+          universityId: z.string().regex(/^\d{10}$/, 'University ID must be exactly 10 digits'),
           role: userRoleEnum,
           name: z.string().min(2).max(100),
           email: z.string().email(),

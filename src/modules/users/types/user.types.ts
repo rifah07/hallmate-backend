@@ -1,4 +1,4 @@
-import { UserRole, AccountStatus, Program, BloodGroup } from '@prisma/client';
+import { UserRole, AccountStatus, Program, BloodGroup, Wing, RoomType } from '@prisma/client';
 
 /**
  * User Response DTO (Data Transfer Object)
@@ -29,8 +29,8 @@ export interface UserResponse {
     id: string;
     roomNumber: string;
     floor: number;
-    wing: string;
-    roomType: string;
+    wing: Wing;
+    roomType: RoomType;
   };
 
   // Provost-specific

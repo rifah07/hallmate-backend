@@ -1,6 +1,6 @@
 import prisma from '@/config/database.config';
 import { UserResponse } from '../types/user.types';
-import { AppError } from 'shared/errors';
+import { AppError } from '@/shared/errors'; 
 class UserService {
   /**
    * Transform User entity to UserResponse (exclude sensitive data)
