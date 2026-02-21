@@ -50,6 +50,12 @@ class UserService {
     return this.toUserResponse(user);
   }
 
+  async getUserByUniversityId(universityId: string): Promise<UserResponse> {
+    const user = await userRepository.findByUniversityId(universityId);
+    if (!user) throw new NotFoundError('User not found');
+    return this.toUserResponse(user);
+  }
+  
   async getAllUsers(
     filters: UserFilterOptions,
     pagination: PaginationOptions,
