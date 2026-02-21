@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import userRepository from '../repositories/user.repository';
 import {
   UserResponse,
@@ -7,7 +9,7 @@ import {
   UserFilterOptions,
   PaginationOptions,
 } from '../types/user.types';
-import { AppError, ConflictError, NotFoundError } from '@/shared/errors';
+import { ConflictError, NotFoundError } from '@/shared/errors';
 import { hashPassword, generateOTP } from '@/shared/utils/crypto/password.util';
 import emailService from '@/shared/utils/email/email.service';
 
