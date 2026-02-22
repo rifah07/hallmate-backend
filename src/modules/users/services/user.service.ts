@@ -9,7 +9,7 @@ import {
   UserFilterOptions,
   PaginationOptions,
 } from '../types/user.types';
-import { ConflictError, NotFoundError } from '@/shared/errors';
+import { ConflictError, ForbiddenError, NotFoundError } from '@/shared/errors';
 import { hashPassword, generateOTP } from '@/shared/utils/crypto/password.util';
 import emailService from '@/shared/utils/email/email.service';
 
@@ -55,7 +55,7 @@ class UserService {
     if (!user) throw new NotFoundError('User not found');
     return this.toUserResponse(user);
   }
-  
+
   async getAllUsers(
     filters: UserFilterOptions,
     pagination: PaginationOptions,
@@ -130,6 +130,40 @@ class UserService {
     if (!existing) throw new NotFoundError('User not found');
 
     const user = await userRepository.updateAccountStatus(userId, accountStatus as any);
+    return this.toUserResponse(user);
+  }
+
+  async uploadProfilePicture(
+    userId: string,
+    photoUrl: string,
+    requesterId: string,
+  ): Promise<UserResponse> {
+    const existing = await userRepository.findById(userId);
+    if (!existing) throw new NotFoundError('User not found');
+
+    if (existing.id !== requesterId) {
+      const requester = await userRepository.findById(requesterId);
+      if (!requester || !['SUPER_ADMIN', 'PROVOST'].includes(requester.role)) {
+        throw new ForbiddenError('You can only update your own profile picture');
+      }
+    }
+
+    const user = await userRepository.updateProfilePicture(userId, photoUrl);
+    return this.toUserResponse(user);
+  }
+
+  async deleteProfilePicture(userId: string, requesterId: string): Promise<UserResponse> {
+    const existing = await userRepository.findById(userId);
+    if (!existing) throw new NotFoundError('User not found');
+
+    if (existing.id !== requesterId) {
+      const requester = await userRepository.findById(requesterId);
+      if (!requester || !['SUPER_ADMIN', 'PROVOST'].includes(requester.role)) {
+        throw new ForbiddenError('You can only delete your own profile picture');
+      }
+    }
+
+    const user = await userRepository.deleteProfilePicture(userId);
     return this.toUserResponse(user);
   }
 
