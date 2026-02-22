@@ -103,9 +103,22 @@ class UserService {
     return this.toUserResponse(user);
   }
 
-  async updateUser(userId: string, data: UpdateUserInput): Promise<UserResponse> {
+  async updateUser(
+    userId: string,
+    data: UpdateUserInput,
+    requesterId: string,
+  ): Promise<UserResponse> {
     const existing = await userRepository.findById(userId);
     if (!existing) throw new NotFoundError('User not found');
+
+    // Ownership check — students can only edit themselves
+    // Admins can edit anyone
+    if (existing.id !== requesterId) {
+      const requester = await userRepository.findById(requesterId);
+      if (!requester || !['SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR'].includes(requester.role)) {
+        throw new ForbiddenError('You can only update your own profile');
+      }
+    }
 
     // If email is being changed, check it's not taken
     if (data.email && data.email !== existing.email) {
