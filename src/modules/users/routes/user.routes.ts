@@ -29,11 +29,7 @@ router.use(authenticate);
 // ADMIN ROUTES (statistics, bulk operations)
 // ============================================================================
 
-router.get(
-  '/statistics',
-  authorize('SUPER_ADMIN', 'PROVOST'),
-  userController.getUserStatistics,
-);
+router.get('/statistics', authorize('SUPER_ADMIN', 'PROVOST'), userController.getUserStatistics);
 
 router.post(
   '/bulk',
@@ -95,10 +91,7 @@ router
     validate(getUserByIdValidation),
     userController.getUserById,
   )
-  .patch(
-    validate(updateUserValidation),
-    userController.updateUser,
-  )
+  .patch(validate(updateUserValidation), userController.updateUser)
   .delete(
     authorize('SUPER_ADMIN', 'PROVOST'),
     validate(deleteUserValidation),
