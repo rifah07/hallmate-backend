@@ -8,6 +8,7 @@ import logger from './shared/utils/logger.util';
 import authRoutes from './modules/auth/routes/auth.routes';
 import cookieParser from 'cookie-parser';
 import { setupSwagger } from './config/swagger.config';
+import userRoutes from './modules/users/routes/user.routes';
 
 const app: Application = express();
 
@@ -41,7 +42,7 @@ app.use((req: Request, _res: Response, next) => {
   next();
 });
 
-setupSwagger(app); 
+setupSwagger(app);
 
 // Health check route
 app.get('/health', (_req: Request, res: Response) => {
@@ -64,6 +65,7 @@ app.get('/', (_req: Request, res: Response) => {
 
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response, _next: NextFunction) => {
