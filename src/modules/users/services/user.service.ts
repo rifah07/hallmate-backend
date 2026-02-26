@@ -204,8 +204,12 @@ class UserService {
     return this.toUserResponse(updatedUser);
   }
 
-  async deleteProfilePicture(userId: string, requesterId: string): Promise<UserResponse> {
-    const existing = await userRepository.findById(userId);
+  async deleteProfilePicture(
+    userId: string,
+    requestingUserId: string,
+    requestingUserRole: UserRole,
+  ): Promise<UserResponse> {
+    /*  const existing = await userRepository.findById(userId);
     if (!existing) throw new NotFoundError('User not found');
 
     if (existing.id !== requesterId) {
@@ -213,10 +217,39 @@ class UserService {
       if (!requester || !['SUPER_ADMIN', 'PROVOST'].includes(requester.role)) {
         throw new ForbiddenError('You can only delete your own profile picture');
       }
+    } */
+
+    if (
+      userId !== requestingUserId &&
+      !['SUPER_ADMIN', 'ADMIN', 'PROVOST'].includes(requestingUserRole)
+    ) {
+      throw new ForbiddenError('You can only delete your own profile picture');
     }
 
-    const user = await userRepository.deleteProfilePicture(userId);
-    return this.toUserResponse(user);
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    if (!user.photo) {
+      throw new BadRequestError('User does not have a profile picture');
+    }
+
+    // Delete from Cloudinary
+    const publicId = cloudinaryService.extractPublicId(user.photo);
+    if (publicId) {
+      try {
+        await cloudinaryService.deleteImage(publicId);
+      } catch (error) {
+        // Log error but continue to remove from database
+        console.error('Failed to delete from Cloudinary:', error);
+      }
+    }
+
+    // Remove from database
+    const updatedUser = await userRepository.deleteProfilePicture(userId);
+
+    return this.toUserResponse(updatedUser);
   }
 
   async deleteUser(userId: string, deletedBy: string): Promise<void> {
