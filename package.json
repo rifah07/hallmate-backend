@@ -31,8 +31,9 @@
   "homepage": "https://github.com/rifah07/hallmate-backend#readme",
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@types/multer": "^2.0.0",
     "bcrypt": "^6.0.0",
-    "cloudinary": "^2.8.0",
+    "cloudinary": "^2.9.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
@@ -41,6 +42,7 @@
     "express-rate-limit": "^8.2.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.0.2",
     "qrcode": "^1.5.4",
     "resend": "^6.8.0",
     "swagger-jsdoc": "^6.2.8",
