@@ -154,10 +154,11 @@ class UserService {
     //requestingUserId: string,
     requestingUserRole: UserRole,
   ): Promise<UserResponse> {
-    if (!['SUPER_ADMIN', 'ADMIN', 'PROVOST'].includes(requestingUserRole)) {
-      throw new ForbiddenError(
-        'Only Admin, provost or House-Tutor can upload profile picture for a user',
-      );
+    if (
+      //userId !== requestingUserId &&
+      !['SUPER_ADMIN', 'ADMIN', 'PROVOST'].includes(requestingUserRole)
+    ) {
+      throw new ForbiddenError('Only Admin, provost or House-Tutor can upload profile picture for a user');
     }
 
     const user = await userRepository.findById(userId);
@@ -165,6 +166,7 @@ class UserService {
       throw new NotFoundError('User not found');
     }
 
+    // Validate file
     const validation = cloudinaryService.validateImageFile(file);
     if (!validation.valid) {
       throw new BadRequestError(validation.error || 'Invalid image file');
@@ -196,19 +198,23 @@ class UserService {
       },
     );
 
+    // Update user with new profile picture URL
     const updatedUser = await userRepository.updateProfilePicture(userId, uploadResult.url);
+
     return this.toUserResponse(updatedUser);
   }
 
   async deleteProfilePicture(
     userId: string,
-    // requestingUserId: string,
+   // requestingUserId: string,
     requestingUserRole: UserRole,
   ): Promise<UserResponse> {
-    if (!['SUPER_ADMIN', 'ADMIN', 'PROVOST'].includes(requestingUserRole)) {
-      throw new ForbiddenError(
-        'Only Admin, provost or House-Tutor can delete profile picture for a user',
-      );
+   
+    if (
+      //userId !== requestingUserId &&
+      !['SUPER_ADMIN', 'ADMIN', 'PROVOST'].includes(requestingUserRole)
+    ) {
+      throw new ForbiddenError('Only Admin, provost or House-Tutor can delete profile picture for a user');
     }
 
     const user = await userRepository.findById(userId);
@@ -231,34 +237,10 @@ class UserService {
       }
     }
 
+    // Remove from database
     const updatedUser = await userRepository.deleteProfilePicture(userId);
+
     return this.toUserResponse(updatedUser);
-  }
-
-  /**
-   * Get optimized profile picture URL
-   * Useful for generating thumbnails or different sizes
-   */
-  getOptimizedProfilePicture(
-    profilePictureUrl: string,
-    options: {
-      width?: number;
-      height?: number;
-      quality?: string;
-    } = {},
-  ): string {
-    const publicId = cloudinaryService.extractPublicId(profilePictureUrl);
-    if (!publicId) {
-      return profilePictureUrl; // Return original if can't extract public ID
-    }
-
-    return cloudinaryService.getOptimizedUrl(publicId, {
-      width: options.width || 200,
-      height: options.height || 200,
-      crop: 'fill',
-      quality: options.quality || 'auto',
-      format: 'auto',
-    });
   }
 
   async deleteUser(userId: string, deletedBy: string): Promise<void> {
