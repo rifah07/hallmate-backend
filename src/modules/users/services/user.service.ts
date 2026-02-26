@@ -158,9 +158,7 @@ class UserService {
       //userId !== requestingUserId &&
       !['SUPER_ADMIN', 'ADMIN', 'PROVOST'].includes(requestingUserRole)
     ) {
-      throw new ForbiddenError(
-        'Only Admin, provost or House-Tutor can upload profile picture for a user',
-      );
+      throw new ForbiddenError('Only Admin, provost or House-Tutor can upload profile picture for a user');
     }
 
     const user = await userRepository.findById(userId);
@@ -208,16 +206,15 @@ class UserService {
 
   async deleteProfilePicture(
     userId: string,
-    // requestingUserId: string,
+   // requestingUserId: string,
     requestingUserRole: UserRole,
   ): Promise<UserResponse> {
+   
     if (
       //userId !== requestingUserId &&
       !['SUPER_ADMIN', 'ADMIN', 'PROVOST'].includes(requestingUserRole)
     ) {
-      throw new ForbiddenError(
-        'Only Admin, provost or House-Tutor can delete profile picture for a user',
-      );
+      throw new ForbiddenError('Only Admin, provost or House-Tutor can delete profile picture for a user');
     }
 
     const user = await userRepository.findById(userId);
