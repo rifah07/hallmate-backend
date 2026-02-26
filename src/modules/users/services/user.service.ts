@@ -9,9 +9,11 @@ import {
   UserFilterOptions,
   PaginationOptions,
 } from '../types/user.types';
-import { ConflictError, ForbiddenError, NotFoundError } from '@/shared/errors';
+import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '@/shared/errors';
 import { hashPassword, generateOTP } from '@/shared/utils/crypto/password.util';
 import emailService from '@/shared/utils/email/email.service';
+import { cloudinaryService } from '@/shared/shared/services/cloudinary.service';
+import { UserRole } from '@prisma/client';
 
 class UserService {
   private toUserResponse(user: any): UserResponse {
@@ -148,21 +150,58 @@ class UserService {
 
   async uploadProfilePicture(
     userId: string,
-    photoUrl: string,
-    requesterId: string,
+    file: Express.Multer.File,
+    requestingUserId: string,
+    requestingUserRole: UserRole,
   ): Promise<UserResponse> {
-    const existing = await userRepository.findById(userId);
-    if (!existing) throw new NotFoundError('User not found');
+    if (
+      userId !== requestingUserId &&
+      !['SUPER_ADMIN', 'ADMIN', 'PROVOST'].includes(requestingUserRole)
+    ) {
+      throw new ForbiddenError('You can only upload your own profile picture');
+    }
 
-    if (existing.id !== requesterId) {
-      const requester = await userRepository.findById(requesterId);
-      if (!requester || !['SUPER_ADMIN', 'PROVOST'].includes(requester.role)) {
-        throw new ForbiddenError('You can only update your own profile picture');
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    // Validate file
+    const validation = cloudinaryService.validateImageFile(file);
+    if (!validation.valid) {
+      throw new BadRequestError(validation.error || 'Invalid image file');
+    }
+
+    // Delete old profile picture from Cloudinary if exists
+    if (user.photo) {
+      const publicId = cloudinaryService.extractPublicId(user.photo);
+      if (publicId) {
+        try {
+          await cloudinaryService.deleteImage(publicId);
+        } catch (error) {
+          // Log error but don't fail the upload
+          console.error('Failed to delete old profile picture:', error);
+        }
       }
     }
 
-    const user = await userRepository.updateProfilePicture(userId, photoUrl);
-    return this.toUserResponse(user);
+    // Upload new image to Cloudinary
+    const uploadResult = await cloudinaryService.uploadImage(
+      file.buffer,
+      'hallmate/profile-pictures',
+      {
+        public_id: `user_${userId}`, // Use user ID as public ID for easy management
+        transformation: [
+          { width: 500, height: 500, crop: 'fill', gravity: 'face' }, // Auto-crop to face
+          { quality: 'auto', fetch_format: 'auto' },
+        ],
+      },
+    );
+
+    // Update user with new profile picture URL
+    const updatedUser = await userRepository.updateProfilePicture(userId, uploadResult.url);
+
+    return this.toUserResponse(updatedUser);
   }
 
   async deleteProfilePicture(userId: string, requesterId: string): Promise<UserResponse> {
