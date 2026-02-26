@@ -151,14 +151,16 @@ class UserService {
   async uploadProfilePicture(
     userId: string,
     file: Express.Multer.File,
-    requestingUserId: string,
+    //requestingUserId: string,
     requestingUserRole: UserRole,
   ): Promise<UserResponse> {
     if (
-      userId !== requestingUserId &&
+      //userId !== requestingUserId &&
       !['SUPER_ADMIN', 'ADMIN', 'PROVOST'].includes(requestingUserRole)
     ) {
-      throw new ForbiddenError('You can only upload your own profile picture');
+      throw new ForbiddenError(
+        'Only Admin, provost or House-Tutor can upload profile picture for a user',
+      );
     }
 
     const user = await userRepository.findById(userId);
@@ -206,24 +208,16 @@ class UserService {
 
   async deleteProfilePicture(
     userId: string,
-    requestingUserId: string,
+    // requestingUserId: string,
     requestingUserRole: UserRole,
   ): Promise<UserResponse> {
-    /*  const existing = await userRepository.findById(userId);
-    if (!existing) throw new NotFoundError('User not found');
-
-    if (existing.id !== requesterId) {
-      const requester = await userRepository.findById(requesterId);
-      if (!requester || !['SUPER_ADMIN', 'PROVOST'].includes(requester.role)) {
-        throw new ForbiddenError('You can only delete your own profile picture');
-      }
-    } */
-
     if (
-      userId !== requestingUserId &&
+      //userId !== requestingUserId &&
       !['SUPER_ADMIN', 'ADMIN', 'PROVOST'].includes(requestingUserRole)
     ) {
-      throw new ForbiddenError('You can only delete your own profile picture');
+      throw new ForbiddenError(
+        'Only Admin, provost or House-Tutor can delete profile picture for a user',
+      );
     }
 
     const user = await userRepository.findById(userId);
