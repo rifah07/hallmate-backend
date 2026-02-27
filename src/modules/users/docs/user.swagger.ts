@@ -55,7 +55,7 @@
  *           description: Required if role is HOUSE_TUTOR
  *         designation:
  *           type: string
- *           description: Required for staff roles
+ *           description: For staff roles
  *
  *     UpdateUserBody:
  *       type: object
@@ -75,7 +75,7 @@
  *           enum: [A_POSITIVE, A_NEGATIVE, B_POSITIVE, B_NEGATIVE, O_POSITIVE, O_NEGATIVE, AB_POSITIVE, AB_NEGATIVE]
  *         photo:
  *           type: string
- *           format: url
+ *           format: uri
  *         department:
  *           type: string
  *         year:
@@ -151,6 +151,14 @@
  *         totalPages:
  *           type: integer
  *           example: 5
+ *
+ *     OptimizedImageResponse:
+ *       type: object
+ *       properties:
+ *         url:
+ *           type: string
+ *           format: uri
+ *           example: "https://res.cloudinary.com/hallmate/image/upload/w_200,h_200,c_fill,q_auto,f_auto/hallmate/profile-pictures/user_abc123.jpg"
  */
 
 /**
@@ -158,157 +166,8 @@
  * tags:
  *   - name: Users
  *     description: User management — CRUD, roles, status, statistics
- */
-
-// ============================================================================
-// COLLECTION ROUTES
-// ============================================================================
-
-/**
- * @swagger
- * /api/users:
- *   get:
- *     tags: [Users]
- *     summary: Get all users with filters and pagination
- *     description: |
- *       Returns paginated list of users. Supports filtering by role, status,
- *       department, year, program, floor, and free-text search.
- *
- *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR, OFFICE_STAFF
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           default: 1
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 20
- *           maximum: 100
- *       - in: query
- *         name: role
- *         schema:
- *           type: string
- *           enum: [SUPER_ADMIN, PROVOST, HOUSE_TUTOR, ASSISTANT_WARDEN, OFFICE_STAFF, DINING_STAFF, MAINTENANCE_STAFF, GUARD, STUDENT, PARENT]
- *       - in: query
- *         name: accountStatus
- *         schema:
- *           type: string
- *           enum: [ACTIVE, SUSPENDED, SEAT_CANCELLED, INACTIVE, GRADUATED]
- *       - in: query
- *         name: department
- *         schema:
- *           type: string
- *           example: "Computer Science"
- *       - in: query
- *         name: year
- *         schema:
- *           type: integer
- *       - in: query
- *         name: program
- *         schema:
- *           type: string
- *           enum: [UNDERGRADUATE, MASTERS, PHD]
- *       - in: query
- *         name: search
- *         schema:
- *           type: string
- *         description: Search by name, email, or university ID
- *       - in: query
- *         name: sortBy
- *         schema:
- *           type: string
- *           enum: [createdAt, name, universityId, role]
- *           default: createdAt
- *       - in: query
- *         name: sortOrder
- *         schema:
- *           type: string
- *           enum: [asc, desc]
- *           default: desc
- *     responses:
- *       200:
- *         description: Users retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/User'
- *                 meta:
- *                   $ref: '#/components/schemas/PaginationMeta'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
- *
- *   post:
- *     tags: [Users]
- *     summary: Create a new user
- *     description: |
- *       Creates a new user and sends a one-time password to their email.
- *       The user must complete first-time login to set their permanent password.
- *
- *       **Validation rules:**
- *       - STUDENT role requires: department, year, program, session
- *       - HOUSE_TUTOR role requires: assignedFloor
- *
- *       **Access:** SUPER_ADMIN, PROVOST
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/CreateUserBody'
- *     responses:
- *       201:
- *         description: User created successfully
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/SuccessResponse'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       $ref: '#/components/schemas/User'
- *                     message:
- *                       example: "User created successfully. One-time password sent to email."
- *       400:
- *         $ref: '#/components/responses/ValidationError'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
- *       409:
- *         description: University ID or email already exists
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             examples:
- *               duplicateId:
- *                 value:
- *                   success: false
- *                   error:
- *                     message: "University ID already exists"
- *               duplicateEmail:
- *                 value:
- *                   success: false
- *                   error:
- *                     message: "Email already exists"
+ *   - name: Profile Picture
+ *     description: Cloudinary-backed profile picture upload and management
  */
 
 // ============================================================================
@@ -354,7 +213,8 @@
  *     summary: Bulk create users
  *     description: |
  *       Creates multiple users in a single request. Maximum 100 users per request.
- *       Duplicate university IDs or emails are silently skipped.
+ *       Duplicate university IDs or emails are silently skipped (`skipDuplicates`).
+ *       Each created user receives a welcome email with their one-time password.
  *
  *       **Access:** SUPER_ADMIN only
  *     security:
@@ -389,10 +249,165 @@
  *                         created:
  *                           type: integer
  *                           example: 45
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  *       403:
  *         $ref: '#/components/responses/Forbidden'
+ */
+
+// ============================================================================
+// COLLECTION ROUTES
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/users:
+ *   get:
+ *     tags: [Users]
+ *     summary: Get all users with filters and pagination
+ *     description: |
+ *       Returns paginated list of users. Supports filtering by role, status,
+ *       department, year, program, and free-text search across name, email,
+ *       and university ID.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR, OFFICE_STAFF
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *           maximum: 100
+ *       - in: query
+ *         name: role
+ *         schema:
+ *           type: string
+ *           enum: [SUPER_ADMIN, PROVOST, HOUSE_TUTOR, ASSISTANT_WARDEN, OFFICE_STAFF, DINING_STAFF, MAINTENANCE_STAFF, GUARD, STUDENT, PARENT]
+ *       - in: query
+ *         name: accountStatus
+ *         schema:
+ *           type: string
+ *           enum: [ACTIVE, SUSPENDED, SEAT_CANCELLED, INACTIVE, GRADUATED]
+ *       - in: query
+ *         name: department
+ *         schema:
+ *           type: string
+ *           example: "Computer Science"
+ *       - in: query
+ *         name: year
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: program
+ *         schema:
+ *           type: string
+ *           enum: [UNDERGRADUATE, MASTERS, PHD]
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by name, email, or university ID (case-insensitive)
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [createdAt, name, universityId, role]
+ *           default: createdAt
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: desc
+ *     responses:
+ *       200:
+ *         description: Users retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/User'
+ *                 meta:
+ *                   $ref: '#/components/schemas/PaginationMeta'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *
+ *   post:
+ *     tags: [Users]
+ *     summary: Create a new user
+ *     description: |
+ *       Creates a new user and sends a welcome email with a one-time password (OTP).
+ *       The OTP expires in 7 days. The user must complete first-time login to set
+ *       their permanent password.
+ *
+ *       **Validation rules:**
+ *       - STUDENT role requires: department, year, program, session
+ *       - HOUSE_TUTOR role requires: assignedFloor (1–14)
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateUserBody'
+ *     responses:
+ *       201:
+ *         description: User created — OTP sent to email
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/User'
+ *                     message:
+ *                       example: "User created successfully. One-time password sent to email."
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       409:
+ *         description: University ID or email already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               duplicateId:
+ *                 value:
+ *                   success: false
+ *                   error:
+ *                     message: "University ID already exists"
+ *               duplicateEmail:
+ *                 value:
+ *                   success: false
+ *                   error:
+ *                     message: "Email already exists"
  */
 
 // ============================================================================
@@ -406,6 +421,9 @@
  *     tags: [Users]
  *     summary: Get all active users by role
  *     description: |
+ *       Returns all active (non-deleted) users with the specified role,
+ *       ordered by name ascending.
+ *
  *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR
  *     security:
  *       - bearerAuth: []
@@ -443,9 +461,10 @@
  * /api/users/floor/{floor}:
  *   get:
  *     tags: [Users]
- *     summary: Get all students on a specific floor
+ *     summary: Get all active students on a specific floor
  *     description: |
- *       Returns active students whose current room is on the specified floor.
+ *       Returns active students whose current room is on the given floor.
+ *       Ordered by name ascending.
  *
  *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR
  *     security:
@@ -497,7 +516,6 @@
  *         required: true
  *         schema:
  *           type: string
- *           pattern: '^\d{10}$'
  *         example: "2020123456"
  *     responses:
  *       200:
@@ -565,8 +583,9 @@
  *     tags: [Users]
  *     summary: Update user profile
  *     description: |
- *       Users can update their own profile. Admins can update any profile.
- *       At least one field must be provided.
+ *       Users can update their own profile. Admins (SUPER_ADMIN, PROVOST, HOUSE_TUTOR)
+ *       can update any profile. At least one field must be provided.
+ *       If email is changed, uniqueness is enforced.
  *
  *       **Access:** All authenticated users (ownership enforced in service)
  *     security:
@@ -605,15 +624,15 @@
  *       404:
  *         $ref: '#/components/responses/NotFound'
  *       409:
- *         description: Email already in use
+ *         description: Email already in use by another user
  *
  *   delete:
  *     tags: [Users]
  *     summary: Soft delete user
  *     description: |
- *       Soft deletes a user — anonymizes email/phone, revokes all tokens,
- *       sets account to INACTIVE. Data is retained for audit purposes.
- *       Use `/restore` to undo.
+ *       Soft deletes a user — anonymizes email/phone, revokes all refresh tokens,
+ *       sets account to INACTIVE. All data is retained for audit purposes.
+ *       Recoverable via `POST /{userId}/restore`.
  *
  *       **Access:** SUPER_ADMIN, PROVOST
  *     security:
@@ -676,6 +695,15 @@
  *     responses:
  *       200:
  *         description: Role updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/User'
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  *       403:
@@ -715,6 +743,15 @@
  *     responses:
  *       200:
  *         description: Status updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/User'
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  *       403:
@@ -762,18 +799,32 @@
  *         $ref: '#/components/responses/NotFound'
  */
 
+// ============================================================================
+// PROFILE PICTURE ROUTES
+// ============================================================================
+
 /**
  * @swagger
  * /api/users/{userId}/profile-picture:
  *   post:
- *     tags: [Users]
+ *     tags: [Profile Picture]
  *     summary: Upload profile picture
  *     description: |
- *       Users can upload their own profile picture.
- *       Admins can upload for any user.
- *       File is uploaded to Cloudinary.
+ *       Uploads a profile picture to Cloudinary under `hallmate/profile-pictures/`.
+ *       The image is stored with public ID `user_{userId}` — uploading again
+ *       **overwrites** the previous picture automatically.
  *
- *       **Access:** All authenticated users (ownership enforced in service)
+ *       **Cloudinary transformations applied:**
+ *       - 500×500px face-crop (`c_fill, g_face`)
+ *       - Auto quality and format (`q_auto, f_auto`)
+ *
+ *       If the user already has a profile picture, the old Cloudinary asset is
+ *       deleted before the new one is uploaded.
+ *
+ *       **Accepted formats:** JPEG, PNG, WebP, GIF
+ *       **Max file size:** 5MB (enforced by multer)
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -794,11 +845,40 @@
  *               file:
  *                 type: string
  *                 format: binary
+ *                 description: Image file (JPEG, PNG, WebP, GIF — max 5MB)
  *     responses:
  *       200:
- *         description: Profile picture uploaded successfully
+ *         description: Profile picture uploaded to Cloudinary successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/User'
+ *                     message:
+ *                       example: "Profile picture uploaded successfully"
  *       400:
- *         description: No file uploaded
+ *         description: No file uploaded or invalid file type/size
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               noFile:
+ *                 summary: No file in request
+ *                 value:
+ *                   success: false
+ *                   error:
+ *                     message: "No file uploaded"
+ *               invalidType:
+ *                 summary: Unsupported file type
+ *                 value:
+ *                   success: false
+ *                   error:
+ *                     message: "Invalid image file"
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  *       403:
@@ -807,10 +887,16 @@
  *         $ref: '#/components/responses/NotFound'
  *
  *   delete:
- *     tags: [Users]
+ *     tags: [Profile Picture]
  *     summary: Delete profile picture
  *     description: |
- *       **Access:** All authenticated users (ownership enforced in service)
+ *       Deletes the user's profile picture from Cloudinary and clears
+ *       the `photo` field in the database.
+ *
+ *       If Cloudinary deletion fails (e.g. asset already removed), the error
+ *       is logged but the database is still updated — the operation does not fail.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -823,10 +909,111 @@
  *     responses:
  *       200:
  *         description: Profile picture deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/User'
+ *       400:
+ *         description: User does not have a profile picture
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error:
+ *                 message: "User does not have a profile picture"
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  *       404:
  *         $ref: '#/components/responses/NotFound'
+ */
+
+/**
+ * @swagger
+ * /api/users/{userId}/profile-picture/optimized:
+ *   get:
+ *     tags: [Profile Picture]
+ *     summary: Get optimized Cloudinary profile picture URL
+ *     description: |
+ *       Generates an optimized Cloudinary URL from an existing profile picture URL.
+ *       This is a **pure URL transformation** — no database call is made.
+ *
+ *       Useful for generating thumbnails or resized versions for different UI contexts
+ *       (e.g. avatar in navbar vs full profile page).
+ *
+ *       The `profilePictureUrl` must be a valid Cloudinary URL from which the
+ *       public ID can be extracted.
+ *
+ *       **Access:** All authenticated users
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: query
+ *         name: width
+ *         schema:
+ *           type: integer
+ *           default: 200
+ *           example: 100
+ *       - in: query
+ *         name: height
+ *         schema:
+ *           type: integer
+ *           default: 200
+ *           example: 100
+ *       - in: query
+ *         name: quality
+ *         schema:
+ *           type: string
+ *           default: auto
+ *           example: "80"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [profilePictureUrl]
+ *             properties:
+ *               profilePictureUrl:
+ *                 type: string
+ *                 format: uri
+ *                 example: "https://res.cloudinary.com/hallmate/image/upload/hallmate/profile-pictures/user_abc123.jpg"
+ *     responses:
+ *       200:
+ *         description: Optimized URL generated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/OptimizedImageResponse'
+ *       400:
+ *         description: profilePictureUrl is missing or not a valid Cloudinary URL
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error:
+ *                 message: "profilePictureUrl is required"
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
  */
