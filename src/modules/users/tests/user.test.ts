@@ -18,6 +18,12 @@ let provostToken: string;
 let studentToken: string;
 let createdUserId: string;
 
+// Small valid 1x1 PNG — no external file needed
+const DUMMY_IMAGE_BUFFER = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+  'base64',
+);
+
 const loginAs = async (universityId: string, password: string): Promise<string> => {
   const res = await request(app).post('/api/auth/login').send({ universityId, password });
   return res.body.data.accessToken;
@@ -53,7 +59,6 @@ const createTestUser = async (
 // ============================================================================
 
 beforeAll(async () => {
-  // Cleanup
   await prisma.refreshToken.deleteMany({
     where: {
       user: { universityId: { in: [ADMIN_UNI_ID, PROVOST_UNI_ID, STUDENT_UNI_ID, TARGET_UNI_ID] } },
@@ -63,7 +68,6 @@ beforeAll(async () => {
     where: { universityId: { in: [ADMIN_UNI_ID, PROVOST_UNI_ID, STUDENT_UNI_ID, TARGET_UNI_ID] } },
   });
 
-  // Create test users
   await createTestUser(ADMIN_UNI_ID, 'SUPER_ADMIN', 'Admin@123');
   await createTestUser(PROVOST_UNI_ID, 'PROVOST', 'Provost@123');
   await createTestUser(STUDENT_UNI_ID, 'STUDENT', 'Student@123', {
@@ -73,7 +77,6 @@ beforeAll(async () => {
     session: '2022-23',
   });
 
-  // Login all
   adminToken = await loginAs(ADMIN_UNI_ID, 'Admin@123');
   provostToken = await loginAs(PROVOST_UNI_ID, 'Provost@123');
   studentToken = await loginAs(STUDENT_UNI_ID, 'Student@123');
@@ -514,7 +517,6 @@ describe('User Module', () => {
       expect(res.status).toBe(201);
       expect(res.body.data.created).toBeGreaterThan(0);
 
-      // Cleanup bulk users
       await prisma.user.deleteMany({
         where: { universityId: { in: ['8888888881', '8888888882'] } },
       });
@@ -531,7 +533,184 @@ describe('User Module', () => {
   });
 
   // --------------------------------------------------------------------------
-  // DELETE AND RESTORE
+  // PROFILE PICTURE
+  // Note: upload and optimized run before delete since delete depends on
+  // a photo existing. Delete and restore run last since they mutate state.
+  // --------------------------------------------------------------------------
+
+  describe('Profile Picture', () => {
+    describe('POST /api/users/:userId/profile-picture', () => {
+      it('should upload profile picture (admin)', async () => {
+        if (!createdUserId) throw new Error('createdUserId not set');
+
+        const res = await request(app)
+          .post(`/api/users/${createdUserId}/profile-picture`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .attach('file', DUMMY_IMAGE_BUFFER, {
+            filename: 'avatar.png',
+            contentType: 'image/png',
+          });
+
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.data).toHaveProperty('photo');
+        expect(res.body.data.photo).toBeTruthy();
+      }, 20000);
+
+      it('should overwrite existing picture (provost)', async () => {
+        if (!createdUserId) throw new Error('createdUserId not set');
+
+        const res = await request(app)
+          .post(`/api/users/${createdUserId}/profile-picture`)
+          .set('Authorization', `Bearer ${provostToken}`)
+          .attach('file', DUMMY_IMAGE_BUFFER, {
+            filename: 'avatar2.png',
+            contentType: 'image/png',
+          });
+
+        expect(res.status).toBe(200);
+        expect(res.body.data).toHaveProperty('photo');
+      }, 20000);
+
+      it('should reject upload without file', async () => {
+        if (!createdUserId) throw new Error('createdUserId not set');
+
+        const res = await request(app)
+          .post(`/api/users/${createdUserId}/profile-picture`)
+          .set('Authorization', `Bearer ${adminToken}`);
+
+        expect(res.status).toBe(400);
+      }, 15000);
+
+      it('should reject upload by student', async () => {
+        if (!createdUserId) throw new Error('createdUserId not set');
+
+        const res = await request(app)
+          .post(`/api/users/${createdUserId}/profile-picture`)
+          .set('Authorization', `Bearer ${studentToken}`)
+          .attach('file', DUMMY_IMAGE_BUFFER, {
+            filename: 'avatar.png',
+            contentType: 'image/png',
+          });
+
+        expect(res.status).toBe(403);
+      }, 15000);
+
+      it('should reject unauthenticated upload', async () => {
+        if (!createdUserId) throw new Error('createdUserId not set');
+
+        const res = await request(app)
+          .post(`/api/users/${createdUserId}/profile-picture`)
+          .attach('file', DUMMY_IMAGE_BUFFER, {
+            filename: 'avatar.png',
+            contentType: 'image/png',
+          });
+
+        expect(res.status).toBe(401);
+      }, 15000);
+    });
+
+    describe('GET /api/users/:userId/profile-picture/optimized', () => {
+      it('should return optimized Cloudinary URL', async () => {
+        if (!createdUserId) throw new Error('createdUserId not set');
+
+        const userRes = await request(app)
+          .get(`/api/users/${createdUserId}`)
+          .set('Authorization', `Bearer ${adminToken}`);
+
+        const photoUrl = userRes.body.data.photo;
+        if (!photoUrl) throw new Error('No photo set — upload test must pass first');
+
+        const res = await request(app)
+          .get(`/api/users/${createdUserId}/profile-picture/optimized`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ profilePictureUrl: photoUrl })
+          .query({ width: 100, height: 100 });
+
+        expect(res.status).toBe(200);
+        expect(res.body.data).toHaveProperty('url');
+        expect(res.body.data.url).toContain('cloudinary');
+      }, 15000);
+
+      it('should use default dimensions when none provided', async () => {
+        if (!createdUserId) throw new Error('createdUserId not set');
+
+        const userRes = await request(app)
+          .get(`/api/users/${createdUserId}`)
+          .set('Authorization', `Bearer ${adminToken}`);
+
+        const photoUrl = userRes.body.data.photo;
+        if (!photoUrl) throw new Error('No photo set — upload test must pass first');
+
+        const res = await request(app)
+          .get(`/api/users/${createdUserId}/profile-picture/optimized`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ profilePictureUrl: photoUrl });
+
+        expect(res.status).toBe(200);
+        expect(res.body.data.url).toContain('cloudinary');
+      }, 15000);
+
+      it('should reject missing profilePictureUrl', async () => {
+        if (!createdUserId) throw new Error('createdUserId not set');
+
+        const res = await request(app)
+          .get(`/api/users/${createdUserId}/profile-picture/optimized`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({});
+
+        expect(res.status).toBe(400);
+      }, 15000);
+
+      it('should reject unauthenticated request', async () => {
+        if (!createdUserId) throw new Error('createdUserId not set');
+
+        const res = await request(app)
+          .get(`/api/users/${createdUserId}/profile-picture/optimized`)
+          .send({ profilePictureUrl: 'https://res.cloudinary.com/test/image/upload/test.jpg' });
+
+        expect(res.status).toBe(401);
+      }, 15000);
+    });
+
+    describe('DELETE /api/users/:userId/profile-picture', () => {
+      it('should delete profile picture (admin)', async () => {
+        if (!createdUserId) throw new Error('createdUserId not set');
+
+        const res = await request(app)
+          .delete(`/api/users/${createdUserId}/profile-picture`)
+          .set('Authorization', `Bearer ${adminToken}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.data.photo).toBeNull();
+      }, 20000);
+
+      it('should reject delete when no picture exists', async () => {
+        if (!createdUserId) throw new Error('createdUserId not set');
+
+        // Picture was deleted above - second delete should 400
+        const res = await request(app)
+          .delete(`/api/users/${createdUserId}/profile-picture`)
+          .set('Authorization', `Bearer ${adminToken}`);
+
+        expect(res.status).toBe(400);
+      }, 15000);
+
+      it('should reject delete by student', async () => {
+        if (!createdUserId) throw new Error('createdUserId not set');
+
+        const res = await request(app)
+          .delete(`/api/users/${createdUserId}/profile-picture`)
+          .set('Authorization', `Bearer ${studentToken}`);
+
+        expect(res.status).toBe(403);
+      }, 15000);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // DELETE AND RESTORE (modifies createdUserId state)
   // --------------------------------------------------------------------------
 
   describe('DELETE /api/users/:userId and POST /api/users/:userId/restore', () => {

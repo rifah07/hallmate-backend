@@ -5,7 +5,7 @@ import { BadRequestError, ForbiddenError, UnauthorizedError } from '../errors';
 /**
  * Authorization middleware - checks if user has required role(s)
  */
-export const authorize = (...allowedRoles: UserRole[]) => {
+/* export const authorize = (...allowedRoles: UserRole[]) => {
   return (req: Request, _res: Response, next: NextFunction): void => {
     if (!req.user) {
       return next(new UnauthorizedError('Authentication required'));
@@ -14,6 +14,30 @@ export const authorize = (...allowedRoles: UserRole[]) => {
 
     if (!hasRole) {
       return next(new ForbiddenError('You do not have permission to perform this action'));
+    }
+
+    next();
+  };
+}; */
+
+export const authorize = (...allowedRoles: UserRole[]) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        error: { message: 'Authentication required' },
+      });
+      return;
+    }
+
+    const hasRole = allowedRoles.includes(req.user.role as UserRole);
+
+    if (!hasRole) {
+      res.status(403).json({
+        success: false,
+        error: { message: 'You do not have permission to perform this action' },
+      });
+      return;
     }
 
     next();
