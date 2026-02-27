@@ -19,6 +19,7 @@ import {
   uploadProfilePictureValidation,
   deleteProfilePictureValidation,
 } from '../validations/user.validation';
+import { handleMulterError, upload } from '@/shared/middleware/upload.middleware';
 
 const router = Router();
 
@@ -119,16 +120,30 @@ router.post(
   userController.restoreUser,
 );
 
+// ============================================================================
+// PROFILE PICTURE ROUTES
+// ============================================================================
+
 router.post(
   '/:userId/profile-picture',
+  authorize('SUPER_ADMIN', 'PROVOST'),
+  upload.single('file'),
+  handleMulterError,
   validate(uploadProfilePictureValidation),
   userController.uploadProfilePicture,
 );
 
 router.delete(
   '/:userId/profile-picture',
+  authorize('SUPER_ADMIN', 'PROVOST'),
   validate(deleteProfilePictureValidation),
   userController.deleteProfilePicture,
+);
+
+router.get(
+  '/:userId/profile-picture/optimized',
+  validate(getUserByIdValidation),
+  userController.getOptimizedProfilePicture,
 );
 
 export default router;
