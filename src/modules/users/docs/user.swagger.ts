@@ -165,7 +165,7 @@
  * @swagger
  * tags:
  *   - name: Users
- *     description: User management — CRUD, roles, status, statistics
+ *     description: User management - creation, retrieval, updating, deletion, and statistics
  *   - name: Profile Picture
  *     description: Cloudinary-backed profile picture upload and management
  */
