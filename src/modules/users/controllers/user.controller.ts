@@ -1,8 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import userService from '../services/user.service';
 import { sendSuccess, sendPaginatedSuccess } from '@/shared/utils/response.util';
-import { AppError } from '@/shared/errors';
+import { AppError, BadRequestError, UnauthorizedError } from '@/shared/errors';
 import { UserRole } from '@prisma/client';
+import {
+  generateUserExcelTemplate,
+  parseUserCSVFile,
+  parseUserExcelFile,
+} from '@/shared/utils/excel/excel-parser.util';
+import { CreateUserInput } from '../types/user.types';
 
 class UserController {
   constructor() {
@@ -238,6 +244,92 @@ class UserController {
   }
 
   /**
+   * POST /api/users/bulk-upload
+   * Upload Excel/CSV file to bulk create users
+   */
+  async bulkUploadUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) throw new UnauthorizedError('User not authenticated');
+
+      const file = (req as any).file;
+
+      if (!file) throw new BadRequestError('No file uploaded');
+
+      // Check file type
+      const allowedMimeTypes = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+        'application/vnd.ms-excel', // .xls
+        'text/csv', // .csv
+      ];
+
+      if (!allowedMimeTypes.includes(file.mimetype)) {
+        throw new BadRequestError(
+          'Invalid file type. Only Excel (.xlsx, .xls) and CSV files are allowed',
+        );
+      }
+
+      // Parse file based on type
+      let parseResult;
+      if (file.mimetype === 'text/csv') {
+        parseResult = await parseUserCSVFile(file.buffer as any);
+      } else {
+        parseResult = await parseUserExcelFile(file.buffer as any);
+      }
+
+      // If no valid users found
+      if (parseResult.users.length === 0) {
+        res.status(400).json({
+          success: false,
+          message: 'No valid users found in the file',
+          data: {
+            totalRows: parseResult.totalRows,
+            validRows: 0,
+            errors: parseResult.errors,
+          },
+        });
+        return;
+      }
+
+      const result = await userService.bulkCreateUsers(parseResult.users as CreateUserInput[]);
+
+      res.status(201).json({
+        success: true,
+        message: `Successfully processed ${parseResult.totalRows} rows. Created ${result.created} users.`,
+        data: {
+          totalRows: parseResult.totalRows,
+          validRows: parseResult.users.length,
+          created: result.created,
+          failed: parseResult.errors.length,
+          errors: parseResult.errors, // Only file parsing errors
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /api/users/template/download
+   * Download Excel template for bulk user upload
+   */
+  async downloadUserTemplate(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) throw new UnauthorizedError('User not authenticated');
+
+      const buffer = await generateUserExcelTemplate();
+
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      res.setHeader('Content-Disposition', 'attachment; filename=user-upload-template.xlsx');
+      res.send(buffer);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * GET /api/users/role/:role
    */
   async getUsersByRole(
@@ -316,7 +408,7 @@ class UserController {
 
   /**
    * GET /api/users/:userId/profile-picture/optimized
-   * Returns optimized Cloudinary URL — no DB call, just URL transformation
+   * Returns optimized Cloudinary URL - no DB call, just URL transformation
    */
   async getOptimizedProfilePicture(
     req: Request<{ userId: string }>,
