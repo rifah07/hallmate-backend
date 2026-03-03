@@ -408,7 +408,7 @@ class UserController {
 
   /**
    * GET /api/users/:userId/profile-picture/optimized
-   * Returns optimized Cloudinary URL — no DB call, just URL transformation
+   * Returns optimized Cloudinary URL - no DB call, just URL transformation
    */
   async getOptimizedProfilePicture(
     req: Request<{ userId: string }>,
