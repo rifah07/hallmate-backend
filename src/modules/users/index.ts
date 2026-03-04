@@ -14,7 +14,7 @@
 export { default as userRoutes } from './routes/user.routes';
 export { default as userController } from './controllers/user.controller';
 export { default as userService } from './services/user.service';
-export { default as userRepository } from './repositories/user.repository';
+//export { default as UserRepository } from './repositories/user.repository';
 
 // Export types
 export * from './types/user.types';
