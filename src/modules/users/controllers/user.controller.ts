@@ -109,6 +109,32 @@ class UserController {
   }
 
   /**
+   * GET /api/users/search
+   * Search users
+   */
+  async searchUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { q, page, limit } = req.query;
+
+      const pagination = {
+        page: page ? parseInt(page as string) : 1,
+        limit: limit ? parseInt(limit as string) : 10,
+      };
+
+      const result = await userService.getAllUsers({ search: q as string }, pagination);
+
+      res.status(200).json({
+        success: true,
+        data: result.users,
+        pagination: result.pagination,
+        message: 'Search results retrieved successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * POST /api/users
    * Admin only — authorization handled by middleware
    */
