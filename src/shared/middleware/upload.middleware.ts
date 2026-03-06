@@ -1,111 +1,86 @@
 import multer from 'multer';
-import path from 'path';
+import { Request } from 'express';
+import { BadRequestError } from '@/shared/errors';
 
-/**
- * Multer configuration for file uploads
- * Uses memory storage to upload directly to Cloudinary
- */
-
-// Memory storage (files stored in memory as Buffer)
+// Storage configuration - use memory storage for Cloudinary
 const storage = multer.memoryStorage();
 
-/**
- * File filter function
- */
-const fileFilter = (
-  _req: Express.Request,
+// File filter for images only
+const imageFileFilter = (
+  _req: Request,
   file: Express.Multer.File,
   cb: multer.FileFilterCallback,
 ) => {
-  // Allowed image extensions
-  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
-  const ext = path.extname(file.originalname).toLowerCase();
+  const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
-  if (allowedExtensions.includes(ext)) {
+  if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Only JPEG, PNG, and WebP images are allowed'));
+    cb(new BadRequestError('Only image files (JPEG, PNG, GIF, WebP) are allowed'));
   }
 };
 
-/**
- * Multer instance for single image upload
- * Usage: upload.single('profilePicture')
- */
-export const upload = multer({
-  storage,
-  fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-  },
-});
-
-/**
- * Multer instance for multiple image uploads
- * Usage: uploadMultiple.array('images', 10)
- */
-export const uploadMultiple = multer({
-  storage,
-  fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB per file
-    files: 10, // Max 10 files
-  },
-});
-
-/**
- * Multer instance for document uploads (PDF, DOCX, etc.)
- */
-const documentFilter = (
-  _req: Express.Request,
+// File filter for documents (Excel, CSV)
+const documentFileFilter = (
+  _req: Request,
   file: Express.Multer.File,
   cb: multer.FileFilterCallback,
 ) => {
-  const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt'];
-  const ext = path.extname(file.originalname).toLowerCase();
+  const allowedMimes = [
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+    'application/vnd.ms-excel', // .xls
+    'text/csv', // .csv
+  ];
 
-  if (allowedExtensions.includes(ext)) {
+  if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Only PDF, DOC, DOCX, and TXT files are allowed'));
+    cb(new BadRequestError('Only Excel (.xlsx, .xls) and CSV files are allowed'));
   }
 };
 
+// No file filter - accept any file type
+const anyFileFilter = (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  cb(null, true);
+};
+
+// Image upload instance (for profile pictures)
+export const uploadImage = multer({
+  storage,
+  fileFilter: imageFileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB max
+  },
+});
+
+// Document upload instance (for Excel/CSV)
 export const uploadDocument = multer({
   storage,
-  fileFilter: documentFilter,
+  fileFilter: documentFileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit for documents
+    fileSize: 10 * 1024 * 1024, // 10MB max
   },
 });
 
-/**
- * Error handler for multer errors
- */
-export const handleMulterError = (err: any, _req: Express.Request, res: any, next: any) => {
+// General upload instance (no restrictions)
+export const uploadAny = multer({
+  storage,
+  fileFilter: anyFileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB max
+  },
+});
+
+// Multer error handler middleware
+export const handleMulterError = (err: any, _req: Request, _res: any, next: any) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({
-        error: 'File size exceeds the allowed limit',
-      });
-    }
-    if (err.code === 'LIMIT_FILE_COUNT') {
-      return res.status(400).json({
-        error: 'Too many files uploaded',
-      });
+      return next(new BadRequestError('File size too large. Maximum size is 10MB'));
     }
     if (err.code === 'LIMIT_UNEXPECTED_FILE') {
-      return res.status(400).json({
-        error: 'Unexpected field in form data',
-      });
+      return next(new BadRequestError('Unexpected field name'));
     }
+    return next(new BadRequestError(`Upload error: ${err.message}`));
   }
-
-  if (err.message) {
-    return res.status(400).json({
-      error: err.message,
-    });
-  }
-
   next(err);
 };
