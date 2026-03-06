@@ -4,9 +4,9 @@ import { sendSuccess, sendPaginatedSuccess } from '@/shared/utils/response.util'
 import { AppError, BadRequestError, UnauthorizedError } from '@/shared/errors';
 import { UserRole } from '@prisma/client';
 import {
-  generateUserExcelTemplate,
-  parseUserCSVFile,
   parseUserExcelFile,
+  parseUserCSVFile,
+  generateUserExcelTemplate,
 } from '@/shared/utils/excel/excel-parser.util';
 import { CreateUserInput } from '../types/user.types';
 
@@ -278,28 +278,14 @@ class UserController {
       if (!req.user) throw new UnauthorizedError('User not authenticated');
 
       const file = (req as any).file;
-
       if (!file) throw new BadRequestError('No file uploaded');
-
-      // Check file type
-      const allowedMimeTypes = [
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-        'application/vnd.ms-excel', // .xls
-        'text/csv', // .csv
-      ];
-
-      if (!allowedMimeTypes.includes(file.mimetype)) {
-        throw new BadRequestError(
-          'Invalid file type. Only Excel (.xlsx, .xls) and CSV files are allowed',
-        );
-      }
 
       // Parse file based on type
       let parseResult;
       if (file.mimetype === 'text/csv') {
-        parseResult = await parseUserCSVFile(file.buffer as any);
+        parseResult = await parseUserCSVFile(file.buffer);
       } else {
-        parseResult = await parseUserExcelFile(file.buffer as any);
+        parseResult = await parseUserExcelFile(file.buffer);
       }
 
       // If no valid users found
@@ -316,7 +302,8 @@ class UserController {
         return;
       }
 
-      const result = await userService.bulkCreateUsers(parseResult.users as CreateUserInput[]);
+      // Call existing bulk create service
+      const result = await userService.bulkCreateUsers(parseResult.users as any);
 
       res.status(201).json({
         success: true,
@@ -326,7 +313,7 @@ class UserController {
           validRows: parseResult.users.length,
           created: result.created,
           failed: parseResult.errors.length,
-          errors: parseResult.errors, // Only file parsing errors
+          errors: parseResult.errors,
         },
       });
     } catch (error) {
