@@ -8,7 +8,6 @@ import {
   parseUserCSVFile,
   generateUserExcelTemplate,
 } from '@/shared/utils/excel/excel-parser.util';
-import { CreateUserInput } from '../types/user.types';
 
 class UserController {
   constructor() {

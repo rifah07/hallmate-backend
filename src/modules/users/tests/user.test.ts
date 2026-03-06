@@ -18,7 +18,7 @@ let provostToken: string;
 let studentToken: string;
 let createdUserId: string;
 
-// Small valid 1x1 PNG — no external file needed
+// Small valid 1x1 PNG - no external file needed
 const DUMMY_IMAGE_BUFFER = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
   'base64',
@@ -332,6 +332,31 @@ describe('User Module', () => {
   });
 
   // --------------------------------------------------------------------------
+  // SEARCH USERS
+  // --------------------------------------------------------------------------
+
+  describe('GET /api/users/search', () => {
+    it('should search users by query', async () => {
+      const res = await request(app)
+        .get('/api/users/search?q=Test')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toBeInstanceOf(Array);
+    }, 15000);
+
+    it('should paginate search results', async () => {
+      const res = await request(app)
+        .get('/api/users/search?q=Test&page=1&limit=2')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.pagination.limit).toBe(2);
+    }, 15000);
+  });
+
+  // --------------------------------------------------------------------------
   // UPDATE USER
   // --------------------------------------------------------------------------
 
@@ -479,7 +504,7 @@ describe('User Module', () => {
   });
 
   // --------------------------------------------------------------------------
-  // BULK CREATE
+  // BULK CREATE (JSON)
   // --------------------------------------------------------------------------
 
   describe('POST /api/users/bulk', () => {
@@ -530,6 +555,187 @@ describe('User Module', () => {
 
       expect(res.status).toBe(403);
     }, 15000);
+  });
+
+  // --------------------------------------------------------------------------
+  // BULK UPLOAD FROM FILE
+  // --------------------------------------------------------------------------
+
+  describe('Bulk Upload from Excel/CSV', () => {
+    describe('GET /api/users/template/download', () => {
+      it('should download Excel template (admin)', async () => {
+        const res = await request(app)
+          .get('/api/users/template/download')
+          .set('Authorization', `Bearer ${adminToken}`);
+
+        expect(res.status).toBe(200);
+        expect(res.headers['content-type']).toContain('spreadsheet');
+        expect(res.headers['content-disposition']).toContain('user-upload-template.xlsx');
+      }, 15000);
+
+      it('should allow provost to download template', async () => {
+        const res = await request(app)
+          .get('/api/users/template/download')
+          .set('Authorization', `Bearer ${provostToken}`);
+
+        expect(res.status).toBe(200);
+      }, 15000);
+
+      it('should reject download by student', async () => {
+        const res = await request(app)
+          .get('/api/users/template/download')
+          .set('Authorization', `Bearer ${studentToken}`);
+
+        expect(res.status).toBe(403);
+      }, 15000);
+
+      it('should reject unauthenticated download', async () => {
+        const res = await request(app).get('/api/users/template/download');
+        expect(res.status).toBe(401);
+      }, 15000);
+    });
+
+    describe('POST /api/users/bulk-upload', () => {
+      const createCSV = (rows: string[]): Buffer => {
+        const header = 'universityId,email,name,role,phone,department,year,program,session';
+        const csv = [header, ...rows].join('\n');
+        return Buffer.from(csv, 'utf-8');
+      };
+
+      it('should upload and create users from CSV (admin)', async () => {
+        const csvBuffer = createCSV([
+          '7777777771,csv1@test.com,CSV User 1,STUDENT,01712345678,CSE,1,UNDERGRADUATE,2023-24',
+          '7777777772,csv2@test.com,CSV User 2,STUDENT,01712345679,EEE,2,UNDERGRADUATE,2022-23',
+        ]);
+
+        const res = await request(app)
+          .post('/api/users/bulk-upload')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .attach('file', csvBuffer, {
+            filename: 'users.csv',
+            contentType: 'text/csv',
+          });
+
+        expect(res.status).toBe(201);
+        expect(res.body.success).toBe(true);
+        expect(res.body.data.totalRows).toBe(2);
+        expect(res.body.data.created).toBeGreaterThan(0);
+
+        await prisma.user.deleteMany({
+          where: { universityId: { in: ['7777777771', '7777777772'] } },
+        });
+      }, 20000);
+
+      it('should handle partial failures gracefully', async () => {
+        const csvBuffer = createCSV([
+          '7777777773,csv3@test.com,Valid User,STUDENT,01712345678,CSE,1,UNDERGRADUATE,2023-24',
+          '7777777774,invalid-email,Invalid Email,STUDENT,01712345678,CSE,1,UNDERGRADUATE,2023-24',
+        ]);
+
+        const res = await request(app)
+          .post('/api/users/bulk-upload')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .attach('file', csvBuffer, {
+            filename: 'users.csv',
+            contentType: 'text/csv',
+          });
+
+        expect(res.status).toBe(201);
+        expect(res.body.data.errors.length).toBeGreaterThan(0);
+
+        await prisma.user.deleteMany({
+          where: { universityId: '7777777773' },
+        });
+      }, 20000);
+
+      it('should reject file with no valid users', async () => {
+        const csvBuffer = createCSV([
+          'SHORT,invalid,Bad,INVALID,01712345678,CSE,1,UNDERGRADUATE,2023-24',
+        ]);
+
+        const res = await request(app)
+          .post('/api/users/bulk-upload')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .attach('file', csvBuffer, {
+            filename: 'users.csv',
+            contentType: 'text/csv',
+          });
+
+        expect(res.status).toBe(400);
+        expect(res.body.success).toBe(false);
+      }, 15000);
+
+      it('should reject upload without file', async () => {
+        const res = await request(app)
+          .post('/api/users/bulk-upload')
+          .set('Authorization', `Bearer ${adminToken}`);
+
+        expect(res.status).toBe(400);
+      }, 15000);
+
+      it('should reject invalid file type', async () => {
+        const txtBuffer = Buffer.from('This is a text file', 'utf-8');
+
+        const res = await request(app)
+          .post('/api/users/bulk-upload')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .attach('file', txtBuffer, {
+            filename: 'users.txt',
+            contentType: 'text/plain',
+          });
+
+        expect(res.status).toBe(400);
+      }, 15000);
+
+      it('should reject upload by student', async () => {
+        const csvBuffer = createCSV([
+          '7777777775,csv@test.com,Test User,STUDENT,01712345678,CSE,1,UNDERGRADUATE,2023-24',
+        ]);
+
+        const res = await request(app)
+          .post('/api/users/bulk-upload')
+          .set('Authorization', `Bearer ${studentToken}`)
+          .attach('file', csvBuffer, {
+            filename: 'users.csv',
+            contentType: 'text/csv',
+          });
+
+        expect(res.status).toBe(403);
+      }, 15000);
+
+      it('should reject unauthenticated upload', async () => {
+        const csvBuffer = createCSV([
+          '7777777776,csv@test.com,Test User,STUDENT,01712345678,CSE,1,UNDERGRADUATE,2023-24',
+        ]);
+
+        const res = await request(app).post('/api/users/bulk-upload').attach('file', csvBuffer, {
+          filename: 'users.csv',
+          contentType: 'text/csv',
+        });
+
+        expect(res.status).toBe(401);
+      }, 15000);
+
+      it('should allow provost to upload', async () => {
+        const csvBuffer = createCSV([
+          '7777777777,provost@test.com,Provost Upload,STUDENT,01712345678,CSE,1,UNDERGRADUATE,2023-24',
+        ]);
+
+        const res = await request(app)
+          .post('/api/users/bulk-upload')
+          .set('Authorization', `Bearer ${provostToken}`)
+          .attach('file', csvBuffer, {
+            filename: 'users.csv',
+            contentType: 'text/csv',
+          });
+
+        expect(res.status).toBe(201);
+
+        await prisma.user.deleteMany({
+          where: { universityId: '7777777777' },
+        });
+      }, 20000);
+    });
   });
 
   // --------------------------------------------------------------------------
@@ -689,7 +895,6 @@ describe('User Module', () => {
       it('should reject delete when no picture exists', async () => {
         if (!createdUserId) throw new Error('createdUserId not set');
 
-        // Picture was deleted above - second delete should 400
         const res = await request(app)
           .delete(`/api/users/${createdUserId}/profile-picture`)
           .set('Authorization', `Bearer ${adminToken}`);
