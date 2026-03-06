@@ -40,7 +40,7 @@ const documentFileFilter = (
 };
 
 // No file filter - accept any file type
-const anyFileFilter = (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const anyFileFilter = (_req: Request, _file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   cb(null, true);
 };
 
