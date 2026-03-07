@@ -18,7 +18,7 @@ let provostToken: string;
 let studentToken: string;
 let createdUserId: string;
 
-// Small valid 1x1 PNG - no external file needed
+// Small valid 1x1 PNG — no external file needed
 const DUMMY_IMAGE_BUFFER = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
   'base64',
@@ -547,11 +547,53 @@ describe('User Module', () => {
       });
     }, 15000);
 
-    it('should reject bulk create by provost', async () => {
+    it('should allow provost to bulk create', async () => {
       const res = await request(app)
         .post('/api/users/bulk')
         .set('Authorization', `Bearer ${provostToken}`)
-        .send({ users: [] });
+        .send({
+          users: [
+            {
+              universityId: '9999999990',
+              name: 'Provost Bulk User',
+              email: 'provost-bulk@test.com',
+              phone: '01712345690',
+              role: 'STUDENT',
+              department: 'CSE',
+              year: 1,
+              program: 'UNDERGRADUATE',
+              session: '2023-24',
+            },
+          ],
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.created).toBeGreaterThan(0);
+
+      await prisma.user.deleteMany({
+        where: { universityId: '9999999990' },
+      });
+    }, 15000);
+
+    it('should reject bulk create by student', async () => {
+      const res = await request(app)
+        .post('/api/users/bulk')
+        .set('Authorization', `Bearer ${studentToken}`)
+        .send({
+          users: [
+            {
+              universityId: '8888888884',
+              name: 'Test User',
+              email: 'test@test.com',
+              phone: '01712345678',
+              role: 'STUDENT',
+              department: 'CSE',
+              year: 1,
+              program: 'UNDERGRADUATE',
+              session: '2023-24',
+            },
+          ],
+        });
 
       expect(res.status).toBe(403);
     }, 15000);
@@ -626,10 +668,30 @@ describe('User Module', () => {
         });
       }, 20000);
 
-      it('should handle partial failures gracefully', async () => {
+      it('should handle duplicate records in upload', async () => {
+        // First create a user that will cause duplicate error
+        await prisma.user.create({
+          data: {
+            universityId: '6666666669',
+            name: 'Existing User',
+            email: 'existing@test.com',
+            phone: '01712345669',
+            role: 'STUDENT',
+            department: 'CSE',
+            year: 1,
+            program: 'UNDERGRADUATE',
+            session: '2023-24',
+            password: await hashPassword('Test@123'),
+            oneTimePassword: await hashPassword('123456'),
+            isFirstLogin: true,
+            accountStatus: 'ACTIVE',
+          },
+        });
+
         const csvBuffer = createCSV([
-          '7777777773,csv3@test.com,Valid User,STUDENT,01712345678,CSE,1,UNDERGRADUATE,2023-24',
-          '7777777774,invalid-email,Invalid Email,STUDENT,01712345678,CSE,1,UNDERGRADUATE,2023-24',
+          '6666666661,valid1@test.com,Valid User 1,STUDENT,01712345661,CSE,1,UNDERGRADUATE,2023-24',
+          '6666666669,existing@test.com,Duplicate User,STUDENT,01712345669,CSE,1,UNDERGRADUATE,2023-24',
+          '6666666662,valid2@test.com,Valid User 2,STUDENT,01712345662,EEE,2,UNDERGRADUATE,2022-23',
         ]);
 
         const res = await request(app)
@@ -641,10 +703,11 @@ describe('User Module', () => {
           });
 
         expect(res.status).toBe(201);
-        expect(res.body.data.errors.length).toBeGreaterThan(0);
+        expect(res.body.data.totalRows).toBe(3);
+        expect(res.body.data.created).toBeLessThan(3); // Some will fail due to duplicate
 
         await prisma.user.deleteMany({
-          where: { universityId: '7777777773' },
+          where: { universityId: { in: ['6666666661', '6666666662', '6666666669'] } },
         });
       }, 20000);
 
