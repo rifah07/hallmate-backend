@@ -2,7 +2,7 @@ import { CorsOptions } from 'cors';
 import { env } from './env.config';
 
 const whitelist = [
-  'http://localhost:3000',
+  'http://localhost:5000',
   'http://localhost:5173',
   env.NODE_ENV === 'production' ? 'https://frontend-domain.com' : '',
 ].filter(Boolean);

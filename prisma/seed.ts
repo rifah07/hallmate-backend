@@ -1,105 +1,67 @@
-//import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
+import * as dotenv from 'dotenv';
 
 //const prisma = new PrismaClient();
-import prisma from '../src/database/prisma/client';
+//import prisma from '../src/database/prisma/client';
 
+dotenv.config();
 
+const prisma = new PrismaClient();
+
+// Simple hash function (avoid importing from src to prevent path issues)
+async function hashPassword(password: string): Promise<string> {
+  const rounds = parseInt(process.env.BCRYPT_ROUNDS || '10', 10);
+  return bcrypt.hash(password, rounds);
+}
 
 async function main() {
-  console.log('Seeding database...');
+  console.log('🌱 Starting database seed...');
 
-  // Hash OTP
-  const otp = '123456';
-  const hashedOTP = await bcrypt.hash(otp, 10);
+  // Check if super admin already exists
+  const existingSuperAdmin = await prisma.user.findFirst({
+    where: { role: 'SUPER_ADMIN' },
+  });
 
-  const superAdmin = await prisma.user.upsert({
-  where: { universityId: 'ADMIN001' },
-  update: {},
-  create: {
-    universityId: 'ADMIN001',
-    name: 'Super Admin',
-    email: 'admin@hall.edu.bd',
-    phone: '01700000000',
-    role: 'SUPER_ADMIN',
-    password: await bcrypt.hash('Admin@123', 10),
-    isFirstLogin: false,
-  },
-});
+  if (existingSuperAdmin) {
+    console.log('✅ Super Admin already exists. Skipping seed.');
+    console.log(`   Email: ${existingSuperAdmin.email}`);
+    console.log(`   University ID: ${existingSuperAdmin.universityId}`);
+    return;
+  }
 
-console.log('✅ Super admin created:', superAdmin.universityId);
-console.log('Password: Admin@123');
+  // Get credentials from environment
+  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'admin_n@hallmate.edu.bd';
+  const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || 'SuperAdmin@123';
 
-  // Create test student
-  const student = await prisma.user.upsert({
-    where: { universityId: '2020123456' },
-    update: {},
-    create: {
-      universityId: '2020123456',
-      name: 'Test Student',
-      email: 'student1@test.com',
-      phone: '01712345678',
-      role: 'STUDENT',
-      password: await bcrypt.hash('dummy', 10), // Will be set on first login
-      isFirstLogin: true,
-      oneTimePassword: hashedOTP,
-      otpExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-      department: 'Computer Science',
-      year: 3,
-      program: 'UNDERGRADUATE',
-      session: '2020-21',
-      bloodGroup: 'A_POSITIVE',
-      emergencyContacts: {
-        create: [
-          {
-            name: 'Parent Name',
-            phone: '01798765432',
-            relation: 'Father',
-          },
-        ],
-      },
-      guardianInfo: {
-        create: {
-          name: 'Guardian Name',
-          phone: '01798765432',
-          relation: 'Father',
-          address: 'Dhaka, Bangladesh',
-        },
-      },
+  // Create the first Super Admin
+  const hashedPassword = await hashPassword(superAdminPassword);
+
+  const superAdmin = await prisma.user.create({
+    data: {
+      universityId: '0000000000',
+      name: 'System Administrator',
+      email: superAdminEmail,
+      phone: '01700000000',
+      role: 'SUPER_ADMIN',
+      password: hashedPassword,
+      oneTimePassword: hashedPassword, // Same as password initially
+      isFirstLogin: false, // Already set up
+      accountStatus: 'ACTIVE',
     },
   });
 
-  console.log('✅ Test student created:', student.universityId);
-console.log('=================================');
-console.log('Student OTP for first login:', otp);
-console.log('=================================');
-
-  // Create test provost
-  const provost = await prisma.user.upsert({
-    where: { universityId: '1990111111' },
-    update: {},
-    create: {
-      universityId: '1990111111',
-      name: 'Test Provost',
-      email: 'provost1@test.com',
-      phone: '01812345678',
-      role: 'PROVOST',
-      password: await bcrypt.hash('Provost@123', 10),
-      isFirstLogin: false,
-      tenureStart: new Date(),
-      provostMessage: 'Welcome to our hall!',
-    },
-  });
-
-  console.log('✅ Test provost created:', provost.universityId);
-  console.log('Password: Provost@123');
-
-  console.log('🎉 Seeding completed!');
+  console.log('✅ Super Admin created successfully!');
+  console.log('\n📧 Login Credentials:');
+  console.log(`   University ID: ${superAdmin.universityId}`);
+  console.log(`   Email: ${superAdmin.email}`);
+  console.log(`   Password: ${superAdminPassword}`);
+  console.log('\n⚠️  IMPORTANT: Change this password immediately after first login!\n');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seeding failed:', e);
+    console.error('❌ Seed failed:', e);
     process.exit(1);
   })
   .finally(async () => {

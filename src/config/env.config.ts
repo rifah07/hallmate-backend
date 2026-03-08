@@ -13,6 +13,8 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
   BCRYPT_ROUNDS: z.string().default('10'),
+  SUPER_ADMIN_EMAIL: z.string().email(),
+  SUPER_ADMIN_PASSWORD: z.string().min(8, 'SUPER_ADMIN_PASSWORD must be at least 8 characters long'),
 });
 
 const envValidation = envSchema.safeParse(process.env);
