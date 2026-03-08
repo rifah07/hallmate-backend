@@ -210,13 +210,13 @@
  * /api/users/bulk:
  *   post:
  *     tags: [Users]
- *     summary: Bulk create users
+ *     summary: Bulk create users (JSON)
  *     description: |
  *       Creates multiple users in a single request. Maximum 100 users per request.
  *       Duplicate university IDs or emails are silently skipped (`skipDuplicates`).
  *       Each created user receives a welcome email with their one-time password.
  *
- *       **Access:** SUPER_ADMIN only
+ *       **Access:** SUPER_ADMIN, PROVOST
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -251,6 +251,116 @@
  *                           example: 45
  *       400:
  *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
+
+/**
+ * @swagger
+ * /api/users/bulk-upload:
+ *   post:
+ *     tags: [Users]
+ *     summary: Bulk create users from Excel/CSV file
+ *     description: |
+ *       Upload an Excel (.xlsx, .xls) or CSV file containing user data to create
+ *       multiple users in one operation. The file is parsed, validated row-by-row,
+ *       and all valid users are created. Errors are returned with specific row numbers.
+ *
+ *       **Download template:** GET /api/users/template/download
+ *
+ *       **File format:**
+ *       - Required columns: universityId, email, name, role, phone
+ *       - Optional columns: department, year, program, session, bloodGroup, assignedFloor, designation
+ *
+ *       **Validation:**
+ *       - Students require: department, year, program, session
+ *       - House tutors require: assignedFloor (1-14)
+ *       - Duplicates are skipped automatically
+ *
+ *       **Max file size:** 10MB
+ *       **Max rows:** Recommended 100-500
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [file]
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: Excel (.xlsx, .xls) or CSV file
+ *     responses:
+ *       201:
+ *         description: File processed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Successfully processed 50 rows. Created 45 users."
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     totalRows:
+ *                       type: integer
+ *                       example: 50
+ *                     validRows:
+ *                       type: integer
+ *                       example: 48
+ *                     created:
+ *                       type: integer
+ *                       example: 45
+ *                     failed:
+ *                       type: integer
+ *                       example: 3
+ *                     errors:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       example:
+ *                         - "Row 12: Missing email"
+ *                         - "Row 25: Invalid role"
+ *       400:
+ *         description: Invalid file or no valid users found
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
+
+/**
+ * @swagger
+ * /api/users/template/download:
+ *   get:
+ *     tags: [Users]
+ *     summary: Download Excel template for bulk user upload
+ *     description: |
+ *       Downloads a pre-formatted Excel template with column headers and sample data.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Excel template file
+ *         content:
+ *           application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+ *             schema:
+ *               type: string
+ *               format: binary
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  *       403:
@@ -415,10 +525,9 @@
  * /api/users/search:
  *   get:
  *     tags: [Users]
- *     summary: Search users by name, email, or university ID
+ *     summary: Search users
  *     description: |
- *       Performs a case-insensitive search across user's name, email, and
- *       university ID fields. Returns paginated results.
+ *       Case-insensitive search across name, email, and university ID.
  *
  *       **Access:** All authenticated users
  *     security:
@@ -429,8 +538,6 @@
  *         required: true
  *         schema:
  *           type: string
- *         description: Search query (searches name, email, universityId)
- *         example: "John Doe"
  *       - in: query
  *         name: page
  *         schema:
@@ -440,11 +547,10 @@
  *         name: limit
  *         schema:
  *           type: integer
- *           default: 20
- *           maximum: 100
+ *           default: 10
  *     responses:
  *       200:
- *         description: Search results retrieved successfully
+ *         description: Search results
  *         content:
  *           application/json:
  *             schema:
@@ -452,23 +558,12 @@
  *               properties:
  *                 success:
  *                   type: boolean
- *                   example: true
  *                 data:
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/User'
- *                 meta:
+ *                 pagination:
  *                   $ref: '#/components/schemas/PaginationMeta'
- *       400:
- *         description: Missing search query
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               success: false
- *               error:
- *                 message: "Search query is required"
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
@@ -1079,161 +1174,4 @@
  *                 message: "profilePictureUrl is required"
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
- */
-
-/**
- * @swagger
- * /api/users/bulk-upload:
- *   post:
- *     tags: [Users]
- *     summary: Bulk create users from Excel/CSV file
- *     description: |
- *       Upload an Excel (.xlsx, .xls) or CSV file containing user data to create
- *       multiple users in one operation. The file is parsed, validated row-by-row,
- *       and all valid users are created. Errors are returned with specific row numbers.
- *
- *       **Download template:** GET /api/users/template/download
- *
- *       **File format:**
- *       - Required columns: universityId, email, name, role
- *       - Optional columns: phone, department, year, program, session, bloodGroup, assignedFloor, designation
- *
- *       **Validation:**
- *       - Students require: department, year, program, session
- *       - House tutors require: assignedFloor (1-14)
- *       - Duplicates are skipped automatically
- *
- *       **Max file size:** 10MB
- *       **Max rows:** Recommended 100-500 (no hard limit)
- *
- *       **Access:** SUPER_ADMIN, PROVOST
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             required: [file]
- *             properties:
- *               file:
- *                 type: string
- *                 format: binary
- *                 description: Excel (.xlsx, .xls) or CSV file
- *     responses:
- *       201:
- *         description: File processed successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: "Successfully processed 50 rows. Created 45 users."
- *                 data:
- *                   type: object
- *                   properties:
- *                     totalRows:
- *                       type: integer
- *                       example: 50
- *                       description: Total rows in file (excluding header)
- *                     validRows:
- *                       type: integer
- *                       example: 48
- *                       description: Rows that passed validation
- *                     created:
- *                       type: integer
- *                       example: 45
- *                       description: Users successfully created
- *                     failed:
- *                       type: integer
- *                       example: 3
- *                       description: Errors encountered
- *                     errors:
- *                       type: array
- *                       items:
- *                         type: string
- *                       example:
- *                         - "Row 12: Missing email"
- *                         - "Row 25: Invalid role 'STUDENT123'"
- *                         - "Row 40: Email john@example.com already exists"
- *       400:
- *         description: Invalid file or no valid users found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             examples:
- *               noFile:
- *                 summary: No file uploaded
- *                 value:
- *                   success: false
- *                   error:
- *                     message: "No file uploaded"
- *               invalidType:
- *                 summary: Wrong file type
- *                 value:
- *                   success: false
- *                   error:
- *                     message: "Invalid file type. Only Excel (.xlsx, .xls) and CSV files are allowed"
- *               noValidUsers:
- *                 summary: All rows failed validation
- *                 value:
- *                   success: false
- *                   message: "No valid users found in the file"
- *                   data:
- *                     totalRows: 10
- *                     validRows: 0
- *                     errors: ["Row 2: Missing email", "Row 3: Invalid role"]
- *               missingColumns:
- *                 summary: Required columns missing
- *                 value:
- *                   success: false
- *                   error:
- *                     message: "Missing required columns: universityId, email"
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
- */
-
-/**
- * @swagger
- * /api/users/template/download:
- *   get:
- *     tags: [Users]
- *     summary: Download Excel template for bulk user upload
- *     description: |
- *       Downloads a pre-formatted Excel template with:
- *       - Column headers for all user fields
- *       - Two sample rows demonstrating correct data format
- *       - Data validation hints in column headers
- *
- *       Use this template to prepare data for POST /api/users/bulk-upload
- *
- *       **Access:** SUPER_ADMIN, PROVOST
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Excel template file
- *         content:
- *           application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
- *             schema:
- *               type: string
- *               format: binary
- *         headers:
- *           Content-Disposition:
- *             schema:
- *               type: string
- *               example: "attachment; filename=user-upload-template.xlsx"
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
  */
