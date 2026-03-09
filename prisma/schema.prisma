@@ -25,6 +25,7 @@ enum UserRole {
 
 enum AccountStatus {
   ACTIVE
+  LOCKED
   SUSPENDED
   SEAT_CANCELLED
   INACTIVE
@@ -191,6 +192,7 @@ model User {
   // Authentication
   password      String
   accountStatus AccountStatus @default(ACTIVE)
+  failedLoginAttempts   Int      @default(0)
   isFirstLogin  Boolean       @default(true)
   oneTimePassword String?
   otpExpiresAt  DateTime?
