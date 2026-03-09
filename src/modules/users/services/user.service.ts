@@ -12,7 +12,7 @@ import {
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '@/shared/errors';
 import { hashPassword, generateOTP } from '@/shared/utils/crypto/password.util';
 import emailService from '@/shared/utils/email/email.service';
-import { cloudinaryService } from '@/shared/shared/services/cloudinary.service';
+import { cloudinaryService } from '@/shared/services/cloudinary.service';
 import { UserRole } from '@prisma/client';
 
 class UserService {

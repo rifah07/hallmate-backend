@@ -1,6 +1,6 @@
 /**
  * User Module - Main Entry Point
- * 
+ *
  * This module handles all user management operations including:
  * - CRUD operations for users
  * - Role and permission management

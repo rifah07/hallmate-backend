@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { NextFunction } from "express";
+import { NextFunction } from 'express';
 
 /**
  * Handle async errors (wrapper for async route handlers)
