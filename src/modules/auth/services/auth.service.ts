@@ -27,6 +27,11 @@ class AuthService {
       throw new UnauthorizedError('Invalid credentials');
     }
 
+    if (user.accountStatus === 'LOCKED') {
+      throw new ForbiddenError(
+        'Account locked due to too many failed login attempts. Contact hall office.',
+      );
+    }
     // Check account status
     if (user.accountStatus === 'SEAT_CANCELLED') {
       throw new AppError('Your seat has been cancelled. Contact hall office.', 403);
@@ -44,7 +49,25 @@ class AuthService {
     // Verify password
     const isPasswordValid = await comparePassword(password, user.password);
     if (!isPasswordValid) {
+      // TRACK FAILED ATTEMPTS
+      const currentAttempts = user.failedLoginAttempts || 0;
+      const newAttempts = currentAttempts + 1;
+
+      if (newAttempts >= 5) {
+        await authRepository.updateFailedAttempts(user.id, newAttempts, true);
+        throw new ForbiddenError(
+          'Account locked due to too many failed login attempts. Contact hall office.',
+        );
+      }
+
+      await authRepository.updateFailedAttempts(user.id, newAttempts);
       throw new AppError('Invalid credentials', 401);
+    }
+
+    // RESET FAILED ATTEMPTS ON SUCCESS
+    const currentAttempts = user.failedLoginAttempts || 0;
+    if (currentAttempts > 0) {
+      await authRepository.updateFailedAttempts(user.id, 0);
     }
 
     // Generate tokens

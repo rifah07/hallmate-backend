@@ -35,6 +35,19 @@ class AuthRepository {
   }
 
   /**
+   * Update in failed login attempts and optionally lock account
+   */
+  async updateFailedAttempts(userId: string, attempts: number, shouldLock: boolean = false) {
+    return await prisma.user.update({
+      where: { id: userId },
+      data: {
+        failedLoginAttempts: attempts,
+        ...(shouldLock && { accountStatus: 'LOCKED' }),
+      },
+    });
+  }
+
+  /**
    * Update user on first login
    */
   async completeFirstLogin(userId: string, hashedPassword: string): Promise<User> {
