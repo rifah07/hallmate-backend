@@ -9,7 +9,7 @@ const options: swaggerJsdoc.Options = {
     info: {
       title: 'HallMate API',
       version: '1.0.0',
-      description: 'University Women\'s Hall Management System - Bangladesh',
+      description: "University Women's Hall Management System - Bangladesh",
     },
     servers: [
       { url: 'http://localhost:5000', description: 'Development' },
