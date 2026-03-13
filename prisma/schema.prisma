@@ -222,6 +222,7 @@ model User {
   // Room assignment
   currentRoomId String?
   currentRoom   Room?         @relation("CurrentResidents", fields: [currentRoomId], references: [id])
+  roomOccupants RoomOccupant[] 
   
   // Provost-specific
   provostMessage String?      @db.Text
@@ -291,6 +292,25 @@ model GuardianInfo {
   updatedAt DateTime @updatedAt
 }
 
+model RoomOccupant {
+  id           String   @id @default(uuid())
+  roomId       String
+  userId       String
+  bedNumber    Int      // 1-4
+  assignedDate DateTime @default(now())
+  
+  room         Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@unique([roomId, bedNumber])
+  @@index([roomId])
+  @@index([userId])
+  @@map("room_occupants")
+}
+
 model Room {
   id                String      @id @default(uuid())
   roomNumber        String      @unique
@@ -300,6 +320,12 @@ model Room {
   capacity          Int
   currentOccupancy  Int         @default(0)
   status            RoomStatus  @default(AVAILABLE)
+
+  occupants RoomOccupant[] 
+
+  hasAC             Boolean     @default(false)
+  hasBalcony        Boolean     @default(false)
+  hasAttachedBath   Boolean     @default(false)
   
   // Furniture inventory (JSON)
   furnitureInventory Json?
