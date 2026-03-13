@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { RoomType, RoomStatus } from '@prisma/client';
+import { RoomType, RoomStatus, Wing } from '@prisma/client';
 
 // ============================================================================
 // ROOM VALIDATION SCHEMAS
@@ -20,8 +20,11 @@ export const createRoomValidation = z.object({
       .int('Floor must be an integer')
       .min(1, 'Floor must be between 1 and 14')
       .max(14, 'Floor must be between 1 and 14'),
+    wing: z.nativeEnum(Wing, {
+      message: 'Wing must be A or B',
+    }),
     roomType: z.nativeEnum(RoomType, {
-      message: 'Room type must be SINGLE, DOUBLE, TRIPLE, or QUAD',
+      message: 'Room type must be SINGLE, DOUBLE, TRIPLE, or FOUR_SHARING',
     }),
     capacity: z
       .number()
@@ -37,7 +40,7 @@ export const createRoomValidation = z.object({
 
 export const updateRoomValidation = z.object({
   params: z.object({
-    roomId: z.string().cuid('Invalid room ID'),
+    roomId: z.string().uuid('Invalid room ID'),
   }),
   body: z.object({
     roomNumber: z
@@ -55,9 +58,14 @@ export const updateRoomValidation = z.object({
       .min(1, 'Floor must be between 1 and 14')
       .max(14, 'Floor must be between 1 and 14')
       .optional(),
+    wing: z
+      .nativeEnum(Wing, {
+        message: 'Wing must be A or B',
+      })
+      .optional(),
     roomType: z
       .nativeEnum(RoomType, {
-        message: 'Room type must be SINGLE, DOUBLE, TRIPLE, or QUAD',
+        message: 'Room type must be SINGLE, DOUBLE, TRIPLE, or FOUR_SHARING',
       })
       .optional(),
     capacity: z
@@ -75,13 +83,13 @@ export const updateRoomValidation = z.object({
 
 export const getRoomByIdValidation = z.object({
   params: z.object({
-    roomId: z.string().cuid('Invalid room ID'),
+    roomId: z.string().uuid('Invalid room ID'),
   }),
 });
 
 export const deleteRoomValidation = z.object({
   params: z.object({
-    roomId: z.string().cuid('Invalid room ID'),
+    roomId: z.string().uuid('Invalid room ID'),
   }),
 });
 
@@ -100,7 +108,7 @@ export const getRoomsByFloorValidation = z.object({
 export const getRoomsByTypeValidation = z.object({
   params: z.object({
     type: z.nativeEnum(RoomType, {
-      message: 'Room type must be SINGLE, DOUBLE, TRIPLE, or QUAD',
+      message: 'Room type must be SINGLE, DOUBLE, TRIPLE, or FOUR_SHARING',
     }),
   }),
 });
@@ -131,6 +139,7 @@ export const getAllRoomsValidation = z.object({
       .string()
       .optional()
       .transform((val) => (val ? parseInt(val, 10) : undefined)),
+    wing: z.nativeEnum(Wing).optional(),
     roomType: z.nativeEnum(RoomType).optional(),
     status: z.nativeEnum(RoomStatus).optional(),
     hasVacancy: z
@@ -149,10 +158,10 @@ export const getAllRoomsValidation = z.object({
 
 export const assignStudentValidation = z.object({
   params: z.object({
-    roomId: z.string().cuid('Invalid room ID'),
+    roomId: z.string().uuid('Invalid room ID'),
   }),
   body: z.object({
-    userId: z.string().cuid('Invalid user ID'),
+    userId: z.string().uuid('Invalid user ID'),
     bedNumber: z
       .number()
       .int('Bed number must be an integer')
@@ -164,18 +173,18 @@ export const assignStudentValidation = z.object({
 
 export const unassignStudentValidation = z.object({
   params: z.object({
-    roomId: z.string().cuid('Invalid room ID'),
-    userId: z.string().cuid('Invalid user ID'),
+    roomId: z.string().uuid('Invalid room ID'),
+    userId: z.string().uuid('Invalid user ID'),
   }),
 });
 
 export const transferStudentValidation = z.object({
   params: z.object({
-    roomId: z.string().cuid('Invalid room ID'),
+    roomId: z.string().uuid('Invalid room ID'),
   }),
   body: z.object({
-    userId: z.string().cuid('Invalid user ID'),
-    targetRoomId: z.string().cuid('Invalid target room ID'),
+    userId: z.string().uuid('Invalid user ID'),
+    targetRoomId: z.string().uuid('Invalid target room ID'),
     targetBedNumber: z
       .number()
       .int('Bed number must be an integer')
