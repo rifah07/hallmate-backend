@@ -1,5 +1,5 @@
 import { prisma } from '@/database/prisma/client';
-import { RoomType, Prisma } from '@prisma/client';
+import { RoomType, Prisma, RoomStatus } from '@prisma/client';
 import { RoomFilters, PaginationParams } from '../types/room.types';
 
 class RoomRepository {
@@ -200,6 +200,143 @@ class RoomRepository {
       },
       orderBy: [{ floor: 'asc' }, { roomNumber: 'asc' }],
     });
+  }
+
+  // ============================================================================
+  // UPDATE
+  // ============================================================================
+
+  async update(roomId: string, data: Prisma.RoomUpdateInput) {
+    return await prisma.room.update({
+      where: { id: roomId },
+      data,
+      include: {
+        occupants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                universityId: true,
+                email: true,
+                phone: true,
+                photo: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  // ============================================================================
+  // DELETE
+  // ============================================================================
+
+  async delete(roomId: string) {
+    return await prisma.room.delete({
+      where: { id: roomId },
+    });
+  }
+
+  // ============================================================================
+  // OCCUPANT MANAGEMENT
+  // ============================================================================
+
+  async assignStudent(roomId: string, userId: string, bedNumber: number, assignedDate?: Date) {
+    return await prisma.roomOccupant.create({
+      data: {
+        roomId,
+        userId,
+        bedNumber,
+        assignedDate: assignedDate || new Date(),
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            universityId: true,
+            email: true,
+            phone: true,
+            photo: true,
+          },
+        },
+        room: true,
+      },
+    });
+  }
+
+  async unassignStudent(roomId: string, userId: string) {
+    return await prisma.roomOccupant.deleteMany({
+      where: {
+        roomId,
+        userId,
+      },
+    });
+  }
+
+  async findOccupantByRoomAndBed(roomId: string, bedNumber: number) {
+    return await prisma.roomOccupant.findFirst({
+      where: {
+        roomId,
+        bedNumber,
+      },
+    });
+  }
+
+  async findOccupantByUserAndRoom(userId: string, roomId: string) {
+    return await prisma.roomOccupant.findFirst({
+      where: {
+        userId,
+        roomId,
+      },
+    });
+  }
+
+  async findUserCurrentRoom(userId: string) {
+    return await prisma.roomOccupant.findFirst({
+      where: { userId },
+      include: {
+        room: true,
+      },
+    });
+  }
+
+  // ============================================================================
+  // STATISTICS
+  // ============================================================================
+
+  async getStatistics() {
+    const [rooms, occupants] = await Promise.all([
+      prisma.room.findMany({
+        select: {
+          id: true,
+          floor: true,
+          roomType: true,
+          capacity: true,
+          status: true,
+        },
+      }),
+      prisma.roomOccupant.findMany({
+        select: {
+          roomId: true,
+          userId: true,
+        },
+      }),
+    ]);
+
+    return { rooms, occupants };
+  }
+
+  async countByStatus(status: RoomStatus) {
+    return await prisma.room.count({
+      where: { status },
+    });
+  }
+
+  async countTotal() {
+    return await prisma.room.count();
   }
 }
 
