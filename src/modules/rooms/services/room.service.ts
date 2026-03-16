@@ -223,6 +223,56 @@ class RoomService {
 
     return this.transformRoom(room);
   }
+
+  // ============================================================================
+  // UPDATE ROOM
+  // ============================================================================
+
+  async updateRoom(roomId: string, data: UpdateRoomInput) {
+    const room = await roomRepository.findById(roomId);
+
+    if (!room) {
+      throw new NotFoundError('Room not found');
+    }
+
+    // If updating room number, check uniqueness
+    if (data.roomNumber && data.roomNumber !== room.roomNumber) {
+      const existing = await roomRepository.findByRoomNumber(data.roomNumber);
+      if (existing) {
+        throw new ConflictError(`Room ${data.roomNumber} already exists`);
+      }
+    }
+
+    // If updating capacity or room type, validate
+    if (data.roomType || data.capacity) {
+      const newRoomType = data.roomType || room.roomType;
+      const newCapacity = data.capacity || room.capacity;
+
+      const expectedCapacity = {
+        SINGLE: 1,
+        DOUBLE: 2,
+        TRIPLE: 3,
+        FOUR_SHARING: 4,
+      };
+
+      if (newCapacity !== expectedCapacity[newRoomType]) {
+        throw new BadRequestError(
+          `Capacity must be ${expectedCapacity[newRoomType]} for ${newRoomType} room type`,
+        );
+      }
+
+      // Check if reducing capacity would leave students without beds
+      const occupiedCount = room.occupants.filter((o) => o.userId !== null).length;
+      if (newCapacity < occupiedCount) {
+        throw new BadRequestError(
+          `Cannot reduce capacity below ${occupiedCount}. Room currently has ${occupiedCount} occupants.`,
+        );
+      }
+    }
+
+    const updated = await roomRepository.update(roomId, data);
+    return this.transformRoom(updated);
+  }
 }
 
 export default new RoomService();
