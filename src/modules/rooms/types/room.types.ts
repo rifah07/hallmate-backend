@@ -7,6 +7,7 @@ import { Room, RoomType, RoomStatus } from '@prisma/client';
 export interface CreateRoomInput {
   roomNumber: string;
   floor: number;
+  wing: 'A' | 'B';
   roomType: RoomType;
   capacity: number;
   status?: RoomStatus;
