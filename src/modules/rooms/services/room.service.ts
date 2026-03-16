@@ -1,8 +1,47 @@
 import roomRepository from '../repositories/room.repository';
-import { CreateRoomInput, RoomWithOccupants, OccupantInfo } from '../types/room.types';
-import { ConflictError, BadRequestError } from '@/shared/errors';
+import {
+  CreateRoomInput,
+  UpdateRoomInput,
+  RoomFilters,
+  PaginationParams,
+  UserContext,
+  RoomWithOccupants,
+  OccupantInfo,
+} from '../types/room.types';
+import { NotFoundError, ConflictError, ForbiddenError, BadRequestError } from '@/shared/errors';
+import { RoomType } from '@prisma/client';
 
 class RoomService {
+  // ============================================================================
+  // HELPER: Apply floor restriction for House Tutors
+  // ============================================================================
+
+  private applyFloorRestriction(filters: RoomFilters, userContext: UserContext): RoomFilters {
+    if (userContext.role === 'HOUSE_TUTOR') {
+      if (!userContext.assignedFloor) {
+        throw new ForbiddenError('House Tutor must have an assigned floor');
+      }
+      // Override floor filter for house tutors
+      return { ...filters, floor: userContext.assignedFloor };
+    }
+    return filters;
+  }
+
+  // ============================================================================
+  // HELPER: Check floor access
+  // ============================================================================
+
+  private checkFloorAccess(floor: number, userContext: UserContext): void {
+    if (userContext.role === 'HOUSE_TUTOR') {
+      if (!userContext.assignedFloor) {
+        throw new ForbiddenError('House Tutor must have an assigned floor');
+      }
+      if (floor !== userContext.assignedFloor) {
+        throw new ForbiddenError('House Tutors can only access rooms on their assigned floor');
+      }
+    }
+  }
+
   // ============================================================================
   // HELPER: Transform room to include occupants and vacancy info
   // ============================================================================
@@ -73,6 +112,114 @@ class RoomService {
       hasBalcony: data.hasBalcony || false,
       hasAttachedBath: data.hasAttachedBath || false,
     });
+
+    return this.transformRoom(room);
+  }
+
+  // ============================================================================
+  // GET ROOMS (with pagination and filters)
+  // ============================================================================
+
+  async getRooms(filters: RoomFilters, pagination: PaginationParams, userContext: UserContext) {
+    // Apply floor restriction for House Tutors
+    const adjustedFilters = this.applyFloorRestriction(filters, userContext);
+
+    const { rooms, total } = await roomRepository.findAll(adjustedFilters, pagination);
+
+    const transformedRooms = rooms.map((room) => this.transformRoom(room));
+
+    const { page = 1, limit = 20 } = pagination;
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      rooms: transformedRooms,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+      },
+    };
+  }
+
+  // ============================================================================
+  // GET VACANT ROOMS
+  // ============================================================================
+
+  async getVacantRooms(floor: number | undefined, userContext: UserContext) {
+    // Apply floor restriction
+    if (userContext.role === 'HOUSE_TUTOR') {
+      if (!userContext.assignedFloor) {
+        throw new ForbiddenError('House Tutor must have an assigned floor');
+      }
+      floor = userContext.assignedFloor;
+    }
+
+    const rooms = await roomRepository.findVacantRooms(floor);
+    return rooms.map((room) => this.transformRoom(room));
+  }
+
+  // ============================================================================
+  // GET MY FLOOR ROOMS (House Tutor only)
+  // ============================================================================
+
+  async getMyFloorRooms(userContext: UserContext) {
+    if (userContext.role !== 'HOUSE_TUTOR') {
+      throw new ForbiddenError('This endpoint is only for House Tutors');
+    }
+
+    if (!userContext.assignedFloor) {
+      throw new ForbiddenError('House Tutor must have an assigned floor');
+    }
+
+    const rooms = await roomRepository.findByFloor(userContext.assignedFloor);
+    return rooms.map((room) => this.transformRoom(room));
+  }
+
+  // ============================================================================
+  // GET ROOMS BY FLOOR
+  // ============================================================================
+
+  async getRoomsByFloor(floor: number, userContext: UserContext) {
+    // Check access
+    this.checkFloorAccess(floor, userContext);
+
+    const rooms = await roomRepository.findByFloor(floor);
+    return rooms.map((room) => this.transformRoom(room));
+  }
+
+  // ============================================================================
+  // GET ROOMS BY TYPE
+  // ============================================================================
+
+  async getRoomsByType(roomType: RoomType, userContext: UserContext) {
+    const rooms = await roomRepository.findByType(roomType);
+
+    // Filter by floor for House Tutors
+    let filteredRooms = rooms;
+    if (userContext.role === 'HOUSE_TUTOR') {
+      if (!userContext.assignedFloor) {
+        throw new ForbiddenError('House Tutor must have an assigned floor');
+      }
+      filteredRooms = rooms.filter((room) => room.floor === userContext.assignedFloor);
+    }
+
+    return filteredRooms.map((room) => this.transformRoom(room));
+  }
+
+  // ============================================================================
+  // GET ROOM BY ID
+  // ============================================================================
+
+  async getRoomById(roomId: string, userContext: UserContext) {
+    const room = await roomRepository.findById(roomId);
+
+    if (!room) {
+      throw new NotFoundError('Room not found');
+    }
+
+    // Check floor access
+    this.checkFloorAccess(room.floor, userContext);
 
     return this.transformRoom(room);
   }
