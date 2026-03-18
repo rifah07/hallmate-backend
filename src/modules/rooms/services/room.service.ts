@@ -396,6 +396,104 @@ class RoomService {
     const updatedTargetRoom = await roomRepository.findById(data.targetRoomId);
     return this.transformRoom(updatedTargetRoom!);
   }
+
+  // ============================================================================
+  // GET STATISTICS
+  // ============================================================================
+
+  async getStatistics(userContext: UserContext): Promise<RoomStatistics> {
+    const { rooms, occupants } = await roomRepository.getStatistics();
+
+    // Filter by floor for House Tutors
+    let filteredRooms = rooms;
+    if (userContext.role === 'HOUSE_TUTOR') {
+      if (!userContext.assignedFloor) {
+        throw new ForbiddenError('House Tutor must have an assigned floor');
+      }
+      filteredRooms = rooms.filter((r) => r.floor === userContext.assignedFloor);
+    }
+
+    // Overall statistics
+    const totalRooms = filteredRooms.length;
+    const occupiedRooms = filteredRooms.filter((r) => {
+      const roomOccupants = occupants.filter((o) => o.roomId === r.id && o.userId !== null);
+      return roomOccupants.length > 0;
+    }).length;
+    const vacantRooms = totalRooms - occupiedRooms;
+    const maintenanceRooms = filteredRooms.filter((r) => r.status === 'MAINTENANCE').length;
+
+    const totalBeds = filteredRooms.reduce((sum, r) => sum + r.capacity, 0);
+    const occupiedBeds = occupants.filter(
+      (o) => o.userId !== null && filteredRooms.some((r) => r.id === o.roomId),
+    ).length;
+    const vacantBeds = totalBeds - occupiedBeds;
+    const overallOccupancyRate = totalBeds > 0 ? (occupiedBeds / totalBeds) * 100 : 0;
+
+    // By floor
+    const floors = [...new Set(filteredRooms.map((r) => r.floor))].sort((a, b) => a - b);
+    const byFloor: FloorStatistics[] = floors.map((floor) => {
+      const floorRooms = filteredRooms.filter((r) => r.floor === floor);
+      const floorTotalRooms = floorRooms.length;
+      const floorOccupiedRooms = floorRooms.filter((r) => {
+        const roomOccupants = occupants.filter((o) => o.roomId === r.id && o.userId !== null);
+        return roomOccupants.length > 0;
+      }).length;
+      const floorVacantRooms = floorTotalRooms - floorOccupiedRooms;
+      const floorTotalBeds = floorRooms.reduce((sum, r) => sum + r.capacity, 0);
+      const floorOccupiedBeds = occupants.filter(
+        (o) => o.userId !== null && floorRooms.some((r) => r.id === o.roomId),
+      ).length;
+      const floorVacantBeds = floorTotalBeds - floorOccupiedBeds;
+      const floorOccupancyRate =
+        floorTotalBeds > 0 ? (floorOccupiedBeds / floorTotalBeds) * 100 : 0;
+
+      return {
+        floor,
+        totalRooms: floorTotalRooms,
+        occupiedRooms: floorOccupiedRooms,
+        vacantRooms: floorVacantRooms,
+        totalBeds: floorTotalBeds,
+        occupiedBeds: floorOccupiedBeds,
+        vacantBeds: floorVacantBeds,
+        occupancyRate: Math.round(floorOccupancyRate * 100) / 100,
+      };
+    });
+
+    // By type
+    const types: RoomType[] = ['SINGLE', 'DOUBLE', 'TRIPLE', 'FOUR_SHARING'];
+    const byType: TypeStatistics[] = types.map((type) => {
+      const typeRooms = filteredRooms.filter((r) => r.roomType === type);
+      const count = typeRooms.length;
+      const typeTotalBeds = typeRooms.reduce((sum, r) => sum + r.capacity, 0);
+      const typeOccupiedBeds = occupants.filter(
+        (o) => o.userId !== null && typeRooms.some((r) => r.id === o.roomId),
+      ).length;
+      const typeVacantBeds = typeTotalBeds - typeOccupiedBeds;
+      const typeOccupancyRate = typeTotalBeds > 0 ? (typeOccupiedBeds / typeTotalBeds) * 100 : 0;
+
+      return {
+        type,
+        count,
+        totalBeds: typeTotalBeds,
+        occupiedBeds: typeOccupiedBeds,
+        vacantBeds: typeVacantBeds,
+        occupancyRate: Math.round(typeOccupancyRate * 100) / 100,
+      };
+    });
+
+    return {
+      totalRooms,
+      occupiedRooms,
+      vacantRooms,
+      maintenanceRooms,
+      totalBeds,
+      occupiedBeds,
+      vacantBeds,
+      overallOccupancyRate: Math.round(overallOccupancyRate * 100) / 100,
+      byFloor,
+      byType,
+    };
+  }
 }
 
 export default new RoomService();
