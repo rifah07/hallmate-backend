@@ -316,6 +316,33 @@ class RoomService {
     const updatedRoom = await roomRepository.findById(roomId);
     return this.transformRoom(updatedRoom!);
   }
+
+  // ============================================================================
+  // UNASSIGN STUDENT
+  // ============================================================================
+
+  async unassignStudent(roomId: string, userId: string, userContext: UserContext) {
+    const room = await roomRepository.findById(roomId);
+
+    if (!room) {
+      throw new NotFoundError('Room not found');
+    }
+
+    // Check floor access
+    this.checkFloorAccess(room.floor, userContext);
+
+    // Check if student is assigned to this room
+    const occupant = await roomRepository.findOccupantByUserAndRoom(userId, roomId);
+    if (!occupant) {
+      throw new NotFoundError('Student is not assigned to this room');
+    }
+
+    await roomRepository.unassignStudent(roomId, userId);
+
+    // Return updated room
+    const updatedRoom = await roomRepository.findById(roomId);
+    return this.transformRoom(updatedRoom!);
+  }
 }
 
 export default new RoomService();
