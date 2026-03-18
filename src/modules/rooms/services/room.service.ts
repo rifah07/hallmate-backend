@@ -343,6 +343,75 @@ class RoomService {
     const updatedRoom = await roomRepository.findById(roomId);
     return this.transformRoom(updatedRoom!);
   }
+
+  // ============================================================================
+  // TRANSFER STUDENT
+  // ============================================================================
+
+  async transferStudent(roomId: string, data: TransferStudentInput, userContext: UserContext) {
+    const [sourceRoom, targetRoom] = await Promise.all([
+      roomRepository.findById(roomId),
+      roomRepository.findById(data.targetRoomId),
+    ]);
+
+    if (!sourceRoom) {
+      throw new NotFoundError('Source room not found');
+    }
+
+    if (!targetRoom) {
+      throw new NotFoundError('Target room not found');
+    }
+
+    // Check floor access for both rooms
+    this.checkFloorAccess(sourceRoom.floor, userContext);
+    this.checkFloorAccess(targetRoom.floor, userContext);
+
+    // Check if student is in source room
+    const occupant = await roomRepository.findOccupantByUserAndRoom(data.userId, roomId);
+    if (!occupant) {
+      throw new NotFoundError('Student is not assigned to the source room');
+    }
+
+    // Check target room availability
+    if (targetRoom.status !== 'AVAILABLE') {
+      throw new BadRequestError(
+        `Target room is currently ${targetRoom.status.toLowerCase()} and cannot accept new occupants`,
+      );
+    }
+
+    // Check if target bed is valid
+    if (data.targetBedNumber < 1 || data.targetBedNumber > targetRoom.capacity) {
+      throw new BadRequestError(`Bed number must be between 1 and ${targetRoom.capacity}`);
+    }
+
+    // Check if target bed is occupied
+    const targetBedOccupant = await roomRepository.findOccupantByRoomAndBed(
+      data.targetRoomId,
+      data.targetBedNumber,
+    );
+    if (targetBedOccupant) {
+      throw new ConflictError(`Target bed ${data.targetBedNumber} is already occupied`);
+    }
+
+    // Check if target room is full
+    const targetOccupiedCount = targetRoom.occupants.filter((o) => o.userId !== null).length;
+    if (targetOccupiedCount >= targetRoom.capacity) {
+      throw new BadRequestError('Target room is full');
+    }
+
+    // Perform transfer (unassign from source, assign to target)
+    await roomRepository.unassignStudent(roomId, data.userId);
+    await roomRepository.assignStudent(
+      data.targetRoomId,
+      data.userId,
+      data.targetBedNumber,
+      data.transferDate,
+    );
+
+    // Return updated target room
+    const updatedTargetRoom = await roomRepository.findById(data.targetRoomId);
+    return this.transformRoom(updatedTargetRoom!);
+  }
 }
 
 export default new RoomService();
