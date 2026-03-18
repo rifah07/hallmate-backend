@@ -269,34 +269,28 @@ class RoomService {
       throw new NotFoundError('Room not found');
     }
 
-    // Check floor access
     this.checkFloorAccess(room.floor, userContext);
 
-    // Check if room is available
     if (room.status !== 'AVAILABLE') {
       throw new BadRequestError(
         `Room is currently ${room.status.toLowerCase()} and cannot accept new occupants`,
       );
     }
 
-    // Check if bed number is valid
     if (data.bedNumber < 1 || data.bedNumber > room.capacity) {
       throw new BadRequestError(`Bed number must be between 1 and ${room.capacity}`);
     }
 
-    // Check if bed is already occupied
     const bedOccupant = await roomRepository.findOccupantByRoomAndBed(roomId, data.bedNumber);
     if (bedOccupant) {
       throw new ConflictError(`Bed ${data.bedNumber} is already occupied`);
     }
 
-    // Check if student is already assigned to this room
     const existingAssignment = await roomRepository.findOccupantByUserAndRoom(data.userId, roomId);
     if (existingAssignment) {
       throw new ConflictError('Student is already assigned to this room');
     }
 
-    // Check if student is assigned to another room
     const currentRoom = await roomRepository.findUserCurrentRoom(data.userId);
     if (currentRoom) {
       throw new ConflictError(
@@ -304,7 +298,6 @@ class RoomService {
       );
     }
 
-    // Check if room is full
     const occupiedCount = room.occupants.filter((o) => o.userId !== null).length;
     if (occupiedCount >= room.capacity) {
       throw new BadRequestError('Room is full');
@@ -312,7 +305,6 @@ class RoomService {
 
     await roomRepository.assignStudent(roomId, data.userId, data.bedNumber, data.assignedDate);
 
-    // Return updated room
     const updatedRoom = await roomRepository.findById(roomId);
     return this.transformRoom(updatedRoom!);
   }
@@ -328,10 +320,8 @@ class RoomService {
       throw new NotFoundError('Room not found');
     }
 
-    // Check floor access
     this.checkFloorAccess(room.floor, userContext);
 
-    // Check if student is assigned to this room
     const occupant = await roomRepository.findOccupantByUserAndRoom(userId, roomId);
     if (!occupant) {
       throw new NotFoundError('Student is not assigned to this room');
@@ -339,7 +329,6 @@ class RoomService {
 
     await roomRepository.unassignStudent(roomId, userId);
 
-    // Return updated room
     const updatedRoom = await roomRepository.findById(roomId);
     return this.transformRoom(updatedRoom!);
   }
@@ -372,19 +361,16 @@ class RoomService {
       throw new NotFoundError('Student is not assigned to the source room');
     }
 
-    // Check target room availability
     if (targetRoom.status !== 'AVAILABLE') {
       throw new BadRequestError(
         `Target room is currently ${targetRoom.status.toLowerCase()} and cannot accept new occupants`,
       );
     }
 
-    // Check if target bed is valid
     if (data.targetBedNumber < 1 || data.targetBedNumber > targetRoom.capacity) {
       throw new BadRequestError(`Bed number must be between 1 and ${targetRoom.capacity}`);
     }
 
-    // Check if target bed is occupied
     const targetBedOccupant = await roomRepository.findOccupantByRoomAndBed(
       data.targetRoomId,
       data.targetBedNumber,
@@ -393,7 +379,6 @@ class RoomService {
       throw new ConflictError(`Target bed ${data.targetBedNumber} is already occupied`);
     }
 
-    // Check if target room is full
     const targetOccupiedCount = targetRoom.occupants.filter((o) => o.userId !== null).length;
     if (targetOccupiedCount >= targetRoom.capacity) {
       throw new BadRequestError('Target room is full');
@@ -408,7 +393,6 @@ class RoomService {
       data.transferDate,
     );
 
-    // Return updated target room
     const updatedTargetRoom = await roomRepository.findById(data.targetRoomId);
     return this.transformRoom(updatedTargetRoom!);
   }
