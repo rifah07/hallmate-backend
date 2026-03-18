@@ -2,11 +2,16 @@ import roomRepository from '../repositories/room.repository';
 import {
   CreateRoomInput,
   UpdateRoomInput,
+  AssignStudentInput,
+  TransferStudentInput,
   RoomFilters,
   PaginationParams,
   UserContext,
   RoomWithOccupants,
   OccupantInfo,
+  RoomStatistics,
+  FloorStatistics,
+  TypeStatistics,
 } from '../types/room.types';
 import { NotFoundError, ConflictError, ForbiddenError, BadRequestError } from '@/shared/errors';
 import { RoomType } from '@prisma/client';
@@ -76,12 +81,7 @@ class RoomService {
     };
   }
 
-  // ============================================================================
-  // CREATE ROOM
-  // ============================================================================
-
   async createRoom(data: CreateRoomInput) {
-    // Check if room number already exists
     const existing = await roomRepository.findByRoomNumber(data.roomNumber);
     if (existing) {
       throw new ConflictError(`Room ${data.roomNumber} already exists`);
@@ -116,10 +116,6 @@ class RoomService {
     return this.transformRoom(room);
   }
 
-  // ============================================================================
-  // GET ROOMS (with pagination and filters)
-  // ============================================================================
-
   async getRooms(filters: RoomFilters, pagination: PaginationParams, userContext: UserContext) {
     // Apply floor restriction for House Tutors
     const adjustedFilters = this.applyFloorRestriction(filters, userContext);
@@ -142,10 +138,6 @@ class RoomService {
     };
   }
 
-  // ============================================================================
-  // GET VACANT ROOMS
-  // ============================================================================
-
   async getVacantRooms(floor: number | undefined, userContext: UserContext) {
     // Apply floor restriction
     if (userContext.role === 'HOUSE_TUTOR') {
@@ -158,10 +150,6 @@ class RoomService {
     const rooms = await roomRepository.findVacantRooms(floor);
     return rooms.map((room) => this.transformRoom(room));
   }
-
-  // ============================================================================
-  // GET MY FLOOR ROOMS (House Tutor only)
-  // ============================================================================
 
   async getMyFloorRooms(userContext: UserContext) {
     if (userContext.role !== 'HOUSE_TUTOR') {
@@ -176,10 +164,6 @@ class RoomService {
     return rooms.map((room) => this.transformRoom(room));
   }
 
-  // ============================================================================
-  // GET ROOMS BY FLOOR
-  // ============================================================================
-
   async getRoomsByFloor(floor: number, userContext: UserContext) {
     // Check access
     this.checkFloorAccess(floor, userContext);
@@ -188,14 +172,9 @@ class RoomService {
     return rooms.map((room) => this.transformRoom(room));
   }
 
-  // ============================================================================
-  // GET ROOMS BY TYPE
-  // ============================================================================
-
   async getRoomsByType(roomType: RoomType, userContext: UserContext) {
     const rooms = await roomRepository.findByType(roomType);
 
-    // Filter by floor for House Tutors
     let filteredRooms = rooms;
     if (userContext.role === 'HOUSE_TUTOR') {
       if (!userContext.assignedFloor) {
@@ -207,10 +186,6 @@ class RoomService {
     return filteredRooms.map((room) => this.transformRoom(room));
   }
 
-  // ============================================================================
-  // GET ROOM BY ID
-  // ============================================================================
-
   async getRoomById(roomId: string, userContext: UserContext) {
     const room = await roomRepository.findById(roomId);
 
@@ -218,15 +193,10 @@ class RoomService {
       throw new NotFoundError('Room not found');
     }
 
-    // Check floor access
     this.checkFloorAccess(room.floor, userContext);
 
     return this.transformRoom(room);
   }
-
-  // ============================================================================
-  // UPDATE ROOM
-  // ============================================================================
 
   async updateRoom(roomId: string, data: UpdateRoomInput) {
     const room = await roomRepository.findById(roomId);
@@ -272,6 +242,26 @@ class RoomService {
 
     const updated = await roomRepository.update(roomId, data);
     return this.transformRoom(updated);
+  }
+
+  // ============================================================================
+  // DELETE ROOM
+  // ============================================================================
+
+  async deleteRoom(roomId: string) {
+    const room = await roomRepository.findById(roomId);
+
+    if (!room) {
+      throw new NotFoundError('Room not found');
+    }
+
+    // Check if room has occupants
+    const occupiedCount = room.occupants.filter((o) => o.userId !== null).length;
+    if (occupiedCount > 0) {
+      throw new BadRequestError('Cannot delete room with occupants. Unassign all students first.');
+    }
+
+    await roomRepository.delete(roomId);
   }
 }
 
