@@ -51,6 +51,27 @@ class RoomController {
       next(error);
     }
   }
+
+  // ============================================================================
+  // GET VACANT ROOMS
+  // ============================================================================
+
+  async getVacantRooms(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const floor = req.query.floor ? parseInt(req.query.floor as string, 10) : undefined;
+
+      const userContext: UserContext = {
+        userId: req.user!.userId,
+        role: req.user!.role,
+        assignedFloor: req.user!.assignedFloor,
+      };
+
+      const rooms = await roomService.getVacantRooms(floor, userContext);
+      sendSuccess(res, { rooms, count: rooms.length });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new RoomController();
