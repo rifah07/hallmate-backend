@@ -112,6 +112,27 @@ class RoomController {
       next(error);
     }
   }
+
+  // ============================================================================
+  // GET ROOMS BY FLOOR
+  // ============================================================================
+
+  async getRoomsByFloor(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const floor = parseInt(String(req.params.floor), 10);
+
+      const userContext: UserContext = {
+        userId: req.user!.userId,
+        role: req.user!.role,
+        assignedFloor: req.user!.assignedFloor,
+      };
+
+      const rooms = await roomService.getRoomsByFloor(floor, userContext);
+      sendSuccess(res, { rooms, count: rooms.length, floor });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new RoomController();
