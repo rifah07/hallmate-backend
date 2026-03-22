@@ -93,6 +93,25 @@ class RoomController {
       next(error);
     }
   }
+
+  // ============================================================================
+  // GET MY FLOOR ROOMS (House Tutor)
+  // ============================================================================
+
+  async getMyFloorRooms(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userContext: UserContext = {
+        userId: req.user!.userId,
+        role: req.user!.role,
+        assignedFloor: req.user!.assignedFloor,
+      };
+
+      const rooms = await roomService.getMyFloorRooms(userContext);
+      sendSuccess(res, { rooms, count: rooms.length, floor: req.user!.assignedFloor });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new RoomController();
