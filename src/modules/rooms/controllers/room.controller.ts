@@ -133,6 +133,27 @@ class RoomController {
       next(error);
     }
   }
+
+  // ============================================================================
+  // GET ROOMS BY TYPE
+  // ============================================================================
+
+  async getRoomsByType(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const roomType = req.params.type as RoomType;
+
+      const userContext: UserContext = {
+        userId: req.user!.userId,
+        role: req.user!.role,
+        assignedFloor: req.user!.assignedFloor,
+      };
+
+      const rooms = await roomService.getRoomsByType(roomType, userContext);
+      sendSuccess(res, { rooms, count: rooms.length, roomType });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new RoomController();
