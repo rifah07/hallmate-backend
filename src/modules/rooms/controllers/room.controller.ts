@@ -186,6 +186,19 @@ class RoomController {
       next(error);
     }
   }
+
+  // ============================================================================
+  // DELETE ROOM
+  // ============================================================================
+
+  async deleteRoom(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      await roomService.deleteRoom(String(req.params.roomId));
+      sendSuccess(res, null, 'Room deleted successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new RoomController();
