@@ -173,6 +173,19 @@ class RoomController {
       next(error);
     }
   }
+
+  // ============================================================================
+  // UPDATE ROOM
+  // ============================================================================
+
+  async updateRoom(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const room = await roomService.updateRoom(String(req.params.roomId), req.body);
+      sendSuccess(res, room, 'Room updated successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new RoomController();
