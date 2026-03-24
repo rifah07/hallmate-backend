@@ -222,6 +222,29 @@ class RoomController {
       next(error);
     }
   }
+
+  // ============================================================================
+  // UNASSIGN STUDENT
+  // ============================================================================
+
+  async unassignStudent(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userContext: UserContext = {
+        userId: req.user!.userId,
+        role: req.user!.role,
+        assignedFloor: req.user!.assignedFloor,
+      };
+
+      const room = await roomService.unassignStudent(
+        String(req.params.roomId),
+        String(req.params.userId),
+        userContext,
+      );
+      sendSuccess(res, room, 'Student unassigned successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new RoomController();
