@@ -199,6 +199,29 @@ class RoomController {
       next(error);
     }
   }
+
+  // ============================================================================
+  // ASSIGN STUDENT
+  // ============================================================================
+
+  async assignStudent(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userContext: UserContext = {
+        userId: req.user!.userId,
+        role: req.user!.role,
+        assignedFloor: req.user!.assignedFloor,
+      };
+
+      const room = await roomService.assignStudent(
+        String(req.params.roomId),
+        req.body,
+        userContext,
+      );
+      sendSuccess(res, room, 'Student assigned successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new RoomController();
