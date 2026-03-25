@@ -268,6 +268,25 @@ class RoomController {
       next(error);
     }
   }
+
+  // ============================================================================
+  // GET STATISTICS
+  // ============================================================================
+
+  async getStatistics(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userContext: UserContext = {
+        userId: req.user!.userId,
+        role: req.user!.role,
+        assignedFloor: req.user!.assignedFloor,
+      };
+
+      const statistics = await roomService.getStatistics(userContext);
+      sendSuccess(res, statistics);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new RoomController();
