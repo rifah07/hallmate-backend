@@ -245,6 +245,29 @@ class RoomController {
       next(error);
     }
   }
+
+  // ============================================================================
+  // TRANSFER STUDENT
+  // ============================================================================
+
+  async transferStudent(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userContext: UserContext = {
+        userId: req.user!.userId,
+        role: req.user!.role,
+        assignedFloor: req.user!.assignedFloor,
+      };
+
+      const room = await roomService.transferStudent(
+        String(req.params.roomId),
+        req.body,
+        userContext,
+      );
+      sendSuccess(res, room, 'Student transferred successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new RoomController();
