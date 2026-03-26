@@ -348,3 +348,54 @@
  *       200:
  *         description: Room deleted
  */
+
+// ============================================================================
+// ASSIGNMENT ROUTES
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/rooms/{roomId}/assign:
+ *   post:
+ *     tags: [Rooms]
+ *     summary: Assign student to room
+ *     description: |
+ *       Assign a student to a specific bed.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Student assigned
+ */
+
+/**
+ * @swagger
+ * /api/rooms/{roomId}/unassign/{userId}:
+ *   delete:
+ *     tags: [Rooms]
+ *     summary: Unassign student from room
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Student unassigned
+ */
+
+/**
+ * @swagger
+ * /api/rooms/{roomId}/transfer:
+ *   post:
+ *     tags: [Rooms]
+ *     summary: Transfer student
+ *     description: |
+ *       Transfer a student to another room.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Student transferred
+ */
