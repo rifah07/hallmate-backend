@@ -9,6 +9,7 @@ import authRoutes from './modules/auth/routes/auth.routes';
 import cookieParser from 'cookie-parser';
 import { setupSwagger } from './config/swagger.config';
 import userRoutes from './modules/users/routes/user.routes';
+import { roomRoutes } from './modules/rooms';
 
 const app: Application = express();
 
@@ -66,6 +67,7 @@ app.get('/', (_req: Request, res: Response) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/rooms', roomRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response, _next: NextFunction) => {
