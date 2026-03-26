@@ -223,3 +223,53 @@
  *       200:
  *         description: Rooms retrieved
  */
+
+// ============================================================================
+// FILTER ROUTES
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/rooms/floor/{floor}:
+ *   get:
+ *     tags: [Rooms]
+ *     summary: Get rooms by floor
+ *     description: |
+ *       Returns all rooms on a specific floor.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ *     parameters:
+ *       - in: path
+ *         name: floor
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Rooms retrieved
+ */
+
+/**
+ * @swagger
+ * /api/rooms/type/{type}:
+ *   get:
+ *     tags: [Rooms]
+ *     summary: Get rooms by type
+ *     description: |
+ *       Filter rooms by type.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ *     parameters:
+ *       - in: path
+ *         name: type
+ *         required: true
+ *         schema:
+ *           type: string
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Rooms retrieved
+ */
