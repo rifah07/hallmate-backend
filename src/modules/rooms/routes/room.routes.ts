@@ -5,10 +5,16 @@ import { authenticate } from '@/shared/middleware/authenticate';
 import { authorize } from '@/shared/middleware/authorize';
 import {
   createRoomValidation,
+  updateRoomValidation,
+  getRoomByIdValidation,
+  deleteRoomValidation,
   getRoomsByFloorValidation,
   getRoomsByTypeValidation,
   getVacantRoomsByFloorValidation,
   getAllRoomsValidation,
+  assignStudentValidation,
+  unassignStudentValidation,
+  transferStudentValidation,
 } from '../validations/room.validation';
 
 const router = Router();
@@ -83,6 +89,56 @@ router.post(
   authorize('SUPER_ADMIN', 'PROVOST'),
   validate(createRoomValidation),
   roomController.createRoom,
+);
+
+// ============================================================================
+// SINGLE ROOM ROUTES
+// ============================================================================
+
+router.get(
+  '/:roomId',
+  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR', 'OFFICE_STAFF'),
+  validate(getRoomByIdValidation),
+  roomController.getRoomById,
+);
+
+router.patch(
+  '/:roomId',
+  authorize('SUPER_ADMIN', 'PROVOST'),
+  validate(updateRoomValidation),
+  roomController.updateRoom,
+);
+
+router.delete(
+  '/:roomId',
+  authorize('SUPER_ADMIN', 'PROVOST'),
+  validate(deleteRoomValidation),
+  roomController.deleteRoom,
+);
+
+// ============================================================================
+// ASSIGNMENT ROUTES
+// ============================================================================
+
+router.post(
+  '/:roomId/assign',
+  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR'),
+  validate(assignStudentValidation),
+  roomController.assignStudent,
+);
+
+router.delete(
+  '/:roomId/unassign/:userId',
+  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR'),
+  validate(unassignStudentValidation),
+  roomController.unassignStudent,
+);
+
+router.post(
+  '/:roomId/transfer',
+  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR'),
+  validate(transferStudentValidation),
+  roomController.transferStudent,
 );
 
 export default router;
