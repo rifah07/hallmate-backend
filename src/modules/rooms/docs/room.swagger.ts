@@ -134,3 +134,92 @@
  *         overallOccupancyRate:
  *           type: number
  */
+
+/**
+ * @swagger
+ * tags:
+ *   - name: Rooms
+ *     description: Room management, allocation, and vacancy tracking
+ */
+
+// ============================================================================
+// STATISTICS
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/rooms/statistics:
+ *   get:
+ *     tags: [Rooms]
+ *     summary: Get room statistics
+ *     description: |
+ *       Returns aggregated statistics about rooms and beds.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Statistics retrieved successfully
+ */
+
+// ============================================================================
+// VACANCY ROUTES
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/rooms/vacant:
+ *   get:
+ *     tags: [Rooms]
+ *     summary: Get all vacant rooms
+ *     description: |
+ *       Returns rooms that have at least one vacant bed.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Vacant rooms retrieved
+ */
+
+/**
+ * @swagger
+ * /api/rooms/vacant/floor/{floor}:
+ *   get:
+ *     tags: [Rooms]
+ *     summary: Get vacant rooms by floor
+ *     description: |
+ *       Returns vacant rooms filtered by floor.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ *     parameters:
+ *       - in: path
+ *         name: floor
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Vacant rooms by floor retrieved
+ */
+
+/**
+ * @swagger
+ * /api/rooms/my-floor:
+ *   get:
+ *     tags: [Rooms]
+ *     summary: Get my floor rooms
+ *     description: |
+ *       Returns rooms for the authenticated house tutor's floor.
+ *
+ *       **Access:** HOUSE_TUTOR
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Rooms retrieved
+ */
