@@ -273,3 +273,43 @@
  *       200:
  *         description: Rooms retrieved
  */
+
+// ============================================================================
+// COLLECTION ROUTES
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/rooms:
+ *   get:
+ *     tags: [Rooms]
+ *     summary: Get all rooms
+ *     description: |
+ *       Returns paginated rooms with filtering.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR, OFFICE_STAFF
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Rooms retrieved
+ *
+ *   post:
+ *     tags: [Rooms]
+ *     summary: Create room
+ *     description: |
+ *       Creates a new room.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateRoomBody'
+ *     responses:
+ *       201:
+ *         description: Room created
+ */
