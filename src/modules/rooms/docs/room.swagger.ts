@@ -313,3 +313,38 @@
  *       201:
  *         description: Room created
  */
+
+// ============================================================================
+// SINGLE ROOM ROUTES
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/rooms/{roomId}:
+ *   get:
+ *     tags: [Rooms]
+ *     summary: Get room by ID
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Room retrieved
+ *
+ *   patch:
+ *     tags: [Rooms]
+ *     summary: Update room
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Room updated
+ *
+ *   delete:
+ *     tags: [Rooms]
+ *     summary: Delete room
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Room deleted
+ */
