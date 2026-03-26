@@ -26,6 +26,11 @@ router.use(authenticate);
 // STATISTICS (MUST be before /:roomId)
 // ============================================================================
 
+/**
+ * @route GET /statistics
+ * @desc Retrieve aggregated statistics for all rooms.
+ * @access SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ */
 router.get(
   '/statistics',
   authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR'),
@@ -36,12 +41,22 @@ router.get(
 // VACANCY ROUTES (MUST be before /:roomId)
 // ============================================================================
 
+/**
+ * @route GET /vacant
+ * @desc Retrieve a list of all currently vacant rooms.
+ * @access SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ */
 router.get(
   '/vacant',
   authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR'),
   roomController.getVacantRooms,
 );
 
+/**
+ * @route GET /vacant/floor/:floor
+ * @desc Retrieve vacant rooms on a specific floor.
+ * @access SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ */
 router.get(
   '/vacant/floor/:floor',
   authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR'),
@@ -53,12 +68,22 @@ router.get(
 // MY FLOOR (House Tutor only)
 // ============================================================================
 
+/**
+ * @route GET /my-floor
+ * @desc Retrieve rooms on the authenticated house tutor's floor.
+ * @access HOUSE_TUTOR
+ */
 router.get('/my-floor', authorize('HOUSE_TUTOR'), roomController.getMyFloorRooms);
 
 // ============================================================================
 // FILTER ROUTES (MUST be before /:roomId)
 // ============================================================================
 
+/**
+ * @route GET /floor/:floor
+ * @desc Retrieve all rooms on a specified floor.
+ * @access SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ */
 router.get(
   '/floor/:floor',
   authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR'),
@@ -66,6 +91,11 @@ router.get(
   roomController.getRoomsByFloor,
 );
 
+/**
+ * @route GET /type/:type
+ * @desc Retrieve all rooms of a specified type (e.g., single, double).
+ * @access SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ */
 router.get(
   '/type/:type',
   authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR'),
@@ -77,6 +107,11 @@ router.get(
 // COLLECTION ROUTES
 // ============================================================================
 
+/**
+ * @route GET /
+ * @desc Retrieve a list of all rooms.
+ * @access SUPER_ADMIN, PROVOST, HOUSE_TUTOR, OFFICE_STAFF
+ */
 router.get(
   '/',
   authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR', 'OFFICE_STAFF'),
@@ -84,6 +119,11 @@ router.get(
   roomController.getAllRooms,
 );
 
+/**
+ * @route POST /
+ * @desc Create a new room.
+ * @access SUPER_ADMIN, PROVOST
+ */
 router.post(
   '/',
   authorize('SUPER_ADMIN', 'PROVOST'),
@@ -95,6 +135,11 @@ router.post(
 // SINGLE ROOM ROUTES
 // ============================================================================
 
+/**
+ * @route GET /:roomId
+ * @desc Retrieve details of a specific room by ID.
+ * @access SUPER_ADMIN, PROVOST, HOUSE_TUTOR, OFFICE_STAFF
+ */
 router.get(
   '/:roomId',
   authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR', 'OFFICE_STAFF'),
@@ -102,6 +147,11 @@ router.get(
   roomController.getRoomById,
 );
 
+/**
+ * @route PATCH /:roomId
+ * @desc Update details of a specific room.
+ * @access SUPER_ADMIN, PROVOST
+ */
 router.patch(
   '/:roomId',
   authorize('SUPER_ADMIN', 'PROVOST'),
@@ -109,6 +159,11 @@ router.patch(
   roomController.updateRoom,
 );
 
+/**
+ * @route DELETE /:roomId
+ * @desc Delete a specific room.
+ * @access SUPER_ADMIN, PROVOST
+ */
 router.delete(
   '/:roomId',
   authorize('SUPER_ADMIN', 'PROVOST'),
@@ -120,6 +175,11 @@ router.delete(
 // ASSIGNMENT ROUTES
 // ============================================================================
 
+/**
+ * @route POST /:roomId/assign
+ * @desc Assign a student to a room.
+ * @access SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ */
 router.post(
   '/:roomId/assign',
   authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR'),
@@ -127,6 +187,11 @@ router.post(
   roomController.assignStudent,
 );
 
+/**
+ * @route DELETE /:roomId/unassign/:userId
+ * @desc Remove a student (by user ID) from a room.
+ * @access SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ */
 router.delete(
   '/:roomId/unassign/:userId',
   authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR'),
@@ -134,6 +199,11 @@ router.delete(
   roomController.unassignStudent,
 );
 
+/**
+ * @route POST /:roomId/transfer
+ * @desc Transfer a student to another room.
+ * @access SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ */
 router.post(
   '/:roomId/transfer',
   authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR'),
