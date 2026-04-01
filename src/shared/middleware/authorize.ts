@@ -30,6 +30,18 @@ export const authorize = (...allowedRoles: UserRole[]) => {
       return;
     }
 
+    /*  const userRole = String(req.user.role).toUpperCase();
+
+    const hasRole = allowedRoles.map((r) => r.toUpperCase()).includes(userRole as UserRole);
+
+    if (!hasRole) {
+      res.status(403).json({
+        success: false,
+        error: { message: 'You do not have permission to perform this action' },
+      });
+      return;
+    } */
+
     const hasRole = allowedRoles.includes(req.user.role as UserRole);
 
     if (!hasRole) {

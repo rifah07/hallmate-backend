@@ -67,7 +67,7 @@ class RoomRepository {
 
     const where: Prisma.RoomWhereInput = {};
 
-    if (floor) where.floor = floor;
+    if (floor !== undefined) where.floor = floor;
     if (roomType) where.roomType = roomType;
     if (status) where.status = status;
     if (search) {
@@ -126,7 +126,7 @@ class RoomRepository {
       status: 'AVAILABLE',
     };
 
-    if (floor) where.floor = floor;
+    if (floor !== undefined) where.floor = floor;
 
     const rooms = await prisma.room.findMany({
       where,
