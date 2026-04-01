@@ -250,7 +250,8 @@ class RoomService {
       throw new NotFoundError('Room not found');
     }
 
-    const occupiedCount = room.occupants.filter((o) => o.userId !== null).length;
+   // const occupiedCount = room.occupants.filter((o) => o.userId !== null).length;
+    const occupiedCount = room.occupants.filter((o) => !!o.userId).length;
     if (occupiedCount > 0) {
       throw new BadRequestError('Cannot delete room with occupants. Unassign all students first.');
     }
