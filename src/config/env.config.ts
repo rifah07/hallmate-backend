@@ -17,6 +17,8 @@ const envSchema = z.object({
   SUPER_ADMIN_PASSWORD: z
     .string()
     .min(8, 'SUPER_ADMIN_PASSWORD must be at least 8 characters long'),
+  RESEND_API_KEY: z.string(),
+  FROM_EMAIL: z.string().optional(),
 });
 
 const envValidation = envSchema.safeParse(process.env);

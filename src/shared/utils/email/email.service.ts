@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 import { env } from '@/config/env.config';
 import logger from '../logger.util';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(env.RESEND_API_KEY);
 
 interface EmailOptions {
   to: string;
@@ -17,7 +17,7 @@ class EmailService {
   async sendEmail(options: EmailOptions): Promise<void> {
     try {
       // If no API key in development, just log
-      if (!process.env.RESEND_API_KEY && env.NODE_ENV === 'development') {
+      if (!env.RESEND_API_KEY && env.NODE_ENV === 'development') {
         logger.info('📧 Email would be sent (dev mode):');
         logger.info(`To: ${options.to}`);
         logger.info(`Subject: ${options.subject}`);
@@ -25,17 +25,19 @@ class EmailService {
         return;
       }
 
-      await resend.emails.send({
-        from: process.env.FROM_EMAIL || 'onboarding@resend.dev',
+      const response = await resend.emails.send({
+        from: env.FROM_EMAIL || 'onboarding@resend.dev',
         to: env.NODE_ENV === 'development' ? 'rifahsajida7@gmail.com' : options.to,
         subject: options.subject,
         html: options.html,
       });
 
+      logger.info('📧 Email sent successfully:', response);
       logger.info(`✅ Email sent to ${options.to}`);
-    } catch (error) {
-      logger.error('❌ Email sending failed:', error);
-      throw new Error('Failed to send email');
+    } catch (error: any) {
+      console.error('🔥 FULL ERROR:', error);
+      logger.error('❌ Email sending failed:', error?.message || error);
+      throw error; // DO NOT overwrite
     }
   }
 

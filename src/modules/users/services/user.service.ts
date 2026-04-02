@@ -14,6 +14,7 @@ import { hashPassword, generateOTP } from '@/shared/utils/crypto/password.util';
 import emailService from '@/shared/utils/email/email.service';
 import { cloudinaryService } from '@/shared/services/cloudinary.service';
 import { UserRole } from '@prisma/client';
+import logger from '@/shared/utils/logger.util';
 
 class UserService {
   private toUserResponse(user: any): UserResponse {
@@ -101,7 +102,6 @@ class UserService {
 
     // Send OTP via email
     await emailService.sendWelcomeEmail(user.email, user.name, otp);
-
     return this.toUserResponse(user);
   }
 
@@ -279,6 +279,16 @@ class UserService {
     ]);
 
     const count = await userRepository.bulkCreate(usersData, hashedPasswords, hashedOTPs);
+
+    // SEND EMAILS
+    for (let i = 0; i < usersData.length; i++) {
+      try {
+        await emailService.sendWelcomeEmail(usersData[i].email, usersData[i].name, otps[i]);
+        logger.info(`Email sent to ${usersData[i].email}`);
+      } catch (err) {
+        logger.error(`Failed email for ${usersData[i].email}`, err);
+      }
+    }
     return { created: count };
   }
 
