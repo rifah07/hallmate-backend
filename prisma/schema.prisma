@@ -4,9 +4,8 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL") 
+  url      = env("DATABASE_URL")
 }
-
 
 // ENUMS
 
@@ -153,109 +152,107 @@ enum PaymentStatus {
   REFUNDED
 }
 
-
 // MAIN MODELS
 
 model RefreshToken {
-  id          String   @id @default(uuid())
-  token       String   @unique  // store hashed token
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  expiresAt   DateTime
-  isRevoked   Boolean  @default(false)
-  revokedAt   DateTime?
-  
+  id     String @id @default(uuid())
+  token  String @unique // store hashed token
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+  isRevoked Boolean   @default(false)
+  revokedAt DateTime?
+
   // Device/session info (useful for "logout all devices")
-  userAgent   String?
-  ipAddress   String?
-  
-  createdAt   DateTime @default(now())
-  
+  userAgent String?
+  ipAddress String?
+
+  createdAt DateTime @default(now())
+
   @@index([userId])
   @@index([token])
   @@index([expiresAt])
 }
 
-
 model User {
-  id            String        @id @default(uuid())
-  universityId  String        @unique
-  role          UserRole
-  
+  id           String   @id @default(uuid())
+  universityId String   @unique
+  role         UserRole
+
   // Basic Info
-  name          String
-  email         String        @unique
-  phone         String
-  photo         String?
-  
+  name  String
+  email String  @unique
+  phone String
+  photo String?
+
   // Authentication
-  password      String
-  accountStatus AccountStatus @default(ACTIVE)
-  failedLoginAttempts   Int      @default(0)
-  isFirstLogin  Boolean       @default(true)
-  oneTimePassword String?
-  otpExpiresAt  DateTime?
-  passwordChangedAt DateTime?
-  passwordResetToken String?
+  password             String
+  accountStatus        AccountStatus @default(ACTIVE)
+  failedLoginAttempts  Int           @default(0)
+  isFirstLogin         Boolean       @default(true)
+  oneTimePassword      String?
+  otpExpiresAt         DateTime?
+  passwordChangedAt    DateTime?
+  passwordResetToken   String?
   passwordResetExpires DateTime?
 
   // Authorization
   refreshTokens RefreshToken[]
-  
+
   // Seat Cancellation Info
   cancellationReason String?
-  cancelledBy   String?       // userId who cancelled
-  cancelledAt   DateTime?
-  
+  cancelledBy        String? // userId who cancelled
+  cancelledAt        DateTime?
+
   // Student-specific fields
-  department    String?
-  year          Int?
-  program       Program?
-  session       String?
-  bloodGroup    BloodGroup?
-  nationalId    String?
-  studentPhoto  String?
+  department        String?
+  year              Int?
+  program           Program?
+  session           String?
+  bloodGroup        BloodGroup?
+  nationalId        String?
+  studentPhoto      String?
   medicalConditions String?
-  allergies     String?
-  
+  allergies         String?
+
   // Room assignment
   currentRoomId String?
-  currentRoom   Room?         @relation("CurrentResidents", fields: [currentRoomId], references: [id])
-  roomOccupants RoomOccupant[] 
-  
+  currentRoom   Room?          @relation("CurrentResidents", fields: [currentRoomId], references: [id])
+  roomOccupants RoomOccupant[]
+
   // Provost-specific
-  provostMessage String?      @db.Text
-  tenureStart   DateTime?
-  tenureEnd     DateTime?
-  
+  provostMessage String?   @db.Text
+  tenureStart    DateTime?
+  tenureEnd      DateTime?
+
   // House Tutor-specific
   assignedFloor Int?
-  
+
   // Staff-specific
-  designation   String?
-  joiningDate   DateTime?
-  
+  designation String?
+  joiningDate DateTime?
+
   // Relations
   emergencyContacts EmergencyContact[]
-  guardianInfo  GuardianInfo?
-  applications  Application[]
-  complaints    Complaint[]
-  bills         Bill[]
-  payments      Payment[]
-  mealLogs      MealLog[]
-  gateEntries   GateEntry[]
-  visitors      Visitor[]
-  notifications Notification[]
-  seatAllocations SeatAllocation[]
-  
+  guardianInfo      GuardianInfo?
+  applications      Application[]
+  complaints        Complaint[]
+  bills             Bill[]
+  payments          Payment[]
+  mealLogs          MealLog[]
+  gateEntries       GateEntry[]
+  visitors          Visitor[]
+  notifications     Notification[]
+  seatAllocations   SeatAllocation[]
+
   // Audit
-  createdBy     String?
-  isDeleted     Boolean       @default(false)
-  deletedAt     DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  
+  createdBy String?
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
   @@index([email])
   @@index([universityId])
   @@index([role, accountStatus])
@@ -264,30 +261,30 @@ model User {
 }
 
 model EmergencyContact {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  name      String
-  phone     String
-  relation  String
-  
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name     String
+  phone    String
+  relation String
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@index([userId])
 }
 
 model GuardianInfo {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  name      String
-  phone     String
-  relation  String
-  address   String   @db.Text
-  
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name     String
+  phone    String
+  relation String
+  address  String @db.Text
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -296,15 +293,15 @@ model RoomOccupant {
   id           String   @id @default(uuid())
   roomId       String
   userId       String
-  bedNumber    Int      // 1-4
+  bedNumber    Int // 1-4
   assignedDate DateTime @default(now())
-  
-  room         Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([roomId, bedNumber])
   @@index([roomId])
   @@index([userId])
@@ -312,169 +309,169 @@ model RoomOccupant {
 }
 
 model Room {
-  id                String      @id @default(uuid())
-  roomNumber        String      @unique
-  floor             Int
-  wing              Wing
-  roomType          RoomType
-  capacity          Int
-  currentOccupancy  Int         @default(0)
-  status            RoomStatus  @default(AVAILABLE)
+  id               String     @id @default(uuid())
+  roomNumber       String     @unique
+  floor            Int
+  wing             Wing
+  roomType         RoomType
+  capacity         Int
+  currentOccupancy Int        @default(0)
+  status           RoomStatus @default(AVAILABLE)
 
-  occupants RoomOccupant[] 
+  occupants RoomOccupant[]
 
-  hasAC             Boolean     @default(false)
-  hasBalcony        Boolean     @default(false)
-  hasAttachedBath   Boolean     @default(false)
-  
+  hasAC           Boolean @default(false)
+  hasBalcony      Boolean @default(false)
+  hasAttachedBath Boolean @default(false)
+
   // Furniture inventory (JSON)
   furnitureInventory Json?
-  
+
   // Relations
-  currentResidents  User[]      @relation("CurrentResidents")
-  seatAllocations   SeatAllocation[]
-  complaints        Complaint[]
-  
+  currentResidents User[]           @relation("CurrentResidents")
+  seatAllocations  SeatAllocation[]
+  complaints       Complaint[]
+
   // Audit
-  isDeleted         Boolean     @default(false)
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([floor, wing])
   @@index([status])
   @@index([roomType])
 }
 
 model SeatAllocation {
-  id            String   @id @default(uuid())
-  studentId     String
-  student       User     @relation(fields: [studentId], references: [id])
-  roomId        String
-  room          Room     @relation(fields: [roomId], references: [id])
-  
-  allocatedAt   DateTime @default(now())
-  vacatedAt     DateTime?
-  isActive      Boolean  @default(true)
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
+  id        String @id @default(uuid())
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id])
+  roomId    String
+  room      Room   @relation(fields: [roomId], references: [id])
+
+  allocatedAt DateTime  @default(now())
+  vacatedAt   DateTime?
+  isActive    Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([studentId])
   @@index([roomId])
   @@index([isActive])
 }
 
 model Application {
-  id              String            @id @default(uuid())
-  type            ApplicationType
-  status          ApplicationStatus @default(PENDING)
-  
-  studentId       String
-  student         User              @relation(fields: [studentId], references: [id])
-  
+  id     String            @id @default(uuid())
+  type   ApplicationType
+  status ApplicationStatus @default(PENDING)
+
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id])
+
   // Application data (JSON - flexible for different types)
-  data            Json
-  
+  data Json
+
   // File attachments
-  attachments     String[]
-  
+  attachments String[]
+
   // Assignment
-  assignedTo      String?
-  assignedToRole  UserRole?
-  
+  assignedTo     String?
+  assignedToRole UserRole?
+
   // Response
-  responseNote    String?           @db.Text
-  respondedAt     DateTime?
-  
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  
+  responseNote String?   @db.Text
+  respondedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([studentId])
   @@index([type, status])
   @@index([assignedTo])
 }
 
 model Complaint {
-  id              String            @id @default(uuid())
-  category        ComplaintCategory
-  priority        ComplaintPriority @default(NORMAL)
-  status          ComplaintStatus   @default(SUBMITTED)
-  
-  studentId       String
-  student         User              @relation(fields: [studentId], references: [id])
-  
-  roomId          String?
-  room            Room?             @relation(fields: [roomId], references: [id])
-  
-  title           String
-  description     String            @db.Text
-  attachments     String[]
-  
+  id       String            @id @default(uuid())
+  category ComplaintCategory
+  priority ComplaintPriority @default(NORMAL)
+  status   ComplaintStatus   @default(SUBMITTED)
+
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id])
+
+  roomId String?
+  room   Room?   @relation(fields: [roomId], references: [id])
+
+  title       String
+  description String   @db.Text
+  attachments String[]
+
   // Assignment
-  assignedTo      String?
-  assignedAt      DateTime?
-  
+  assignedTo String?
+  assignedAt DateTime?
+
   // Resolution
-  resolutionNote  String?           @db.Text
-  resolvedAt      DateTime?
-  
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  
+  resolutionNote String?   @db.Text
+  resolvedAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([studentId])
   @@index([status, priority])
   @@index([assignedTo])
 }
 
 model Bill {
-  id          String     @id @default(uuid())
-  type        BillType
-  status      BillStatus @default(UNPAID)
-  
-  studentId   String
-  student     User       @relation(fields: [studentId], references: [id])
-  
-  amount      Float
-  month       Int
-  year        Int
-  dueDate     DateTime
-  paidAt      DateTime?
-  
+  id     String     @id @default(uuid())
+  type   BillType
+  status BillStatus @default(UNPAID)
+
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id])
+
+  amount  Float
+  month   Int
+  year    Int
+  dueDate DateTime
+  paidAt  DateTime?
+
   // Fine calculation
-  lateFee     Float      @default(0)
-  
+  lateFee Float @default(0)
+
   // Relations
-  payments    Payment[]
-  
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  
+  payments Payment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, type, month, year])
   @@index([studentId])
   @@index([status])
   @@index([dueDate])
-  @@unique([studentId, type, month, year])
 }
 
 model Payment {
-  id              String         @id @default(uuid())
-  billId          String
-  bill            Bill           @relation(fields: [billId], references: [id])
-  
-  studentId       String
-  student         User           @relation(fields: [studentId], references: [id])
-  
-  amount          Float
-  gateway         PaymentGateway
-  status          PaymentStatus  @default(PENDING)
-  
-  transactionId   String?        @unique
+  id     String @id @default(uuid())
+  billId String
+  bill   Bill   @relation(fields: [billId], references: [id])
+
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id])
+
+  amount  Float
+  gateway PaymentGateway
+  status  PaymentStatus  @default(PENDING)
+
+  transactionId   String? @unique
   gatewayResponse Json?
-  
-  paidAt          DateTime?
-  
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  
+
+  paidAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([billId])
   @@index([studentId])
   @@index([status])
@@ -482,128 +479,127 @@ model Payment {
 }
 
 model Notice {
-  id            String   @id @default(uuid())
-  title         String
-  content       String   @db.Text
-  
+  id      String @id @default(uuid())
+  title   String
+  content String @db.Text
+
   // Attachments
-  pdfUrl        String?
-  imageUrl      String?
-  
+  pdfUrl   String?
+  imageUrl String?
+
   // Targeting
-  targetAudience String  // ALL, FLOOR_SPECIFIC, YEAR_SPECIFIC, PROGRAM_SPECIFIC
-  targetValue   String?
-  
-  priority      String   @default("NORMAL")
-  category      String   @default("GENERAL")
-  
-  isPublic      Boolean  @default(false)
-  isActive      Boolean  @default(true)
-  expiresAt     DateTime?
-  
+  targetAudience String // ALL, FLOOR_SPECIFIC, YEAR_SPECIFIC, PROGRAM_SPECIFIC
+  targetValue    String?
+
+  priority String @default("NORMAL")
+  category String @default("GENERAL")
+
+  isPublic  Boolean   @default(false)
+  isActive  Boolean   @default(true)
+  expiresAt DateTime?
+
   createdBy     String
   createdByRole UserRole
   views         Int      @default(0)
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([isActive, isPublic])
   @@index([createdAt])
 }
 
 model MealLog {
-  id          String   @id @default(uuid())
-  studentId   String
-  student     User     @relation(fields: [studentId], references: [id])
-  
-  date        DateTime @db.Date
-  breakfast   Boolean  @default(false)
-  lunch       Boolean  @default(false)
-  dinner      Boolean  @default(false)
-  
-  createdAt   DateTime @default(now())
-  
+  id        String @id @default(uuid())
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id])
+
+  date      DateTime @db.Date
+  breakfast Boolean  @default(false)
+  lunch     Boolean  @default(false)
+  dinner    Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+
   @@unique([studentId, date])
   @@index([studentId])
   @@index([date])
 }
 
 model GateEntry {
-  id          String   @id @default(uuid())
-  studentId   String
-  student     User     @relation(fields: [studentId], references: [id])
-  
-  entryTime   DateTime?
-  exitTime    DateTime?
-  isLateReturn Boolean  @default(false)
-  
-  createdAt   DateTime @default(now())
-  
+  id        String @id @default(uuid())
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id])
+
+  entryTime    DateTime?
+  exitTime     DateTime?
+  isLateReturn Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+
   @@index([studentId])
   @@index([createdAt])
 }
 
 model Visitor {
-  id              String   @id @default(uuid())
-  name            String
-  nidNumber       String
-  phone           String
-  relation        String
-  purpose         String
-  photo           String?
-  
-  studentId       String
-  student         User     @relation(fields: [studentId], references: [id])
-  
-  approved        Boolean  @default(false)
-  approvedAt      DateTime?
-  
-  entryTime       DateTime
-  exitTime        DateTime?
-  
-  createdAt       DateTime @default(now())
-  
+  id        String  @id @default(uuid())
+  name      String
+  nidNumber String
+  phone     String
+  relation  String
+  purpose   String
+  photo     String?
+
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id])
+
+  approved   Boolean   @default(false)
+  approvedAt DateTime?
+
+  entryTime DateTime
+  exitTime  DateTime?
+
+  createdAt DateTime @default(now())
+
   @@index([studentId])
   @@index([entryTime])
 }
 
 model Notification {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  
-  type        String
-  title       String
-  message     String   @db.Text
-  
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  type    String
+  title   String
+  message String @db.Text
+
   relatedEntityType String?
   relatedEntityId   String?
-  
-  isRead      Boolean  @default(false)
-  readAt      DateTime?
-  
-  createdAt   DateTime @default(now())
-  
+
+  isRead Boolean   @default(false)
+  readAt DateTime?
+
+  createdAt DateTime @default(now())
+
   @@index([userId, isRead])
   @@index([createdAt])
 }
 
-
 // AUDIT LOG
 
 model AuditLog {
-  id          String   @id @default(uuid())
-  userId      String?
-  action      String
-  entity      String
-  entityId    String?
-  changes     Json?
-  ipAddress   String?
-  userAgent   String?
-  
-  createdAt   DateTime @default(now())
-  
+  id        String  @id @default(uuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  changes   Json?
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
   @@index([userId])
   @@index([entity, entityId])
   @@index([createdAt])
