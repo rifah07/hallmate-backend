@@ -284,7 +284,6 @@ class UserService {
     for (let i = 0; i < usersData.length; i++) {
       try {
         await emailService.sendWelcomeEmail(usersData[i].email, usersData[i].name, otps[i]);
-        logger.info(`Email sent to ${usersData[i].email}`);
       } catch (err) {
         logger.error(`Failed email for ${usersData[i].email}`, err);
       }

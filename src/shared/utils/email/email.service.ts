@@ -35,7 +35,7 @@ class EmailService {
       logger.info('📧 Email sent successfully:', response);
       logger.info(`✅ Email sent to ${options.to}`);
     } catch (error: any) {
-      console.error('🔥 FULL ERROR:', error);
+      console.error('FULL ERROR:', error);
       logger.error('❌ Email sending failed:', error?.message || error);
       throw error; // DO NOT overwrite
     }
