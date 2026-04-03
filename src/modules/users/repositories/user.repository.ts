@@ -368,6 +368,7 @@ class UserRepository {
       ...user,
       password: hashedPasswords[index],
       oneTimePassword: otps[index],
+      otpExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       isFirstLogin: true,
       accountStatus: 'ACTIVE' as AccountStatus,
     }));
