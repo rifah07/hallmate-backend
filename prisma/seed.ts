@@ -32,7 +32,7 @@ async function main() {
 
   // Get credentials from environment
   const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'admin_n@hallmate.edu.bd';
-  const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || 'SuperAdmin@123';
+  const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || 'SuperAdmin@123!';
 
   // Create the first Super Admin
   const hashedPassword = await hashPassword(superAdminPassword);
