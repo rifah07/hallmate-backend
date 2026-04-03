@@ -26,37 +26,47 @@ export interface ExcelParseResult {
 /**
  * Parse Excel file for bulk user upload
  * Expected columns: universityId, email, name, role, phone, department, year, program, session, bloodGroup, assignedFloor, designation
+ * IMPORTANT: Always use the official template from GET /api/users/template/download
  */
 export async function parseUserExcelFile(buffer: Buffer): Promise<ExcelParseResult> {
+  const normalize = (str: string) =>
+    str
+      .toLowerCase()
+      .replace(/\s+/g, '')
+      .replace(/[^a-z0-9]/g, '')
+      .trim();
+
   const workbook = new ExcelJS.Workbook();
 
   try {
     await workbook.xlsx.load(buffer as any);
-  } catch (error) {
+  } catch {
     throw new BadRequestError('Invalid Excel file format');
   }
 
   const worksheet = workbook.worksheets[0];
-
-  if (!worksheet) {
-    throw new BadRequestError('Excel file is empty');
-  }
+  if (!worksheet) throw new BadRequestError('Excel file is empty');
 
   const users: ParsedUserRow[] = [];
   const errors: string[] = [];
   let totalRows = 0;
 
-  // Get header row (row 1)
+  // Build header map by iterating all cells (not eachCell — avoids skipping empty cells)
   const headerRow = worksheet.getRow(1);
-  const headers: string[] = [];
+  const headerMap: Record<string, number> = {};
+  const lastCol = headerRow.actualCellCount + 5; // +5 buffer for safety
 
-  headerRow.eachCell((cell, colNumber) => {
-    headers[colNumber] = String(cell.value).toLowerCase().trim();
-  });
+  for (let col = 1; col <= lastCol; col++) {
+    const cell = headerRow.getCell(col);
+    const val = cell.value;
+    if (val !== null && val !== undefined && String(val).trim() !== '') {
+      headerMap[normalize(String(val))] = col;
+    }
+  }
 
   // Validate required columns
   const requiredColumns = ['universityid', 'email', 'name', 'role'];
-  const missingColumns = requiredColumns.filter((col) => !headers.includes(col));
+  const missingColumns = requiredColumns.filter((col) => !headerMap[col]);
 
   if (missingColumns.length > 0) {
     throw new ValidationError(`Missing required columns: ${missingColumns.join(', ')}`, {
@@ -66,34 +76,30 @@ export async function parseUserExcelFile(buffer: Buffer): Promise<ExcelParseResu
 
   // Parse data rows (starting from row 2)
   worksheet.eachRow((row, rowNumber) => {
-    if (rowNumber === 1) return; // Skip header row
+    if (rowNumber === 1) return;
 
     totalRows++;
 
     try {
       const getCellValue = (columnName: string): string | undefined => {
-        const colIndex = headers.indexOf(columnName.toLowerCase());
-        if (colIndex === -1) return undefined;
+        const colIndex = headerMap[normalize(columnName)];
+        if (!colIndex) return undefined;
 
         const cell = row.getCell(colIndex);
         const value = cell.value;
 
         if (value === null || value === undefined) return undefined;
+        if (typeof value === 'object' && 'text' in value) return String(value.text).trim();
 
-        // Handle different cell types
-        if (typeof value === 'object' && 'text' in value) {
-          return String(value.text).trim();
-        }
-
-        return String(value).trim();
+        const str = String(value).trim();
+        return str === '' ? undefined : str;
       };
 
-      const universityId = getCellValue('universityid');
+      const universityId = getCellValue('universityId');
       const email = getCellValue('email');
       const name = getCellValue('name');
       const role = getCellValue('role');
 
-      // Validate required fields
       if (!universityId) {
         errors.push(`Row ${rowNumber}: Missing universityId`);
         return;
@@ -111,7 +117,6 @@ export async function parseUserExcelFile(buffer: Buffer): Promise<ExcelParseResu
         return;
       }
 
-      // Validate role enum
       const validRoles: UserRole[] = [
         'SUPER_ADMIN',
         'PROVOST',
@@ -137,7 +142,6 @@ export async function parseUserExcelFile(buffer: Buffer): Promise<ExcelParseResu
         role: role.toUpperCase() as UserRole,
       };
 
-      // Optional fields
       const phone = getCellValue('phone');
       if (phone) user.phone = phone;
 
@@ -167,7 +171,7 @@ export async function parseUserExcelFile(buffer: Buffer): Promise<ExcelParseResu
       const session = getCellValue('session');
       if (session) user.session = session;
 
-      const bloodGroup = getCellValue('bloodgroup');
+      const bloodGroup = getCellValue('bloodGroup');
       if (bloodGroup) {
         const validBloodGroups: BloodGroup[] = [
           'A_POSITIVE',
@@ -190,7 +194,7 @@ export async function parseUserExcelFile(buffer: Buffer): Promise<ExcelParseResu
         user.bloodGroup = normalized as BloodGroup;
       }
 
-      const assignedFloorStr = getCellValue('assignedfloor');
+      const assignedFloorStr = getCellValue('assignedFloor');
       if (assignedFloorStr) {
         const floor = parseInt(assignedFloorStr);
         if (isNaN(floor) || floor < 1 || floor > 14) {
@@ -205,17 +209,15 @@ export async function parseUserExcelFile(buffer: Buffer): Promise<ExcelParseResu
       const designation = getCellValue('designation');
       if (designation) user.designation = designation;
 
-      // Validate student-specific fields
-      if (user.role === 'STUDENT') {
-        if (!user.department || !user.year || !user.program || !user.session) {
-          errors.push(
-            `Row ${rowNumber}: Students must have department, year, program, and session`,
-          );
-          return;
-        }
+      // Role-specific validation
+      if (
+        user.role === 'STUDENT' &&
+        (!user.department || !user.year || !user.program || !user.session)
+      ) {
+        errors.push(`Row ${rowNumber}: Students must have department, year, program, and session`);
+        return;
       }
 
-      // Validate house tutor-specific fields
       if (user.role === 'HOUSE_TUTOR' && !user.assignedFloor) {
         errors.push(`Row ${rowNumber}: House tutors must have an assigned floor`);
         return;
@@ -227,11 +229,7 @@ export async function parseUserExcelFile(buffer: Buffer): Promise<ExcelParseResu
     }
   });
 
-  return {
-    users,
-    errors,
-    totalRows,
-  };
+  return { users, errors, totalRows };
 }
 
 /**
@@ -241,14 +239,10 @@ export async function parseUserCSVFile(buffer: Buffer): Promise<ExcelParseResult
   const csvContent = buffer.toString('utf-8');
   const lines = csvContent.split('\n').filter((line) => line.trim());
 
-  if (lines.length === 0) {
-    throw new BadRequestError('CSV file is empty');
-  }
+  if (lines.length === 0) throw new BadRequestError('CSV file is empty');
 
   const users: ParsedUserRow[] = [];
   const errors: string[] = [];
-
-  // Parse header
   const headers = lines[0].split(',').map((h) => h.trim().toLowerCase());
 
   const requiredColumns = ['universityid', 'email', 'name', 'role'];
@@ -260,15 +254,14 @@ export async function parseUserCSVFile(buffer: Buffer): Promise<ExcelParseResult
     });
   }
 
-  // Parse data rows
   for (let i = 1; i < lines.length; i++) {
-    const line = lines[i];
-    const values = line.split(',').map((v) => v.trim());
+    const values = lines[i].split(',').map((v) => v.trim());
 
     try {
       const getValue = (columnName: string): string | undefined => {
         const index = headers.indexOf(columnName.toLowerCase());
-        return index !== -1 ? values[index] : undefined;
+        const val = index !== -1 ? values[index] : undefined;
+        return val === '' ? undefined : val;
       };
 
       const universityId = getValue('universityid');
@@ -288,7 +281,6 @@ export async function parseUserCSVFile(buffer: Buffer): Promise<ExcelParseResult
         role: role.toUpperCase() as UserRole,
       };
 
-      // Add optional fields (same logic as Excel parser)
       const phone = getValue('phone');
       if (phone) user.phone = phone;
 
@@ -304,17 +296,28 @@ export async function parseUserCSVFile(buffer: Buffer): Promise<ExcelParseResult
       const session = getValue('session');
       if (session) user.session = session;
 
+      const bloodGroup = getValue('bloodgroup');
+      if (bloodGroup) {
+        const normalized = bloodGroup
+          .toUpperCase()
+          .replace('+', '_POSITIVE')
+          .replace('-', '_NEGATIVE');
+        user.bloodGroup = normalized as BloodGroup;
+      }
+
+      const assignedFloorStr = getValue('assignedfloor');
+      if (assignedFloorStr) user.assignedFloor = parseInt(assignedFloorStr);
+
+      const designation = getValue('designation');
+      if (designation) user.designation = designation;
+
       users.push(user);
     } catch (error) {
       errors.push(`Row ${i + 1}: ${(error as Error).message}`);
     }
   }
 
-  return {
-    users,
-    errors,
-    totalRows: lines.length - 1,
-  };
+  return { users, errors, totalRows: lines.length - 1 };
 }
 
 /**
@@ -324,7 +327,6 @@ export async function generateUserExcelTemplate(): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Users');
 
-  // Define columns
   worksheet.columns = [
     { header: 'universityId', key: 'universityId', width: 20 },
     { header: 'email', key: 'email', width: 30 },
@@ -340,7 +342,6 @@ export async function generateUserExcelTemplate(): Promise<Buffer> {
     { header: 'designation', key: 'designation', width: 25 },
   ];
 
-  // Style header row
   worksheet.getRow(1).font = { bold: true };
   worksheet.getRow(1).fill = {
     type: 'pattern',
@@ -348,7 +349,6 @@ export async function generateUserExcelTemplate(): Promise<Buffer> {
     fgColor: { argb: 'FFD3D3D3' },
   };
 
-  // Add sample rows
   worksheet.addRow({
     universityId: '2024-1-60-001',
     email: 'student@example.com',

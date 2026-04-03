@@ -8,6 +8,7 @@ import {
   parseUserCSVFile,
   generateUserExcelTemplate,
 } from '@/shared/utils/excel/excel-parser.util';
+import { CreateUserInput } from '../types/user.types';
 
 class UserController {
   constructor() {
@@ -279,7 +280,6 @@ class UserController {
       const file = (req as any).file;
       if (!file) throw new BadRequestError('No file uploaded');
 
-      // Parse file based on type
       let parseResult;
       if (file.mimetype === 'text/csv') {
         parseResult = await parseUserCSVFile(file.buffer);
@@ -287,7 +287,6 @@ class UserController {
         parseResult = await parseUserExcelFile(file.buffer);
       }
 
-      // If no valid users found
       if (parseResult.users.length === 0) {
         res.status(400).json({
           success: false,
@@ -301,8 +300,21 @@ class UserController {
         return;
       }
 
-      // Call existing bulk create service
-      const result = await userService.bulkCreateUsers(parseResult.users as any);
+      const createInputs: CreateUserInput[] = parseResult.users.map((user) => ({
+        universityId: user.universityId,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        phone: user.phone ?? '',
+        department: user.department,
+        year: user.year,
+        program: user.program,
+        session: user.session,
+        bloodGroup: user.bloodGroup,
+        assignedFloor: user.assignedFloor,
+        designation: user.designation,
+      }));
+      const result = await userService.bulkCreateUsers(createInputs);
 
       res.status(201).json({
         success: true,
@@ -313,6 +325,8 @@ class UserController {
           created: result.created,
           failed: parseResult.errors.length,
           errors: parseResult.errors,
+          warning:
+            'Please use the official template from /api/users/template/download to avoid data loss',
         },
       });
     } catch (error) {
