@@ -97,3 +97,72 @@ export interface ApplicationStatistics {
   cancelled: number;
   avgResponseTime?: number; // in hours
 }
+
+export interface UserContext {
+  userId: string;
+  role: string;
+  assignedFloor?: number | null;
+}
+
+export interface SeatApplicationData {
+  roomPreference?: string; // roomType or specific room
+  reason: string;
+  emergencyContact?: {
+    name: string;
+    phone: string;
+    relation: string;
+  };
+}
+
+export interface SeatCancellationData {
+  reason: string;
+  effectiveDate: Date;
+  forwardingAddress?: string;
+}
+
+export interface SeatTransferData {
+  currentRoomId: string;
+  targetRoomId?: string;
+  targetRoomType?: string;
+  reason: string;
+}
+
+export interface SeatSwapData {
+  currentRoomId: string;
+  targetStudentId: string;
+  targetRoomId: string;
+  reason: string;
+  targetStudentConsent: boolean;
+}
+
+export interface LeaveApplicationData {
+  leaveType: string; // SHORT_LEAVE, LONG_LEAVE, etc.
+  startDate: Date;
+  endDate: Date;
+  destination: string;
+  reason: string;
+  emergencyContact: {
+    name: string;
+    phone: string;
+    relation: string;
+  };
+  guardianConsent?: boolean;
+}
+
+export interface ComplaintApplicationData {
+  category: string;
+  priority: string;
+  title: string;
+  description: string;
+  location?: string;
+  roomId?: string;
+}
+
+export interface MaintenanceApplicationData {
+  category: string;
+  priority: string;
+  roomId?: string;
+  location: string;
+  description: string;
+  preferredDate?: Date;
+}
