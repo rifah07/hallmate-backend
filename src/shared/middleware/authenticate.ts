@@ -40,6 +40,7 @@ export const authenticate = async (
         accountStatus: true,
         isDeleted: true,
         passwordChangedAt: true,
+        assignedFloor: true
       },
     });
 
@@ -65,6 +66,7 @@ export const authenticate = async (
       universityId: user.universityId,
       role: user.role,
       accountStatus: user.accountStatus,
+      assignedFloor: user.assignedFloor,
     };
     next();
   } catch (error) {
