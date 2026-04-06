@@ -3,7 +3,7 @@ import { z, ZodError, ZodIssue } from 'zod';
 import { sendError } from '@/shared/utils/response.util';
 
 export const validate =
-  (schema: z.ZodTypeAny) =>
+  (schema: z.ZodTypeAny, customMessage?: string) =>
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       await schema.parseAsync({
@@ -20,7 +20,14 @@ export const validate =
           message: issue.message,
         }));
 
-        sendError(res, 'Validation failed', 400, 'VALIDATION_ERROR', errors);
+        let message = 'Validation failed';
+
+        // Only override if customMessage is explicitly provided
+        if (customMessage) {
+          message = customMessage;
+        }
+
+        sendError(res, message, 400, 'VALIDATION_ERROR', errors);
         return;
       }
 
