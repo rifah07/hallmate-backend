@@ -1,5 +1,3 @@
-// src/modules/applications/types/application.types.ts
-
 import { ApplicationType, ApplicationStatus, UserRole } from '@prisma/client';
 
 export interface CreateApplicationInput {
