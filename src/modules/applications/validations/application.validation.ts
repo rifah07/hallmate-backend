@@ -119,3 +119,56 @@ export const createApplicationSchema = z.discriminatedUnion('type', [
   }),
 ]);
 
+export const updateApplicationSchema = z.object({
+  data: z.record(z.string(), z.any()).optional(),
+  attachments: z.array(z.string().url()).optional(),
+});
+
+export const assignApplicationSchema = z.object({
+  assignedTo: z.string().uuid('Invalid user ID'),
+  assignedToRole: z.enum([
+    'SUPER_ADMIN',
+    'PROVOST',
+    'HOUSE_TUTOR',
+    'ASSISTANT_WARDEN',
+    'OFFICE_STAFF',
+    'DINING_STAFF',
+    'MAINTENANCE_STAFF',
+  ]),
+});
+
+export const respondToApplicationSchema = z.object({
+  status: z.enum(['APPROVED', 'REJECTED', 'CANCELLED']),
+  responseNote: z.string().min(10, 'Response note must be at least 10 characters'),
+});
+
+// ============================================================================
+// QUERY PARAMS VALIDATION
+// ============================================================================
+
+export const applicationQuerySchema = z.object({
+  type: z
+    .enum([
+      'SEAT_APPLICATION',
+      'SEAT_CANCELLATION',
+      'SEAT_TRANSFER',
+      'SEAT_SWAP',
+      'LEAVE',
+      'COMPLAINT',
+      'MAINTENANCE',
+    ])
+    .optional(),
+  status: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED']).optional(),
+  studentId: z.string().uuid('Invalid student ID').optional(),
+  assignedTo: z.string().uuid('Invalid user ID').optional(),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  page: z.string().optional(),
+  limit: z.string().optional(),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+});
+
+export const applicationIdSchema = z.object({
+  applicationId: z.string().uuid('Invalid application ID'),
+});
