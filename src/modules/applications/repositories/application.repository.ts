@@ -318,6 +318,57 @@ class ApplicationRepository {
       where: { id },
     });
   }
+
+  async getStatistics(filters?: ApplicationFilters) {
+    const where: Prisma.ApplicationWhereInput = {};
+
+    if (filters?.studentId) {
+      where.studentId = filters.studentId;
+    }
+
+    if (filters?.assignedTo) {
+      where.assignedTo = filters.assignedTo;
+    }
+
+    const [total, byStatus, byType] = await Promise.all([
+      prisma.application.count({ where }),
+
+      prisma.application.groupBy({
+        by: ['status'],
+        where,
+        _count: true,
+      }),
+
+      prisma.application.groupBy({
+        by: ['type'],
+        where,
+        _count: true,
+      }),
+    ]);
+
+    return {
+      total,
+      byStatus: byStatus.map((item) => ({
+        status: item.status,
+        count: item._count,
+      })),
+      byType: byType.map((item) => ({
+        type: item.type,
+        count: item._count,
+      })),
+    };
+  }
+
+  async existsPendingApplication(studentId: string, type: ApplicationType): Promise<boolean> {
+    const count = await prisma.application.count({
+      where: {
+        studentId,
+        type,
+        status: 'PENDING',
+      },
+    });
+    return count > 0;
+  }
 }
 
 export default new ApplicationRepository();
