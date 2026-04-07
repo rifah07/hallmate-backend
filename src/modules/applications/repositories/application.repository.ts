@@ -1,5 +1,5 @@
 import prisma from '@/config/database.config';
-import { ApplicationType, Prisma } from '@prisma/client';
+import { ApplicationType, ApplicationStatus, UserRole, Prisma } from '@prisma/client';
 import { ApplicationFilters, PaginationParams } from '../types/application.types';
 
 class ApplicationRepository {
@@ -215,6 +215,108 @@ class ApplicationRepository {
       applications,
       total,
     };
+  }
+
+  async update(id: string, data: { data?: any; attachments?: string[] }) {
+    return await prisma.application.update({
+      where: { id },
+      data: {
+        ...(data.data && { data: data.data }),
+        ...(data.attachments && { attachments: data.attachments }),
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            universityId: true,
+            email: true,
+            phone: true,
+            department: true,
+            year: true,
+            currentRoomId: true,
+          },
+        },
+      },
+    });
+  }
+
+  async assign(id: string, assignedTo: string, assignedToRole: UserRole) {
+    return await prisma.application.update({
+      where: { id },
+      data: {
+        assignedTo,
+        assignedToRole,
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            universityId: true,
+            email: true,
+            phone: true,
+            department: true,
+            year: true,
+            currentRoomId: true,
+          },
+        },
+      },
+    });
+  }
+
+  async respond(id: string, status: ApplicationStatus, responseNote: string, respondedAt: Date) {
+    return await prisma.application.update({
+      where: { id },
+      data: {
+        status,
+        responseNote,
+        respondedAt,
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            universityId: true,
+            email: true,
+            phone: true,
+            department: true,
+            year: true,
+            currentRoomId: true,
+          },
+        },
+      },
+    });
+  }
+
+  async cancel(id: string) {
+    return await prisma.application.update({
+      where: { id },
+      data: {
+        status: 'CANCELLED',
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            universityId: true,
+            email: true,
+            phone: true,
+            department: true,
+            year: true,
+            currentRoomId: true,
+          },
+        },
+      },
+    });
+  }
+
+  async delete(id: string) {
+    return await prisma.application.delete({
+      where: { id },
+    });
   }
 }
 
