@@ -8,14 +8,13 @@ import {
   UserContext,
   ApplicationResponse,
 } from '../types/application.types';
-import { ForbiddenError, ConflictError } from '@/shared/errors';
+import { ForbiddenError, ConflictError, NotFoundError } from '@/shared/errors';
 
 class ApplicationService {
   async createApplication(
     input: CreateApplicationInput,
     userContext: UserContext,
   ): Promise<ApplicationResponse> {
-    // Only students can create applications
     if (userContext.role !== 'STUDENT') {
       throw new ForbiddenError('Only students can create applications');
     }
@@ -47,7 +46,6 @@ class ApplicationService {
     pagination: PaginationParams,
     userContext: UserContext,
   ) {
-    // Students can only see their own applications
     if (userContext.role === 'STUDENT') {
       filters.studentId = userContext.userId;
     }
@@ -117,6 +115,18 @@ class ApplicationService {
     };
   }
 
+  async getApplicationById(id: string, userContext: UserContext): Promise<ApplicationResponse> {
+    const application = await applicationRepository.findById(id);
+
+    if (!application) {
+      throw new NotFoundError('Application not found');
+    }
+
+    this.checkAccess(application, userContext);
+
+    return this.transformApplication(application);
+  }
+
   // ============================================================================
   // HELPER METHODS
   // ============================================================================
@@ -137,6 +147,26 @@ class ApplicationService {
       createdAt: application.createdAt,
       updatedAt: application.updatedAt,
     };
+  }
+
+  private checkAccess(application: any, userContext: UserContext): void {
+    // Students can only view their own applications
+    if (userContext.role === 'STUDENT') {
+      if (application.studentId !== userContext.userId) {
+        throw new ForbiddenError('You can only view your own applications');
+      }
+    }
+
+    // Staff can view applications assigned to them or all if admin/provost
+    if (
+      userContext.role !== 'SUPER_ADMIN' &&
+      userContext.role !== 'PROVOST' &&
+      userContext.role !== 'STUDENT'
+    ) {
+      if (application.assignedTo !== userContext.userId) {
+        throw new ForbiddenError('You can only view applications assigned to you');
+      }
+    }
   }
 }
 
