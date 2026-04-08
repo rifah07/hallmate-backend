@@ -8,6 +8,7 @@ import {
   UserContext,
   ApplicationResponse,
   UpdateApplicationInput,
+  AssignApplicationInput,
 } from '../types/application.types';
 import { ForbiddenError, ConflictError, NotFoundError, BadRequestError } from '@/shared/errors';
 
@@ -150,6 +151,30 @@ class ApplicationService {
     const updated = await applicationRepository.update(id, input);
 
     return this.transformApplication(updated);
+  }
+
+  async assignApplication(
+    id: string,
+    input: AssignApplicationInput,
+    userContext: UserContext,
+  ): Promise<ApplicationResponse> {
+    if (userContext.role !== 'SUPER_ADMIN' && userContext.role !== 'PROVOST') {
+      throw new ForbiddenError('Only admins and provost can assign applications');
+    }
+
+    const application = await applicationRepository.findById(id);
+
+    if (!application) {
+      throw new NotFoundError('Application not found');
+    }
+
+    if (application.status !== 'PENDING') {
+      throw new BadRequestError('Can only assign pending applications');
+    }
+
+    const assigned = await applicationRepository.assign(id, input.assignedTo, input.assignedToRole);
+
+    return this.transformApplication(assigned);
   }
 
   // ============================================================================
