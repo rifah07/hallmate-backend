@@ -1,6 +1,10 @@
+// src/modules/applications/services/application.service.ts
+
 import applicationRepository from '../repositories/application.repository';
 import {
   CreateApplicationInput,
+  ApplicationFilters,
+  PaginationParams,
   UserContext,
   ApplicationResponse,
 } from '../types/application.types';
@@ -37,6 +41,85 @@ class ApplicationService {
 
     return this.transformApplication(application);
   }
+
+  async getApplications(
+    filters: ApplicationFilters,
+    pagination: PaginationParams,
+    userContext: UserContext,
+  ) {
+    // Students can only see their own applications
+    if (userContext.role === 'STUDENT') {
+      filters.studentId = userContext.userId;
+    }
+
+    const { applications, total } = await applicationRepository.findAll(filters, pagination);
+
+    const page = pagination.page || 1;
+    const limit = pagination.limit || 20;
+
+    return {
+      applications: applications.map((app) => this.transformApplication(app)),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getMyApplications(pagination: PaginationParams, userContext: UserContext) {
+    if (userContext.role !== 'STUDENT') {
+      throw new ForbiddenError('Only students can view their applications');
+    }
+
+    const { applications, total } = await applicationRepository.findMyApplications(
+      userContext.userId,
+      pagination,
+    );
+
+    const page = pagination.page || 1;
+    const limit = pagination.limit || 20;
+
+    return {
+      applications: applications.map((app) => this.transformApplication(app)),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getAssignedApplications(pagination: PaginationParams, userContext: UserContext) {
+    // Only staff can have assigned applications
+    if (userContext.role === 'STUDENT' || userContext.role === 'PARENT') {
+      throw new ForbiddenError('You do not have permission to view assigned applications');
+    }
+
+    const { applications, total } = await applicationRepository.findAssignedToMe(
+      userContext.userId,
+      pagination,
+    );
+
+    const page = pagination.page || 1;
+    const limit = pagination.limit || 20;
+
+    return {
+      applications: applications.map((app) => this.transformApplication(app)),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  // ============================================================================
+  // HELPER METHODS
+  // ============================================================================
 
   private transformApplication(application: any): ApplicationResponse {
     return {
