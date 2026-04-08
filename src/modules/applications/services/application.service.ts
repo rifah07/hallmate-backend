@@ -7,8 +7,9 @@ import {
   PaginationParams,
   UserContext,
   ApplicationResponse,
+  UpdateApplicationInput,
 } from '../types/application.types';
-import { ForbiddenError, ConflictError, NotFoundError } from '@/shared/errors';
+import { ForbiddenError, ConflictError, NotFoundError, BadRequestError } from '@/shared/errors';
 
 class ApplicationService {
   async createApplication(
@@ -125,6 +126,30 @@ class ApplicationService {
     this.checkAccess(application, userContext);
 
     return this.transformApplication(application);
+  }
+
+  async updateApplication(
+    id: string,
+    input: UpdateApplicationInput,
+    userContext: UserContext,
+  ): Promise<ApplicationResponse> {
+    const application = await applicationRepository.findById(id);
+
+    if (!application) {
+      throw new NotFoundError('Application not found');
+    }
+
+    if (application.studentId !== userContext.userId) {
+      throw new ForbiddenError('You can only update your own applications');
+    }
+
+    if (application.status !== 'PENDING') {
+      throw new BadRequestError('Cannot update application that has been processed');
+    }
+
+    const updated = await applicationRepository.update(id, input);
+
+    return this.transformApplication(updated);
   }
 
   // ============================================================================
