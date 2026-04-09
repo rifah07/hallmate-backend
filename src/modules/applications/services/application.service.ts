@@ -9,6 +9,7 @@ import {
   ApplicationResponse,
   UpdateApplicationInput,
   AssignApplicationInput,
+  RespondToApplicationInput,
 } from '../types/application.types';
 import { ForbiddenError, ConflictError, NotFoundError, BadRequestError } from '@/shared/errors';
 
@@ -177,6 +178,40 @@ class ApplicationService {
     return this.transformApplication(assigned);
   }
 
+  async respondToApplication(
+    id: string,
+    input: RespondToApplicationInput,
+    userContext: UserContext,
+  ): Promise<ApplicationResponse> {
+    const application = await applicationRepository.findById(id);
+
+    if (!application) {
+      throw new NotFoundError('Application not found');
+    }
+
+    // Check if user has permission to respond
+    this.checkRespondPermission(application, userContext);
+
+    // Can only respond to pending applications
+    if (application.status !== 'PENDING') {
+      throw new BadRequestError('Application has already been processed');
+    }
+
+    // Cannot set status to PENDING when responding
+    if (input.status === 'PENDING') {
+      throw new BadRequestError('Invalid status');
+    }
+
+    const responded = await applicationRepository.respond(
+      id,
+      input.status,
+      input.responseNote,
+      new Date(),
+    );
+
+    return this.transformApplication(responded);
+  }
+
   // ============================================================================
   // HELPER METHODS
   // ============================================================================
@@ -216,6 +251,18 @@ class ApplicationService {
       if (application.assignedTo !== userContext.userId) {
         throw new ForbiddenError('You can only view applications assigned to you');
       }
+    }
+  }
+
+  private checkRespondPermission(application: any, userContext: UserContext): void {
+    // Admins and provost can respond to any application
+    if (userContext.role === 'SUPER_ADMIN' || userContext.role === 'PROVOST') {
+      return;
+    }
+
+    // Other staff can only respond to applications assigned to them
+    if (application.assignedTo !== userContext.userId) {
+      throw new ForbiddenError('You can only respond to applications assigned to you');
     }
   }
 }
