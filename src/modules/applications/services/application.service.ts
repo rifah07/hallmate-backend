@@ -189,7 +189,6 @@ class ApplicationService {
       throw new NotFoundError('Application not found');
     }
 
-    // Check if user has permission to respond
     this.checkRespondPermission(application, userContext);
 
     // Can only respond to pending applications
@@ -197,7 +196,6 @@ class ApplicationService {
       throw new BadRequestError('Application has already been processed');
     }
 
-    // Cannot set status to PENDING when responding
     if (input.status === 'PENDING') {
       throw new BadRequestError('Invalid status');
     }
@@ -212,6 +210,33 @@ class ApplicationService {
     return this.transformApplication(responded);
   }
 
+  async cancelApplication(id: string, userContext: UserContext): Promise<ApplicationResponse> {
+    const application = await applicationRepository.findById(id);
+
+    if (!application) {
+      throw new NotFoundError('Application not found');
+    }
+
+    if (userContext.role === 'STUDENT') {
+      if (application.studentId !== userContext.userId) {
+        throw new ForbiddenError('You can only cancel your own applications');
+      }
+
+      if (application.status !== 'PENDING') {
+        throw new BadRequestError('Can only cancel pending applications');
+      }
+    }
+
+    if (userContext.role !== 'STUDENT') {
+      if (application.status !== 'PENDING') {
+        throw new BadRequestError('Can only cancel pending applications');
+      }
+    }
+
+    const cancelled = await applicationRepository.cancel(id);
+
+    return this.transformApplication(cancelled);
+  }
   // ============================================================================
   // HELPER METHODS
   // ============================================================================
