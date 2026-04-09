@@ -251,6 +251,30 @@ class ApplicationService {
 
     await applicationRepository.delete(id);
   }
+  async getStatistics(userContext: UserContext) {
+    const filters: ApplicationFilters = {};
+
+    if (userContext.role === 'STUDENT') {
+      filters.studentId = userContext.userId;
+    }
+
+    const stats = await applicationRepository.getStatistics(filters);
+
+    const pending = stats.byStatus.find((s) => s.status === 'PENDING')?.count || 0;
+    const approved = stats.byStatus.find((s) => s.status === 'APPROVED')?.count || 0;
+    const rejected = stats.byStatus.find((s) => s.status === 'REJECTED')?.count || 0;
+    const cancelled = stats.byStatus.find((s) => s.status === 'CANCELLED')?.count || 0;
+
+    return {
+      total: stats.total,
+      byStatus: stats.byStatus,
+      byType: stats.byType,
+      pending,
+      approved,
+      rejected,
+      cancelled,
+    };
+  }
   // ============================================================================
   // HELPER METHODS
   // ============================================================================
