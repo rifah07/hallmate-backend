@@ -237,6 +237,20 @@ class ApplicationService {
 
     return this.transformApplication(cancelled);
   }
+
+  async deleteApplication(id: string, userContext: UserContext): Promise<void> {
+    if (userContext.role !== 'SUPER_ADMIN' && userContext.role !== 'PROVOST') {
+      throw new ForbiddenError('Only admins can delete applications');
+    }
+
+    const application = await applicationRepository.findById(id);
+
+    if (!application) {
+      throw new NotFoundError('Application not found');
+    }
+
+    await applicationRepository.delete(id);
+  }
   // ============================================================================
   // HELPER METHODS
   // ============================================================================
