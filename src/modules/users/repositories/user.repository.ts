@@ -61,6 +61,21 @@ class UserRepository {
   }
 
   /**
+   * Find user by ID with room and account status (for application processing)
+   */
+
+  async findByIdWithAccountStatusAndRoom(targetStudentId: string) {
+    return await prisma.user.findUnique({
+      where: { id: targetStudentId },
+      select: {
+        id: true,
+        role: true,
+        currentRoomId: true,
+        accountStatus: true,
+      },
+    });
+  }
+  /**
    * Find all users with filters and pagination
    */
   async findMany(
