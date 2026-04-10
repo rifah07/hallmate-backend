@@ -202,6 +202,17 @@ class RoomRepository {
     });
   }
 
+  async findRoomWithFilteredOccupant(roomId: string, studentId: string) {
+    return await prisma.room.findUnique({
+      where: { id: roomId },
+      include: {
+        occupants: {
+          where: { userId: studentId },
+        },
+      },
+    });
+  }
+
   // ============================================================================
   // UPDATE
   // ============================================================================
