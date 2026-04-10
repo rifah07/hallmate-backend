@@ -393,8 +393,28 @@ class ApplicationService {
     }
   }
 
-  private async validateSeatCancellation(data: any, studentId: string): Promise<void> {}
+  private async validateSeatCancellation(data: any, studentId: string): Promise<void> {
+    const currentRoom = await roomRepository.findUserCurrentRoom(studentId);
 
+    if (!currentRoom) {
+      throw new BadRequestError('You do not have a room assigned to cancel');
+    }
+
+    const effectiveDate = new Date(data.effectiveDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (effectiveDate < today) {
+      throw new BadRequestError('Effective date must be in the future');
+    }
+
+    const threeMonthsFromNow = new Date();
+    threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
+
+    if (effectiveDate > threeMonthsFromNow) {
+      throw new BadRequestError('Effective date cannot be more than 3 months in the future');
+    }
+  }
   private async validateSeatTransfer(data: any, studentId: string): Promise<void> {}
 
   private async validateSeatSwap(data: any, studentId: string): Promise<void> {}
