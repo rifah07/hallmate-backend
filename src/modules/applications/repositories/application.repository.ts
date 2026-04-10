@@ -217,6 +217,22 @@ class ApplicationRepository {
     };
   }
 
+  async countOverlappingApplications(studentId: string, data: { startDate: Date; endDate: Date }) {
+    return await prisma.application.count({
+          where: {
+            studentId,
+            type: 'LEAVE',
+            status: {
+              in: ['PENDING', 'APPROVED'],
+            },
+            data: {
+              path: ['startDate'],
+              lte: data.endDate,
+            },
+          },
+        });
+  }
+
   async update(id: string, data: { data?: any; attachments?: string[] }) {
     return await prisma.application.update({
       where: { id },
