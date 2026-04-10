@@ -374,7 +374,24 @@ class ApplicationService {
   // TYPE-SPECIFIC VALIDATIONS
   // ============================================================================
 
-  private async validateSeatApplication(_data: any, studentId: string): Promise<void> {}
+  private async validateSeatApplication(_data: any, studentId: string): Promise<void> {
+    const currentRoom = await roomRepository.findUserCurrentRoom(studentId);
+
+    if (currentRoom) {
+      throw new ConflictError(
+        'You already have a room assigned. Please cancel your current seat first.',
+      );
+    }
+
+    const hasPendingSeatApp = await applicationRepository.existsPendingApplication(
+      studentId,
+      'SEAT_APPLICATION',
+    );
+
+    if (hasPendingSeatApp) {
+      throw new ConflictError('You already have a pending seat application');
+    }
+  }
 
   private async validateSeatCancellation(data: any, studentId: string): Promise<void> {}
 
