@@ -1,17 +1,19 @@
-// src/modules/applications/services/application.service.ts
-
+import prisma from '@/database/prisma/client';
 import applicationRepository from '../repositories/application.repository';
 import {
   CreateApplicationInput,
+  UpdateApplicationInput,
+  AssignApplicationInput,
+  RespondToApplicationInput,
   ApplicationFilters,
   PaginationParams,
   UserContext,
   ApplicationResponse,
-  UpdateApplicationInput,
-  AssignApplicationInput,
-  RespondToApplicationInput,
 } from '../types/application.types';
-import { ForbiddenError, ConflictError, NotFoundError, BadRequestError } from '@/shared/errors';
+import { BadRequestError, NotFoundError, ForbiddenError, ConflictError } from '@/shared/errors/';
+import { ApplicationType } from '@prisma/client';
+import { roomRepository } from '@/modules/rooms';
+import userRepository from '@/modules/users/repositories/user.repository';
 
 class ApplicationService {
   async createApplication(
@@ -22,7 +24,6 @@ class ApplicationService {
       throw new ForbiddenError('Only students can create applications');
     }
 
-    // Check if student already has a pending application of the same type
     const hasPending = await applicationRepository.existsPendingApplication(
       userContext.userId,
       input.type,
@@ -33,6 +34,8 @@ class ApplicationService {
         `You already have a pending ${input.type.replace(/_/g, ' ').toLowerCase()} application`,
       );
     }
+
+    await this.validateApplicationRules(input.type, input.data, userContext.userId);
 
     const application = await applicationRepository.create({
       type: input.type,
@@ -94,7 +97,6 @@ class ApplicationService {
   }
 
   async getAssignedApplications(pagination: PaginationParams, userContext: UserContext) {
-    // Only staff can have assigned applications
     if (userContext.role === 'STUDENT' || userContext.role === 'PARENT') {
       throw new ForbiddenError('You do not have permission to view assigned applications');
     }
@@ -125,6 +127,7 @@ class ApplicationService {
       throw new NotFoundError('Application not found');
     }
 
+    // Check access
     this.checkAccess(application, userContext);
 
     return this.transformApplication(application);
@@ -191,7 +194,6 @@ class ApplicationService {
 
     this.checkRespondPermission(application, userContext);
 
-    // Can only respond to pending applications
     if (application.status !== 'PENDING') {
       throw new BadRequestError('Application has already been processed');
     }
@@ -251,6 +253,7 @@ class ApplicationService {
 
     await applicationRepository.delete(id);
   }
+
   async getStatistics(userContext: UserContext) {
     const filters: ApplicationFilters = {};
 
@@ -275,6 +278,7 @@ class ApplicationService {
       cancelled,
     };
   }
+
   // ============================================================================
   // HELPER METHODS
   // ============================================================================
@@ -298,14 +302,12 @@ class ApplicationService {
   }
 
   private checkAccess(application: any, userContext: UserContext): void {
-    // Students can only view their own applications
     if (userContext.role === 'STUDENT') {
       if (application.studentId !== userContext.userId) {
         throw new ForbiddenError('You can only view your own applications');
       }
     }
 
-    // Staff can view applications assigned to them or all if admin/provost
     if (
       userContext.role !== 'SUPER_ADMIN' &&
       userContext.role !== 'PROVOST' &&
@@ -328,6 +330,63 @@ class ApplicationService {
       throw new ForbiddenError('You can only respond to applications assigned to you');
     }
   }
+
+  private async validateApplicationRules(
+    type: ApplicationType,
+    data: any,
+    studentId: string,
+  ): Promise<void> {
+    switch (type) {
+      case 'SEAT_APPLICATION':
+        await this.validateSeatApplication(data, studentId);
+        break;
+
+      case 'SEAT_CANCELLATION':
+        await this.validateSeatCancellation(data, studentId);
+        break;
+
+      case 'SEAT_TRANSFER':
+        await this.validateSeatTransfer(data, studentId);
+        break;
+
+      case 'SEAT_SWAP':
+        await this.validateSeatSwap(data, studentId);
+        break;
+
+      case 'LEAVE':
+        await this.validateLeaveApplication(data, studentId);
+        break;
+
+      case 'COMPLAINT':
+        await this.validateComplaint(data, studentId);
+        break;
+
+      case 'MAINTENANCE':
+        await this.validateMaintenance(data, studentId);
+        break;
+
+      default:
+        throw new BadRequestError('Invalid application type');
+    }
+  }
+
+  // ============================================================================
+  // TYPE-SPECIFIC VALIDATIONS
+  // ============================================================================
+
+  private async validateSeatApplication(_data: any, studentId: string): Promise<void> {}
+
+  private async validateSeatCancellation(data: any, studentId: string): Promise<void> {}
+
+  private async validateSeatTransfer(data: any, studentId: string): Promise<void> {}
+
+  private async validateSeatSwap(data: any, studentId: string): Promise<void> {}
+
+  private async validateLeaveApplication(data: any, studentId: string): Promise<void> {}
+
+  private async validateComplaint(data: any, studentId: string): Promise<void> {}
+
+  private async validateMaintenance(data: any, studentId: string): Promise<void> {}
 }
 
 export default new ApplicationService();
