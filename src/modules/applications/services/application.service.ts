@@ -415,8 +415,48 @@ class ApplicationService {
       throw new BadRequestError('Effective date cannot be more than 3 months in the future');
     }
   }
-  private async validateSeatTransfer(data: any, studentId: string): Promise<void> {}
+  private async validateSeatTransfer(data: any, studentId: string): Promise<void> {
+    const currentRoom = await roomRepository.findUserCurrentRoom(studentId);
+    if (!currentRoom) {
+      throw new BadRequestError('You do not have a room assigned to transfer from');
+    }
 
+    if (data.currentRoomId !== currentRoom.id) {
+      throw new BadRequestError('Current room ID does not match your assigned room');
+    }
+
+    if (data.targetRoomId) {
+      const targetRoom = await roomRepository.findById(data.targetRoomId);
+      /*  const targetRoom = await prisma.room.findUnique({
+       where: { id: data.targetRoomId },
+       include: {
+         occupants: true
+       },
+     }); */
+
+      if (!targetRoom) {
+        throw new NotFoundError('Target room not found');
+      }
+
+      if (targetRoom.status !== 'AVAILABLE' && targetRoom.status !== 'PARTIALLY_OCCUPIED') {
+        throw new BadRequestError('Target room is not available for transfer');
+      }
+
+      const vacantBeds = targetRoom.capacity - targetRoom.occupants.length;
+      if (vacantBeds <= 0) {
+        throw new BadRequestError('Target room is full');
+      }
+    }
+
+    const hasPendingTransfer = await applicationRepository.existsPendingApplication(
+      studentId,
+      'SEAT_TRANSFER',
+    );
+
+    if (hasPendingTransfer) {
+      throw new ConflictError('You already have a pending seat transfer application');
+    }
+  }
   private async validateSeatSwap(data: any, studentId: string): Promise<void> {}
 
   private async validateLeaveApplication(data: any, studentId: string): Promise<void> {}
