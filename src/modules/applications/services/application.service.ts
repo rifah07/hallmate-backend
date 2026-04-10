@@ -600,7 +600,37 @@ class ApplicationService {
       }
     }
   }
-  private async validateMaintenance(data: any, studentId: string): Promise<void> {}
+
+  private async validateMaintenance(data: any, studentId: string): Promise<void> {
+    if (data.roomId) {
+      const room = await roomRepository.findRoomWithFilteredOccupant(data.roomId, studentId);
+
+      if (!room) {
+        throw new NotFoundError('Room not found');
+      }
+
+      if (room.occupants.length === 0) {
+        throw new BadRequestError('You can only request maintenance for your assigned room');
+      }
+    }
+
+    if (data.preferredDate) {
+      const preferredDate = new Date(data.preferredDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (preferredDate < today) {
+        throw new BadRequestError('Preferred maintenance date must be in the future');
+      }
+
+      const oneMonthFromNow = new Date();
+      oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+
+      if (preferredDate > oneMonthFromNow) {
+        throw new BadRequestError('Preferred date cannot be more than 1 month in the future');
+      }
+    }
+  }
 }
 
 export default new ApplicationService();
