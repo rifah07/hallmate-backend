@@ -528,8 +528,51 @@ class ApplicationService {
       throw new BadRequestError('Target student consent is required for room swap');
     }
   }
-  private async validateLeaveApplication(data: any, studentId: string): Promise<void> {}
+  private async validateLeaveApplication(data: any, studentId: string): Promise<void> {
+    const currentRoom = await roomRepository.findUserCurrentRoom(studentId);
+    if (!currentRoom) {
+      throw new BadRequestError('You must have a room assigned to apply for leave');
+    }
 
+    const startDate = new Date(data.startDate);
+    const endDate = new Date(data.endDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Start date must be in the future (or today for emergency)
+    if (data.leaveType !== 'EMERGENCY' && startDate < today) {
+      throw new BadRequestError('Leave start date must be in the future');
+    }
+
+    if (endDate <= startDate) {
+      throw new BadRequestError('Leave end date must be after start date');
+    }
+
+    const durationDays = Math.ceil(
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
+    if (data.leaveType === 'SHORT_LEAVE' && durationDays > 3) {
+      throw new BadRequestError('Short leave cannot exceed 3 days');
+    }
+
+    if (data.leaveType === 'OVERNIGHT' && durationDays > 1) {
+      throw new BadRequestError('Overnight leave is for single night only');
+    }
+
+    if (data.leaveType === 'LONG_LEAVE' && durationDays > 30) {
+      throw new BadRequestError('Long leave cannot exceed 30 days');
+    }
+
+    const overlappingLeaves = await applicationRepository.countOverlappingApplications(
+      studentId,
+      data,
+    );
+
+    if (overlappingLeaves > 0) {
+      throw new ConflictError('You have overlapping leave applications');
+    }
+  }
   private async validateComplaint(data: any, studentId: string): Promise<void> {}
 
   private async validateMaintenance(data: any, studentId: string): Promise<void> {}
