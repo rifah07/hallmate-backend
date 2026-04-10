@@ -573,8 +573,33 @@ class ApplicationService {
       throw new ConflictError('You have overlapping leave applications');
     }
   }
-  private async validateComplaint(data: any, studentId: string): Promise<void> {}
+  private async validateComplaint(data: any, studentId: string): Promise<void> {
+    if (data.roomId) {
+      const room = await roomRepository.findRoomWithFilteredOccupant(data.roomId, studentId);
 
+      if (!room) {
+        throw new NotFoundError('Room not found');
+      }
+
+      if (room.occupants.length === 0) {
+        // Not their room - only allow for certain categories
+        const allowedCategories = ['CLEANLINESS', 'MESS_FOOD', 'NOISE', 'SECURITY'];
+        if (!allowedCategories.includes(data.category)) {
+          throw new BadRequestError(
+            'You can only file complaints about your own room for this category',
+          );
+        }
+      }
+    }
+
+    if (data.category === 'SECURITY' || data.category === 'HARASSMENT') {
+      if (data.priority === 'LOW') {
+        throw new BadRequestError(
+          'Security and harassment complaints must be at least NORMAL priority',
+        );
+      }
+    }
+  }
   private async validateMaintenance(data: any, studentId: string): Promise<void> {}
 }
 
