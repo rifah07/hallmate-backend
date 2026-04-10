@@ -457,8 +457,77 @@ class ApplicationService {
       throw new ConflictError('You already have a pending seat transfer application');
     }
   }
-  private async validateSeatSwap(data: any, studentId: string): Promise<void> {}
+  private async validateSeatSwap(data: any, studentId: string): Promise<void> {
+    /*  // Check if student has a current room
+   const student = await prisma.user.findUnique({
+     where: { id: studentId },
+     select: { currentRoomId: true },
+   });
 
+   if (!student?.currentRoomId) {
+     throw new BadRequestError('You do not have a room assigned');
+   } */
+
+    const currentRoom = await roomRepository.findUserCurrentRoom(studentId);
+
+    if (!currentRoom) {
+      throw new BadRequestError('You do not have a room assigned');
+    }
+
+    if (data.currentRoomId !== currentRoom.id) {
+      throw new BadRequestError('Current room ID does not match your assigned room');
+    }
+
+    const targetStudent = await userRepository.findByIdWithAccountStatusAndRoom(
+      data.targetStudentId,
+    );
+
+    if (!targetStudent) {
+      throw new NotFoundError('Target student not found');
+    }
+
+    if (targetStudent.role !== 'STUDENT') {
+      throw new BadRequestError('Target user must be a student');
+    }
+
+    if (targetStudent.accountStatus !== 'ACTIVE') {
+      throw new BadRequestError('Target student account is not active');
+    }
+
+    if (!targetStudent.currentRoomId) {
+      throw new BadRequestError('Target student does not have a room assigned');
+    }
+
+    if (data.targetRoomId !== targetStudent.currentRoomId) {
+      throw new BadRequestError("Target room ID does not match target student's assigned room");
+    }
+
+    if (data.targetStudentId === studentId) {
+      throw new BadRequestError('Cannot swap room with yourself');
+    }
+
+    const [presentRoom, targetRoom] = await Promise.all([
+      prisma.room.findUnique({ where: { id: data.currentRoomId } }),
+      prisma.room.findUnique({ where: { id: data.targetRoomId } }),
+    ]);
+
+    if (!presentRoom || !targetRoom) {
+      throw new NotFoundError('One or both rooms not found');
+    }
+
+    const hasPendingSwap = await applicationRepository.existsPendingApplication(
+      studentId,
+      'SEAT_SWAP',
+    );
+
+    if (hasPendingSwap) {
+      throw new ConflictError('You already have a pending seat swap application');
+    }
+
+    if (!data.targetStudentConsent) {
+      throw new BadRequestError('Target student consent is required for room swap');
+    }
+  }
   private async validateLeaveApplication(data: any, studentId: string): Promise<void> {}
 
   private async validateComplaint(data: any, studentId: string): Promise<void> {}
