@@ -73,6 +73,28 @@ class ApplicationController {
       next(error);
     }
   }
+
+  async getAssignedApplications(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const pagination = {
+        page: req.query.page ? parseInt(req.query.page as string, 10) : 1,
+        limit: req.query.limit ? parseInt(req.query.limit as string, 10) : 20,
+        sortBy: req.query.sortBy as string | undefined,
+        sortOrder: req.query.sortOrder as 'asc' | 'desc' | undefined,
+      };
+
+      const userContext: UserContext = {
+        userId: req.user!.userId,
+        role: req.user!.role,
+        assignedFloor: req.user!.assignedFloor,
+      };
+
+      const result = await applicationService.getAssignedApplications(pagination, userContext);
+      sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new ApplicationController();
