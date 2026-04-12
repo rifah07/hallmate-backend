@@ -198,6 +198,21 @@ class ApplicationController {
       next(error);
     }
   }
+
+  async getStatistics(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userContext: UserContext = {
+        userId: req.user!.userId,
+        role: req.user!.role,
+        assignedFloor: req.user!.assignedFloor,
+      };
+
+      const statistics = await applicationService.getStatistics(userContext);
+      sendSuccess(res, statistics);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new ApplicationController();
