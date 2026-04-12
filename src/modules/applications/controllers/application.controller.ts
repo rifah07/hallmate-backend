@@ -131,6 +131,24 @@ class ApplicationController {
       next(error);
     }
   }
+  async assignApplication(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userContext: UserContext = {
+        userId: req.user!.userId,
+        role: req.user!.role,
+        assignedFloor: req.user!.assignedFloor,
+      };
+
+      const application = await applicationService.assignApplication(
+        String(req.params.applicationId),
+        req.body,
+        userContext,
+      );
+      sendSuccess(res, application, 'Application assigned successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new ApplicationController();
