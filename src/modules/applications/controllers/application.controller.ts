@@ -95,6 +95,23 @@ class ApplicationController {
       next(error);
     }
   }
+  async getApplicationById(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userContext: UserContext = {
+        userId: req.user!.userId,
+        role: req.user!.role,
+        assignedFloor: req.user!.assignedFloor,
+      };
+
+      const application = await applicationService.getApplicationById(
+        String(req.params.applicationId),
+        userContext,
+      );
+      sendSuccess(res, application);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new ApplicationController();
