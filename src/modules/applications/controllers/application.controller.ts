@@ -112,6 +112,25 @@ class ApplicationController {
       next(error);
     }
   }
+
+  async updateApplication(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userContext: UserContext = {
+        userId: req.user!.userId,
+        role: req.user!.role,
+        assignedFloor: req.user!.assignedFloor,
+      };
+
+      const application = await applicationService.updateApplication(
+        String(req.params.applicationId),
+        req.body,
+        userContext,
+      );
+      sendSuccess(res, application, 'Application updated successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new ApplicationController();
