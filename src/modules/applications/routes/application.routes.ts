@@ -75,4 +75,30 @@ router.delete(
   applicationController.deleteApplication,
 );
 
+// POST /api/applications/:applicationId/assign - Assign application to staff
+router.post(
+  '/:applicationId/assign',
+  authorize('SUPER_ADMIN', 'PROVOST'),
+  validate(applicationIdSchema, 'params'),
+  validate(assignApplicationSchema, 'body'),
+  applicationController.assignApplication,
+);
+
+// POST /api/applications/:applicationId/respond - Respond to application (approve/reject)
+router.post(
+  '/:applicationId/respond',
+  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR', 'OFFICE_STAFF', 'ASSISTANT_WARDEN'),
+  validate(applicationIdSchema, 'params'),
+  validate(respondToApplicationSchema, 'body'),
+  applicationController.respondToApplication,
+);
+
+// POST /api/applications/:applicationId/cancel - Cancel application
+router.post(
+  '/:applicationId/cancel',
+  authorize('SUPER_ADMIN', 'PROVOST', 'STUDENT'),
+  validate(applicationIdSchema, 'params'),
+  applicationController.cancelApplication,
+);
+
 export default router;
