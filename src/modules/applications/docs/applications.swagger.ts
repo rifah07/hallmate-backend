@@ -145,3 +145,86 @@
  *       200:
  *         description: Applications retrieved
  */
+
+/**
+ * @swagger
+ * /api/applications/assigned:
+ *   get:
+ *     tags: [Applications]
+ *     summary: Get assigned applications
+ *     description: |
+ *       Returns applications assigned to the authenticated staff member.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR, OFFICE_STAFF, ASSISTANT_WARDEN
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Applications retrieved
+ */
+
+/**
+ * @swagger
+ * /api/applications:
+ *   get:
+ *     tags: [Applications]
+ *     summary: Get all applications
+ *     description: |
+ *       Returns paginated applications with filters.
+ *
+ *       Students see only their own applications.
+ *       Staff can see all or assigned applications.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR, OFFICE_STAFF, STUDENT
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: studentId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: query
+ *         name: assignedTo
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Applications retrieved
+ *
+ *   post:
+ *     tags: [Applications]
+ *     summary: Create application
+ *     description: |
+ *       Submit a new application.
+ *
+ *       **Access:** STUDENT
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateApplicationInput'
+ *     responses:
+ *       201:
+ *         description: Application created successfully
+ */
