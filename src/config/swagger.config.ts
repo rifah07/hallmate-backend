@@ -20,6 +20,7 @@ const options: swaggerJsdoc.Options = {
     './src/modules/auth/docs/auth.swagger.ts',
     './src/modules/users/docs/user.swagger.ts',
     './src/modules/rooms/docs/room.swagger.ts',
+    './src/modules/applications/docs/applications.swagger.ts',
     // add other modules
   ],
 };
