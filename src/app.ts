@@ -10,6 +10,7 @@ import cookieParser from 'cookie-parser';
 import { setupSwagger } from './config/swagger.config';
 import userRoutes from './modules/users/routes/user.routes';
 import { roomRoutes } from './modules/rooms';
+import applicationRoutes from './modules/applications/routes/application.routes';
 
 const app: Application = express();
 
@@ -68,6 +69,7 @@ app.get('/', (_req: Request, res: Response) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/rooms', roomRoutes);
+app.use('/api/applications', applicationRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response, _next: NextFunction) => {
