@@ -104,3 +104,44 @@
  *         cancelled:
  *           type: integer
  */
+
+/**
+ * @swagger
+ * tags:
+ *   - name: Applications
+ *     description: Application management system (seat, leave, complaints, maintenance)
+ */
+
+/**
+ * @swagger
+ * /api/applications/statistics:
+ *   get:
+ *     tags: [Applications]
+ *     summary: Get application statistics
+ *     description: |
+ *       Returns aggregated statistics.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR, OFFICE_STAFF, STUDENT
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Statistics retrieved successfully
+ */
+
+/**
+ * @swagger
+ * /api/applications/my-applications:
+ *   get:
+ *     tags: [Applications]
+ *     summary: Get my applications
+ *     description: |
+ *       Returns applications of authenticated student.
+ *
+ *       **Access:** STUDENT
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Applications retrieved
+ */
