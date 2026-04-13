@@ -6,7 +6,11 @@ import { validate } from '@/shared/middleware/validate';
 
 import {
   createApplicationSchema,
+  updateApplicationSchema,
+  assignApplicationSchema,
+  respondToApplicationSchema,
   applicationQuerySchema,
+  applicationIdSchema,
 } from '../validations/application.validation';
 
 const router = Router();
@@ -44,6 +48,31 @@ router.post(
   authorize('STUDENT'),
   validate(createApplicationSchema, 'body'),
   applicationController.createApplication,
+);
+
+// GET /api/applications/:applicationId - Get application by ID
+router.get(
+  '/:applicationId',
+  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR', 'OFFICE_STAFF', 'STUDENT'),
+  validate(applicationIdSchema, 'params'),
+  applicationController.getApplicationById,
+);
+
+// PATCH /api/applications/:applicationId - Update application (student only, own applications)
+router.patch(
+  '/:applicationId',
+  authorize('STUDENT'),
+  validate(applicationIdSchema, 'params'),
+  validate(updateApplicationSchema, 'body'),
+  applicationController.updateApplication,
+);
+
+// DELETE /api/applications/:applicationId - Delete application (admin only)
+router.delete(
+  '/:applicationId',
+  authorize('SUPER_ADMIN', 'PROVOST'),
+  validate(applicationIdSchema, 'params'),
+  applicationController.deleteApplication,
 );
 
 export default router;
