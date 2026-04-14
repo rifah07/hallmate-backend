@@ -328,3 +328,32 @@
  *       200:
  *         description: Application assigned
  */
+/**
+ * @swagger
+ * /api/applications/{applicationId}/respond:
+ *   post:
+ *     tags: [Applications]
+ *     summary: Respond to application
+ *     description: |
+ *       Approve or reject an application.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR, OFFICE_STAFF, ASSISTANT_WARDEN
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: applicationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RespondToApplicationInput'
+ *     responses:
+ *       200:
+ *         description: Response submitted
+ */
