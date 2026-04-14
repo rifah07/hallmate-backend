@@ -228,3 +228,73 @@
  *       201:
  *         description: Application created successfully
  */
+
+/**
+ * @swagger
+ * /api/applications/{applicationId}:
+ *   get:
+ *     tags: [Applications]
+ *     summary: Get application by ID
+ *     description: |
+ *       Retrieve a specific application.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR, OFFICE_STAFF, STUDENT
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: applicationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Application retrieved
+ *
+ *   patch:
+ *     tags: [Applications]
+ *     summary: Update application
+ *     description: |
+ *       Update own pending application only.
+ *
+ *       **Access:** STUDENT
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: applicationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateApplicationInput'
+ *     responses:
+ *       200:
+ *         description: Application updated
+ *
+ *   delete:
+ *     tags: [Applications]
+ *     summary: Delete application
+ *     description: |
+ *       Delete an application.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: applicationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Application deleted
+ */
