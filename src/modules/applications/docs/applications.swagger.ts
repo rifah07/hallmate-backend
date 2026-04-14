@@ -328,6 +328,7 @@
  *       200:
  *         description: Application assigned
  */
+
 /**
  * @swagger
  * /api/applications/{applicationId}/respond:
@@ -356,4 +357,28 @@
  *     responses:
  *       200:
  *         description: Response submitted
+ */
+
+/**
+ * @swagger
+ * /api/applications/{applicationId}/cancel:
+ *   post:
+ *     tags: [Applications]
+ *     summary: Cancel application
+ *     description: |
+ *       Cancel a pending application.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST, STUDENT
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: applicationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Application cancelled
  */
