@@ -2,15 +2,34 @@ import { Request, Response, NextFunction } from 'express';
 import { z, ZodError, ZodIssue } from 'zod';
 import { sendError } from '@/shared/utils/response.util';
 
+type RequestSource = 'body' | 'query' | 'params' | 'all';
+
 export const validate =
-  (schema: z.ZodTypeAny, customMessage?: string) =>
+  (schema: z.ZodTypeAny, source: RequestSource = 'all', customMessage?: string) =>
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      await schema.parseAsync({
-        body: req.body,
-        query: req.query,
-        params: req.params,
-      });
+      const dataToValidate =
+        source === 'all' ? { body: req.body, query: req.query, params: req.params } : req[source];
+
+      const parsed = (await schema.parseAsync(dataToValidate)) as Record<string, any>;
+
+      if (source === 'all') {
+        req.body = parsed.body;
+        req.params = parsed.params;
+        Object.defineProperty(req, 'query', {
+          value: parsed.query,
+          writable: true,
+          configurable: true,
+        });
+      } else if (source === 'query') {
+        Object.defineProperty(req, 'query', {
+          value: parsed,
+          writable: true,
+          configurable: true,
+        });
+      } else {
+        (req as any)[source] = parsed;
+      }
 
       return next();
     } catch (error) {
@@ -20,13 +39,7 @@ export const validate =
           message: issue.message,
         }));
 
-        let message = 'Validation failed';
-
-        // Only override if customMessage is explicitly provided
-        if (customMessage) {
-          message = customMessage;
-        }
-
+        const message = customMessage ?? 'Validation failed';
         sendError(res, message, 400, 'VALIDATION_ERROR', errors);
         return;
       }
