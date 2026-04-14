@@ -5,13 +5,14 @@
     "lib": ["ES2022"],
     "module": "commonjs",
     "moduleResolution": "node",
-    
+    "ignoreDeprecations": "5.0",
+
     /* Emit */
     "outDir": "./dist",
     "rootDir": "./src",
     "removeComments": true,
     "sourceMap": true,
-    
+
     /* Type Checking */
     "strict": true,
     "noImplicitAny": true,
@@ -25,20 +26,20 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    
+
     /* Interop Constraints */
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    
+
     /* Skip Lib Check */
     "skipLibCheck": true,
-    
+
     /* Advanced */
     "resolveJsonModule": true,
     "declaration": true,
     "declarationMap": true,
-    
+
     /* Path Mapping */
     "baseUrl": "./src",
     "paths": {
@@ -46,7 +47,7 @@
       "@/config/*": ["./config/*"],
       "@/modules/*": ["./modules/*"],
       "@/shared/*": ["./shared/*"]
-    },
+    }
   },
   "include": ["src/**/*", "src/shared/types/**/*"],
   "exclude": ["node_modules", "dist", "tests"],
