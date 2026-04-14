@@ -119,10 +119,14 @@ export const createApplicationSchema = z.discriminatedUnion('type', [
   }),
 ]);
 
-export const updateApplicationSchema = z.object({
-  data: z.record(z.string(), z.any()).optional(),
-  attachments: z.array(z.string().url()).optional(),
-});
+export const updateApplicationSchema = z
+  .object({
+    data: z.record(z.string(), z.any()).optional(),
+    attachments: z.array(z.string().url()).optional(),
+  })
+  .refine((val) => val.data !== undefined || val.attachments !== undefined, {
+    message: 'At least one of data or attachments must be provided',
+  });
 
 export const assignApplicationSchema = z.object({
   assignedTo: z.string().uuid('Invalid user ID'),
