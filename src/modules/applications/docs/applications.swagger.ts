@@ -298,3 +298,33 @@
  *       200:
  *         description: Application deleted
  */
+
+/**
+ * @swagger
+ * /api/applications/{applicationId}/assign:
+ *   post:
+ *     tags: [Applications]
+ *     summary: Assign application
+ *     description: |
+ *       Assign a pending application to a staff member.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: applicationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AssignApplicationInput'
+ *     responses:
+ *       200:
+ *         description: Application assigned
+ */
