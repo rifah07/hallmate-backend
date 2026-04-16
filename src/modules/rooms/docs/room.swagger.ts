@@ -1,145 +1,119 @@
 /**
  * @swagger
- * components:
- *   schemas:
- *     Room:
- *       type: object
- *       properties:
- *         id:
- *           type: string
- *           format: uuid
- *         roomNumber:
- *           type: string
- *           example: "301"
- *         floor:
- *           type: integer
- *           example: 3
- *         wing:
- *           type: string
- *           enum: [A, B]
- *         roomType:
- *           type: string
- *           enum: [SINGLE, DOUBLE, TRIPLE, FOUR_SHARING]
- *         capacity:
- *           type: integer
- *         currentOccupancy:
- *           type: integer
- *         status:
- *           type: string
- *           enum: [AVAILABLE, OCCUPIED, PARTIALLY_OCCUPIED, MAINTENANCE, RESERVED]
- *         hasAC:
- *           type: boolean
- *         hasBalcony:
- *           type: boolean
- *         hasAttachedBath:
- *           type: boolean
- *         vacantBeds:
- *           type: array
- *           items:
- *             type: integer
- *         occupancyRate:
- *           type: number
- *
- *     CreateRoomBody:
- *       type: object
- *       required: [roomNumber, floor, wing, roomType, capacity]
- *       properties:
- *         roomNumber:
- *           type: string
- *           example: "301"
- *         floor:
- *           type: integer
- *           minimum: 1
- *           maximum: 14
- *         wing:
- *           type: string
- *           enum: [A, B]
- *         roomType:
- *           type: string
- *           enum: [SINGLE, DOUBLE, TRIPLE, FOUR_SHARING]
- *         capacity:
- *           type: integer
- *           minimum: 1
- *           maximum: 4
- *         hasAC:
- *           type: boolean
- *         hasBalcony:
- *           type: boolean
- *         hasAttachedBath:
- *           type: boolean
- *
- *     UpdateRoomBody:
- *       type: object
- *       description: At least one field required
- *       properties:
- *         roomNumber:
- *           type: string
- *         floor:
- *           type: integer
- *         wing:
- *           type: string
- *         roomType:
- *           type: string
- *         capacity:
- *           type: integer
- *         status:
- *           type: string
- *         hasAC:
- *           type: boolean
- *         hasBalcony:
- *           type: boolean
- *         hasAttachedBath:
- *           type: boolean
- *
- *     AssignStudentBody:
- *       type: object
- *       required: [userId, bedNumber]
- *       properties:
- *         userId:
- *           type: string
- *           format: uuid
- *         bedNumber:
- *           type: integer
- *           minimum: 1
- *           maximum: 4
- *
- *     TransferStudentBody:
- *       type: object
- *       required: [userId, targetRoomId, targetBedNumber]
- *       properties:
- *         userId:
- *           type: string
- *           format: uuid
- *         targetRoomId:
- *           type: string
- *           format: uuid
- *         targetBedNumber:
- *           type: integer
- *
- *     RoomStatistics:
- *       type: object
- *       properties:
- *         totalRooms:
- *           type: integer
- *         occupiedRooms:
- *           type: integer
- *         vacantRooms:
- *           type: integer
- *         totalBeds:
- *           type: integer
- *         occupiedBeds:
- *           type: integer
- *         vacantBeds:
- *           type: integer
- *         overallOccupancyRate:
- *           type: number
+ * tags:
+ *   - name: Rooms - Collection
+ *   - name: Rooms - Vacancy
+ *   - name: Rooms - Filters
+ *   - name: Rooms - Assignments
+ *   - name: Rooms - Statistics
  */
+
+// ============================================================================
+// COLLECTION
+// ============================================================================
 
 /**
  * @swagger
- * tags:
- *   - name: Rooms
- *     description: Room management, allocation, and vacancy tracking
+ * /api/rooms:
+ *   get:
+ *     summary: Get all rooms (with pagination and filters)
+ *     description: |
+ *       Lists all rooms with pagination and filtering.
+ *       - Super Admin/Provost: See all rooms
+ *       - House Tutor: See only their assigned floor
+ *       - Office Staff: Read-only access
+ *     tags: [Rooms - Collection]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 20 }
+ *       - in: query
+ *         name: floor
+ *         schema: { type: integer, minimum: 1, maximum: 14 }
+ *       - in: query
+ *         name: wing
+ *         schema:
+ *           type: string
+ *           enum: [A, B]
+ *       - in: query
+ *         name: roomType
+ *         schema:
+ *           type: string
+ *           enum: [SINGLE, DOUBLE, TRIPLE, FOUR_SHARING]
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [AVAILABLE, OCCUPIED, PARTIALLY_OCCUPIED, MAINTENANCE, RESERVED]
+ *       - in: query
+ *         name: hasVacancy
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           default: roomNumber
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: asc
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/PaginatedRoomsResponse'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *
+ *   post:
+ *     summary: Create a new room
+ *     tags: [Rooms - Collection]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateRoomInput'
+ *     responses:
+ *       201:
+ *         description: Room created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 data:
+ *                   $ref: '#/components/schemas/Room'
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Validation error
+ *       409:
+ *         description: Room number already exists
  */
 
 // ============================================================================
@@ -150,102 +124,109 @@
  * @swagger
  * /api/rooms/statistics:
  *   get:
- *     tags: [Rooms]
  *     summary: Get room statistics
- *     description: |
- *       Returns aggregated statistics about rooms and beds.
- *
- *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ *     tags: [Rooms - Statistics]
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  *     responses:
  *       200:
- *         description: Statistics retrieved successfully
+ *         description: Statistics retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 data:
+ *                   $ref: '#/components/schemas/RoomStatistics'
  */
 
 // ============================================================================
-// VACANCY ROUTES
+// VACANCY
 // ============================================================================
 
 /**
  * @swagger
  * /api/rooms/vacant:
  *   get:
- *     tags: [Rooms]
  *     summary: Get all vacant rooms
- *     description: |
- *       Returns rooms that have at least one vacant bed.
- *
- *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ *     tags: [Rooms - Vacancy]
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: floor
+ *         schema: { type: integer, minimum: 1, maximum: 14 }
  *     responses:
  *       200:
- *         description: Vacant rooms retrieved
+ *         description: Vacant rooms
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     rooms:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Room'
+ *                     count:
+ *                       type: integer
  */
 
 /**
  * @swagger
  * /api/rooms/vacant/floor/{floor}:
  *   get:
- *     tags: [Rooms]
- *     summary: Get vacant rooms by floor
- *     description: |
- *       Returns vacant rooms filtered by floor.
- *
- *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ *     summary: Get vacant rooms on specific floor
+ *     tags: [Rooms - Vacancy]
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: floor
  *         required: true
- *         schema:
- *           type: integer
- *     security:
- *       - bearerAuth: []
+ *         schema: { type: integer, minimum: 1, maximum: 14 }
  *     responses:
  *       200:
- *         description: Vacant rooms by floor retrieved
+ *         description: Vacant rooms by floor
  */
 
 /**
  * @swagger
  * /api/rooms/my-floor:
  *   get:
- *     tags: [Rooms]
- *     summary: Get my floor rooms
- *     description: |
- *       Returns rooms for the authenticated house tutor's floor.
- *
- *       **Access:** HOUSE_TUTOR
+ *     summary: Get rooms on my floor
+ *     tags: [Rooms - Vacancy]
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  *     responses:
  *       200:
  *         description: Rooms retrieved
+ *       403:
+ *         description: Not a House Tutor
  */
 
 // ============================================================================
-// FILTER ROUTES
+// FILTERS
 // ============================================================================
 
 /**
  * @swagger
  * /api/rooms/floor/{floor}:
  *   get:
- *     tags: [Rooms]
  *     summary: Get rooms by floor
- *     description: |
- *       Returns all rooms on a specific floor.
- *
- *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ *     tags: [Rooms - Filters]
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: floor
  *         required: true
- *         schema:
- *           type: integer
- *     security:
- *       - bearerAuth: []
+ *         schema: { type: integer, minimum: 1, maximum: 14 }
  *     responses:
  *       200:
  *         description: Rooms retrieved
@@ -255,147 +236,166 @@
  * @swagger
  * /api/rooms/type/{type}:
  *   get:
- *     tags: [Rooms]
  *     summary: Get rooms by type
- *     description: |
- *       Filter rooms by type.
- *
- *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ *     tags: [Rooms - Filters]
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: type
  *         required: true
  *         schema:
  *           type: string
- *     security:
- *       - bearerAuth: []
+ *           enum: [SINGLE, DOUBLE, TRIPLE, FOUR_SHARING]
  *     responses:
  *       200:
  *         description: Rooms retrieved
  */
 
 // ============================================================================
-// COLLECTION ROUTES
-// ============================================================================
-
-/**
- * @swagger
- * /api/rooms:
- *   get:
- *     tags: [Rooms]
- *     summary: Get all rooms
- *     description: |
- *       Returns paginated rooms with filtering.
- *
- *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR, OFFICE_STAFF
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Rooms retrieved
- *
- *   post:
- *     tags: [Rooms]
- *     summary: Create room
- *     description: |
- *       Creates a new room.
- *
- *       **Access:** SUPER_ADMIN, PROVOST
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/CreateRoomBody'
- *     responses:
- *       201:
- *         description: Room created
- */
-
-// ============================================================================
-// SINGLE ROOM ROUTES
+// SINGLE ROOM
 // ============================================================================
 
 /**
  * @swagger
  * /api/rooms/{roomId}:
  *   get:
- *     tags: [Rooms]
  *     summary: Get room by ID
+ *     tags: [Rooms - Collection]
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
  *     responses:
  *       200:
  *         description: Room retrieved
+ *       404:
+ *         description: Room not found
  *
  *   patch:
- *     tags: [Rooms]
  *     summary: Update room
+ *     tags: [Rooms - Collection]
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateRoomInput'
  *     responses:
  *       200:
  *         description: Room updated
+ *       400:
+ *         description: Validation error
  *
  *   delete:
- *     tags: [Rooms]
  *     summary: Delete room
+ *     tags: [Rooms - Collection]
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  *     responses:
  *       200:
  *         description: Room deleted
  */
 
 // ============================================================================
-// ASSIGNMENT ROUTES
+// ASSIGNMENTS
 // ============================================================================
 
 /**
  * @swagger
  * /api/rooms/{roomId}/assign:
  *   post:
- *     tags: [Rooms]
  *     summary: Assign student to room
- *     description: |
- *       Assign a student to a specific bed.
- *
- *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ *     tags: [Rooms - Assignments]
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AssignStudentInput'
  *     responses:
  *       200:
  *         description: Student assigned
+ *       400:
+ *         description: Validation error
+ *       409:
+ *         description: Conflict
  */
 
 /**
  * @swagger
  * /api/rooms/{roomId}/unassign/{userId}:
  *   delete:
- *     tags: [Rooms]
- *     summary: Unassign student from room
+ *     summary: Unassign student
+ *     tags: [Rooms - Assignments]
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: Student unassigned
+ *       404:
+ *         description: Not found
  */
 
 /**
  * @swagger
  * /api/rooms/{roomId}/transfer:
  *   post:
- *     tags: [Rooms]
  *     summary: Transfer student
- *     description: |
- *       Transfer a student to another room.
- *
- *       **Access:** SUPER_ADMIN, PROVOST, HOUSE_TUTOR
+ *     tags: [Rooms - Assignments]
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/TransferStudentInput'
  *     responses:
  *       200:
  *         description: Student transferred
+ *       400:
+ *         description: Validation error
+ *       409:
+ *         description: Conflict
  */
