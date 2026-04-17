@@ -335,7 +335,7 @@
  *     tags:
  *       - Rooms - Collection
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - name: page
  *         in: query
@@ -414,7 +414,7 @@
  *     tags:
  *       - Rooms - Collection
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -459,7 +459,7 @@
  *     tags:
  *       - Rooms - Statistics
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     responses:
  *       '200':
  *         description: Success
@@ -487,7 +487,7 @@
  *     tags:
  *       - Rooms - Vacancy
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - name: floor
  *         in: query
@@ -525,7 +525,7 @@
  *     tags:
  *       - Rooms - Vacancy
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - name: floor
  *         in: path
@@ -568,7 +568,7 @@
  *     tags:
  *       - Rooms - Vacancy
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     responses:
  *       '200':
  *         description: Success
@@ -605,7 +605,7 @@
  *     tags:
  *       - Rooms - Filters
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - name: floor
  *         in: path
@@ -646,7 +646,7 @@
  *     tags:
  *       - Rooms - Filters
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - name: type
  *         in: path
@@ -688,7 +688,7 @@
  *     tags:
  *       - Rooms - Collection
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - name: roomId
  *         in: path
@@ -721,7 +721,7 @@
  *     tags:
  *       - Rooms - Collection
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - name: roomId
  *         in: path
@@ -764,7 +764,7 @@
  *     tags:
  *       - Rooms - Collection
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - name: roomId
  *         in: path
@@ -808,7 +808,7 @@
  *     tags:
  *       - Rooms - Assignments
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - name: roomId
  *         in: path
@@ -860,7 +860,7 @@
  *     tags:
  *       - Rooms - Assignments
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - name: roomId
  *         in: path
@@ -910,7 +910,7 @@
  *     tags:
  *       - Rooms - Assignments
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - name: roomId
  *         in: path
