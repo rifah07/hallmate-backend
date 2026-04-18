@@ -14,7 +14,7 @@ import {
   TypeStatistics,
 } from '../types/room.types';
 import { NotFoundError, ConflictError, ForbiddenError, BadRequestError } from '@/shared/errors';
-import { RoomType } from '@prisma/client';
+import { RoomStatus, RoomType } from '@prisma/client';
 
 class RoomService {
   // ============================================================================
@@ -319,7 +319,16 @@ class RoomService {
       throw new BadRequestError('Room is full');
     }
 
-    await roomRepository.assignStudent(roomId, data.userId, data.bedNumber, data.assignedDate);
+    const newOccupancy = occupiedCount + 1;
+    const newStatus: RoomStatus = newOccupancy >= room.capacity ? 'OCCUPIED' : 'PARTIALLY_OCCUPIED';
+
+    await roomRepository.assignStudent(
+      roomId,
+      data.userId,
+      data.bedNumber,
+      newStatus,
+      data.assignedDate,
+    );
 
     const updatedRoom = await roomRepository.findById(roomId);
     return this.transformRoom(updatedRoom!);
@@ -343,7 +352,11 @@ class RoomService {
       throw new NotFoundError('Student is not assigned to this room');
     }
 
-    await roomRepository.unassignStudent(roomId, userId);
+    const occupiedCount = room.occupants.filter((o) => o.userId !== null).length;
+    const newOccupancy = occupiedCount - 1;
+    const newStatus: RoomStatus = newOccupancy === 0 ? 'AVAILABLE' : 'PARTIALLY_OCCUPIED';
+
+    await roomRepository.unassignStudent(roomId, userId, newStatus);
 
     const updatedRoom = await roomRepository.findById(roomId);
     return this.transformRoom(updatedRoom!);
@@ -367,17 +380,20 @@ class RoomService {
       throw new NotFoundError('Target room not found');
     }
 
-    // Check floor access for both rooms
     this.checkFloorAccess(sourceRoom.floor, userContext);
     this.checkFloorAccess(targetRoom.floor, userContext);
 
-    // Check if student is in source room
     const occupant = await roomRepository.findOccupantByUserAndRoom(data.userId, roomId);
     if (!occupant) {
       throw new NotFoundError('Student is not assigned to the source room');
     }
 
-    if (targetRoom.status !== 'AVAILABLE') {
+    // Target room must be AVAILABLE or PARTIALLY_OCCUPIED (not full, maintenance, etc.)
+    if (
+      targetRoom.status === 'OCCUPIED' ||
+      targetRoom.status === 'MAINTENANCE' ||
+      targetRoom.status === 'RESERVED'
+    ) {
       throw new BadRequestError(
         `Target room is currently ${targetRoom.status.toLowerCase()} and cannot accept new occupants`,
       );
@@ -400,12 +416,23 @@ class RoomService {
       throw new BadRequestError('Target room is full');
     }
 
-    // Perform transfer (unassign from source, assign to target)
-    await roomRepository.unassignStudent(roomId, data.userId);
+    // Calculate source room new status after student leaves
+    const sourceOccupiedCount = sourceRoom.occupants.filter((o) => o.userId !== null).length;
+    const sourceNewOccupancy = sourceOccupiedCount - 1;
+    const sourceNewStatus: RoomStatus =
+      sourceNewOccupancy === 0 ? 'AVAILABLE' : 'PARTIALLY_OCCUPIED';
+
+    // Calculate target room new status after student arrives
+    const targetNewOccupancy = targetOccupiedCount + 1;
+    const targetNewStatus: RoomStatus =
+      targetNewOccupancy >= targetRoom.capacity ? 'OCCUPIED' : 'PARTIALLY_OCCUPIED';
+
+    await roomRepository.unassignStudent(roomId, data.userId, sourceNewStatus);
     await roomRepository.assignStudent(
       data.targetRoomId,
       data.userId,
       data.targetBedNumber,
+      targetNewStatus,
       data.transferDate,
     );
 
