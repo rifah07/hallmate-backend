@@ -76,6 +76,17 @@ router.get(
 router.get('/my-floor', authorize('HOUSE_TUTOR'), roomController.getMyFloorRooms);
 
 // ============================================================================
+// MY ROOM (Student only)
+// ============================================================================
+
+/**
+ * @route GET /my-room
+ * @desc Retrieve the authenticated student's current room and bed info.
+ * @access STUDENT
+ */
+router.get('/my-room', authorize('STUDENT'), roomController.getMyRoom);
+
+// ============================================================================
 // FILTER ROUTES (MUST be before /:roomId)
 // ============================================================================
 

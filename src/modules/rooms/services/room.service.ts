@@ -171,6 +171,21 @@ class RoomService {
     return rooms.map((room) => this.transformRoom(room));
   }
 
+  async getMyRoom(studentId: string): Promise<RoomWithOccupants & { myBedNumber: number }> {
+    const occupant = await roomRepository.findUserCurrentRoomAndBed(studentId);
+
+    if (!occupant) {
+      throw new NotFoundError('You are not currently assigned to any room');
+    }
+
+    const transformed = this.transformRoom(occupant.room);
+
+    return {
+      ...transformed,
+      myBedNumber: occupant.bedNumber,
+    };
+  }
+
   async getRoomsByType(roomType: RoomType, userContext: UserContext) {
     const rooms = await roomRepository.findByType(roomType);
 
@@ -250,7 +265,7 @@ class RoomService {
       throw new NotFoundError('Room not found');
     }
 
-   // const occupiedCount = room.occupants.filter((o) => o.userId !== null).length;
+    // const occupiedCount = room.occupants.filter((o) => o.userId !== null).length;
     const occupiedCount = room.occupants.filter((o) => !!o.userId).length;
     if (occupiedCount > 0) {
       throw new BadRequestError('Cannot delete room with occupants. Unassign all students first.');

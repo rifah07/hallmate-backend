@@ -97,6 +97,18 @@
  *           type: string
  *           format: date-time
  *
+ *     MyRoomResponse:
+ *       allOf:
+ *         - $ref: '#/components/schemas/Room'
+ *         - type: object
+ *           properties:
+ *             myBedNumber:
+ *               type: integer
+ *               minimum: 1
+ *               maximum: 4
+ *               example: 2
+ *               description: "The bed number assigned to the authenticated student"
+ *
  *     CreateRoomInput:
  *       type: object
  *       required:
@@ -592,6 +604,43 @@
  *                       type: integer
  *       '403':
  *         description: Not a House Tutor or no assigned floor
+ */
+
+/**
+ * @swagger
+ * /api/rooms/my-room:
+ *   get:
+ *     summary: Get my current room (Student only)
+ *     description: |
+ *       Returns the authenticated student's current room details including
+ *       roommate info, vacant beds, and their own assigned bed number.
+ *       **Access**: Student only
+ *     tags:
+ *       - Rooms - Vacancy
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Room info fetched successfully"
+ *                 data:
+ *                   $ref: '#/components/schemas/MyRoomResponse'
+ *       '401':
+ *         description: Unauthorized
+ *       '403':
+ *         description: Forbidden - not a student
+ *       '404':
+ *         description: You are not currently assigned to any room
  */
 
 /**
