@@ -2,6 +2,22 @@ import { prisma } from '@/database/prisma/client';
 import { RoomType, Prisma, RoomStatus } from '@prisma/client';
 import { RoomFilters, PaginationParams } from '../types/room.types';
 
+const OCCUPANTS_INCLUDE = {
+  occupants: {
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          universityId: true,
+          email: true,
+          phone: true,
+          photo: true,
+        },
+      },
+    },
+  },
+} as const;
 class RoomRepository {
   // ============================================================================
   // CREATE
@@ -10,22 +26,7 @@ class RoomRepository {
   async create(data: Prisma.RoomCreateInput) {
     return await prisma.room.create({
       data,
-      include: {
-        occupants: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                universityId: true,
-                email: true,
-                phone: true,
-                photo: true,
-              },
-            },
-          },
-        },
-      },
+      include: OCCUPANTS_INCLUDE,
     });
   }
 
@@ -36,22 +37,7 @@ class RoomRepository {
   async findById(roomId: string) {
     return await prisma.room.findUnique({
       where: { id: roomId },
-      include: {
-        occupants: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                universityId: true,
-                email: true,
-                phone: true,
-                photo: true,
-              },
-            },
-          },
-        },
-      },
+      include: OCCUPANTS_INCLUDE,
     });
   }
 
@@ -71,10 +57,15 @@ class RoomRepository {
     if (roomType) where.roomType = roomType;
     if (status) where.status = status;
     if (search) {
-      where.roomNumber = {
-        contains: search,
-        mode: 'insensitive',
-      };
+      where.roomNumber = { contains: search, mode: 'insensitive' };
+    }
+
+    // DB-level vacancy filter using synced status field
+    if (hasVacancy === true) {
+      where.status = { in: ['AVAILABLE', 'PARTIALLY_OCCUPIED'] };
+    }
+    if (hasVacancy === false) {
+      where.status = 'OCCUPIED';
     }
 
     const skip = (page - 1) * limit;
@@ -82,22 +73,7 @@ class RoomRepository {
     const [rooms, total] = await Promise.all([
       prisma.room.findMany({
         where,
-        include: {
-          occupants: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  universityId: true,
-                  email: true,
-                  phone: true,
-                  photo: true,
-                },
-              },
-            },
-          },
-        },
+        include: OCCUPANTS_INCLUDE,
         skip,
         take: limit,
         orderBy: { [sortBy]: sortOrder },
@@ -105,76 +81,27 @@ class RoomRepository {
       prisma.room.count({ where }),
     ]);
 
-    // Filter by vacancy in memory (more efficient than complex SQL)
-    let filteredRooms = rooms;
-    if (hasVacancy !== undefined) {
-      filteredRooms = rooms.filter((room) => {
-        const occupiedCount = room.occupants.filter((o) => o.userId !== null).length;
-        const hasVacant = occupiedCount < room.capacity;
-        return hasVacancy ? hasVacant : !hasVacant;
-      });
-    }
-
-    return {
-      rooms: filteredRooms,
-      total: hasVacancy !== undefined ? filteredRooms.length : total,
-    };
+    return { rooms, total };
   }
 
   async findVacantRooms(floor?: number) {
     const where: Prisma.RoomWhereInput = {
-      status: 'AVAILABLE',
+      status: { in: ['AVAILABLE', 'PARTIALLY_OCCUPIED'] },
     };
 
     if (floor !== undefined) where.floor = floor;
 
-    const rooms = await prisma.room.findMany({
+    return await prisma.room.findMany({
       where,
-      include: {
-        occupants: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                universityId: true,
-                email: true,
-                phone: true,
-                photo: true,
-              },
-            },
-          },
-        },
-      },
+      include: OCCUPANTS_INCLUDE,
       orderBy: [{ floor: 'asc' }, { roomNumber: 'asc' }],
-    });
-
-    // Filter rooms with vacant beds
-    return rooms.filter((room) => {
-      const occupiedCount = room.occupants.filter((o) => o.userId !== null).length;
-      return occupiedCount < room.capacity;
     });
   }
 
   async findByFloor(floor: number) {
     return await prisma.room.findMany({
       where: { floor },
-      include: {
-        occupants: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                universityId: true,
-                email: true,
-                phone: true,
-                photo: true,
-              },
-            },
-          },
-        },
-      },
+      include: OCCUPANTS_INCLUDE,
       orderBy: { roomNumber: 'asc' },
     });
   }
@@ -182,22 +109,7 @@ class RoomRepository {
   async findByType(roomType: RoomType) {
     return await prisma.room.findMany({
       where: { roomType },
-      include: {
-        occupants: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                universityId: true,
-                email: true,
-                phone: true,
-                photo: true,
-              },
-            },
-          },
-        },
-      },
+      include: OCCUPANTS_INCLUDE,
       orderBy: [{ floor: 'asc' }, { roomNumber: 'asc' }],
     });
   }
@@ -221,22 +133,7 @@ class RoomRepository {
     return await prisma.room.update({
       where: { id: roomId },
       data,
-      include: {
-        occupants: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                universityId: true,
-                email: true,
-                phone: true,
-                photo: true,
-              },
-            },
-          },
-        },
-      },
+      include: OCCUPANTS_INCLUDE,
     });
   }
 
