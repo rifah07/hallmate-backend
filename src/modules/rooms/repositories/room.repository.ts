@@ -254,7 +254,13 @@ class RoomRepository {
   // OCCUPANT MANAGEMENT
   // ============================================================================
 
-  async assignStudent(roomId: string, userId: string, bedNumber: number, assignedDate?: Date) {
+  async assignStudent(
+    roomId: string,
+    userId: string,
+    bedNumber: number,
+    newStatus: RoomStatus,
+    assignedDate?: Date,
+  ) {
     const [occupant] = await prisma.$transaction([
       prisma.roomOccupant.create({
         data: {
@@ -279,21 +285,21 @@ class RoomRepository {
       }),
       prisma.room.update({
         where: { id: roomId },
-        data: { currentOccupancy: { increment: 1 } },
+        data: { currentOccupancy: { increment: 1 }, status: newStatus },
       }),
     ]);
 
     return occupant;
   }
 
-  async unassignStudent(roomId: string, userId: string) {
+  async unassignStudent(roomId: string, userId: string, newStatus: RoomStatus) {
     const [result] = await prisma.$transaction([
       prisma.roomOccupant.deleteMany({
         where: { roomId, userId },
       }),
       prisma.room.update({
         where: { id: roomId },
-        data: { currentOccupancy: { decrement: 1 } },
+        data: { currentOccupancy: { decrement: 1 }, status: newStatus },
       }),
     ]);
 
