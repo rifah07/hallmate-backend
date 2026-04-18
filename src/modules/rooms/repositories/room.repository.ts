@@ -255,36 +255,49 @@ class RoomRepository {
   // ============================================================================
 
   async assignStudent(roomId: string, userId: string, bedNumber: number, assignedDate?: Date) {
-    return await prisma.roomOccupant.create({
-      data: {
-        roomId,
-        userId,
-        bedNumber,
-        assignedDate: assignedDate || new Date(),
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            universityId: true,
-            email: true,
-            phone: true,
-            photo: true,
-          },
+    const [occupant] = await prisma.$transaction([
+      prisma.roomOccupant.create({
+        data: {
+          roomId,
+          userId,
+          bedNumber,
+          assignedDate: assignedDate || new Date(),
         },
-        room: true,
-      },
-    });
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              universityId: true,
+              email: true,
+              phone: true,
+              photo: true,
+            },
+          },
+          room: true,
+        },
+      }),
+      prisma.room.update({
+        where: { id: roomId },
+        data: { currentOccupancy: { increment: 1 } },
+      }),
+    ]);
+
+    return occupant;
   }
 
   async unassignStudent(roomId: string, userId: string) {
-    return await prisma.roomOccupant.deleteMany({
-      where: {
-        roomId,
-        userId,
-      },
-    });
+    const [result] = await prisma.$transaction([
+      prisma.roomOccupant.deleteMany({
+        where: { roomId, userId },
+      }),
+      prisma.room.update({
+        where: { id: roomId },
+        data: { currentOccupancy: { decrement: 1 } },
+      }),
+    ]);
+
+    return result;
   }
 
   async findOccupantByRoomAndBed(roomId: string, bedNumber: number) {
@@ -310,6 +323,32 @@ class RoomRepository {
       where: { userId },
       include: {
         room: true,
+      },
+    });
+  }
+
+  async findUserCurrentRoomAndBed(studentId: string) {
+    return await prisma.roomOccupant.findFirst({
+      where: { userId: studentId },
+      include: {
+        room: {
+          include: {
+            occupants: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    universityId: true,
+                    email: true,
+                    phone: true,
+                    photo: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
   }

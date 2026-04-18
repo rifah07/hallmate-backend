@@ -175,6 +175,19 @@ class RoomController {
   }
 
   // ============================================================================
+  // GET MY ROOM (Student)
+  // ============================================================================
+
+  async getMyRoom(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const room = await roomService.getMyRoom(req.user!.userId);
+      sendSuccess(res, room, 'Room info fetched successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ============================================================================
   // UPDATE ROOM
   // ============================================================================
 
