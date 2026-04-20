@@ -133,3 +133,13 @@ export interface StudentMealHistory {
     totalMeals: number;
   };
 }
+
+// ============================================================================
+// USER CONTEXT
+// ============================================================================
+
+export interface UserContext {
+  userId: string;
+  role: string;
+  assignedFloor?: number | null;
+}
