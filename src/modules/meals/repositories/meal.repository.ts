@@ -48,6 +48,26 @@ class MealRepository {
       },
     });
   }
+
+  async bulkUpsertMealLogs(data: {
+    studentIds: string[];
+    date: Date;
+    breakfast?: boolean;
+    lunch?: boolean;
+    dinner?: boolean;
+  }) {
+    const operations = data.studentIds.map((studentId) =>
+      this.upsertMealLog({
+        studentId,
+        date: data.date,
+        breakfast: data.breakfast,
+        lunch: data.lunch,
+        dinner: data.dinner,
+      }),
+    );
+
+    return await Promise.all(operations);
+  }
 }
 
 export default new MealRepository();
