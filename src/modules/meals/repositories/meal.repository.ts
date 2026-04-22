@@ -229,6 +229,17 @@ class MealRepository {
       },
     });
   }
+
+  async delete(studentId: string, date: Date) {
+    return await prisma.mealLog.delete({
+      where: {
+        studentId_date: {
+          studentId,
+          date,
+        },
+      },
+    });
+  }
 }
 
 export default new MealRepository();
