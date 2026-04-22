@@ -192,6 +192,43 @@ class MealRepository {
       total,
     };
   }
+
+  async findByDate(date: Date) {
+    return await prisma.mealLog.findMany({
+      where: { date },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            universityId: true,
+            email: true,
+            currentRoom: {
+              select: {
+                roomNumber: true,
+                floor: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async findStudentHistory(studentId: string, dateFrom: Date, dateTo: Date) {
+    return await prisma.mealLog.findMany({
+      where: {
+        studentId,
+        date: {
+          gte: dateFrom,
+          lte: dateTo,
+        },
+      },
+      orderBy: {
+        date: 'asc',
+      },
+    });
+  }
 }
 
 export default new MealRepository();
