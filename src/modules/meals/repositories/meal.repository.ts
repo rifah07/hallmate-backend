@@ -259,6 +259,23 @@ class MealRepository {
 
     return logs;
   }
+  async getMonthlyStatistics(studentId: string, month: number, year: number) {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+
+    return await prisma.mealLog.findMany({
+      where: {
+        studentId,
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      orderBy: {
+        date: 'asc',
+      },
+    });
+  }
 }
 
 export default new MealRepository();
