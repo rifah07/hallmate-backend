@@ -240,6 +240,25 @@ class MealRepository {
       },
     });
   }
+
+  async getStatisticsByDate(date: Date) {
+    const logs = await prisma.mealLog.findMany({
+      where: { date },
+      include: {
+        student: {
+          select: {
+            currentRoom: {
+              select: {
+                floor: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return logs;
+  }
 }
 
 export default new MealRepository();
