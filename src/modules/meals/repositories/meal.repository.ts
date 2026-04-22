@@ -276,6 +276,17 @@ class MealRepository {
       },
     });
   }
+  async getTotalStudentsWithRooms() {
+    return await prisma.user.count({
+      where: {
+        role: 'STUDENT',
+        accountStatus: 'ACTIVE',
+        currentRoomId: {
+          not: null,
+        },
+      },
+    });
+  }
 }
 
 export default new MealRepository();
