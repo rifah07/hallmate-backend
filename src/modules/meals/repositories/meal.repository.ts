@@ -68,6 +68,36 @@ class MealRepository {
 
     return await Promise.all(operations);
   }
+
+  async findByStudentAndDate(studentId: string, date: Date) {
+    return await prisma.mealLog.findUnique({
+      where: {
+        studentId_date: {
+          studentId,
+          date,
+        },
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            universityId: true,
+            email: true,
+            department: true,
+            year: true,
+            currentRoomId: true,
+            currentRoom: {
+              select: {
+                roomNumber: true,
+                floor: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
 }
 
 export default new MealRepository();
