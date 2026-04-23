@@ -6,6 +6,7 @@ import {
   BulkUpdateMealInput,
   MealFilters,
   PaginationParams,
+  StudentMealHistory,
 } from '../types/meal.types';
 import { BadRequestError, ForbiddenError, NotFoundError } from '@/shared/errors';
 
@@ -160,6 +161,59 @@ class MealService {
     return this.transformMealLog(mealLog);
   }
 
+  async getMyMealLogs(
+    dateFrom: Date | string,
+    dateTo: Date | string,
+    userContext: UserContext,
+  ): Promise<StudentMealHistory> {
+    if (userContext.role !== 'STUDENT') {
+      throw new ForbiddenError('Only students can view their meal history');
+    }
+
+    const startDate = typeof dateFrom === 'string' ? new Date(dateFrom) : dateFrom;
+    const endDate = typeof dateTo === 'string' ? new Date(dateTo) : dateTo;
+
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
+
+    if (startDate > endDate) {
+      throw new BadRequestError('Start date must be before or equal to end date');
+    }
+
+    // Max 3 months range
+    const threeMonths = 90 * 24 * 60 * 60 * 1000;
+    if (endDate.getTime() - startDate.getTime() > threeMonths) {
+      throw new BadRequestError('Date range cannot exceed 3 months');
+    }
+
+    const logs = await mealRepository.findStudentHistory(userContext.userId, startDate, endDate);
+
+    const student = await mealRepository.findStudentDetails(userContext);
+
+    return {
+      studentId: userContext.userId,
+      studentName: student?.name || '',
+      universityId: student?.universityId || '',
+      dateFrom: startDate,
+      dateTo: endDate,
+      logs: logs.map((log) => ({
+        date: log.date,
+        breakfast: log.breakfast,
+        lunch: log.lunch,
+        dinner: log.dinner,
+      })),
+      summary: {
+        totalDays: logs.length,
+        breakfastCount: logs.filter((l) => l.breakfast).length,
+        lunchCount: logs.filter((l) => l.lunch).length,
+        dinnerCount: logs.filter((l) => l.dinner).length,
+        totalMeals:
+          logs.filter((l) => l.breakfast).length +
+          logs.filter((l) => l.lunch).length +
+          logs.filter((l) => l.dinner).length,
+      },
+    };
+  }
   // ============================================================================
   // HELPER METHODS
   // ============================================================================
