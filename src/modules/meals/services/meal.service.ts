@@ -8,6 +8,7 @@ import {
   PaginationParams,
   StudentMealHistory,
   MealStatistics,
+  MonthlyMealSummary,
 } from '../types/meal.types';
 import { BadRequestError, ForbiddenError, NotFoundError } from '@/shared/errors';
 
@@ -264,6 +265,47 @@ class MealService {
 
     return stats;
   }
+
+  async getMonthlyMealSummary(
+    studentId: string,
+    month: number,
+    year: number,
+    userContext: UserContext,
+  ): Promise<MonthlyMealSummary> {
+    // Students can only see their own summary
+    if (userContext.role === 'STUDENT' && userContext.userId !== studentId) {
+      throw new ForbiddenError('You can only view your own meal summary');
+    }
+
+    const student = await mealRepository.findStudentBasicInfo(studentId);
+
+    if (!student) {
+      throw new NotFoundError('Student not found');
+    }
+
+    if (student.role !== 'STUDENT') {
+      throw new BadRequestError('User is not a student');
+    }
+
+    const logs = await mealRepository.getMonthlyStatistics(studentId, month, year);
+
+    return {
+      studentId,
+      studentName: student.name,
+      universityId: student.universityId,
+      month,
+      year,
+      totalDays: logs.length,
+      breakfastCount: logs.filter((l) => l.breakfast).length,
+      lunchCount: logs.filter((l) => l.lunch).length,
+      dinnerCount: logs.filter((l) => l.dinner).length,
+      totalMeals:
+        logs.filter((l) => l.breakfast).length +
+        logs.filter((l) => l.lunch).length +
+        logs.filter((l) => l.dinner).length,
+    };
+  }
+
   // ============================================================================
   // HELPER METHODS
   // ============================================================================

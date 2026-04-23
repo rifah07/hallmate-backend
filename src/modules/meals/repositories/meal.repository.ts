@@ -276,6 +276,17 @@ class MealRepository {
       },
     });
   }
+
+  async findStudentBasicInfo(  studentId: string,){
+    return await prisma.user.findUnique({
+          where: { id: studentId },
+          select: {
+            name: true,
+            universityId: true,
+            role: true,
+          },
+        });
+  }
   async delete(studentId: string, date: Date) {
     return await prisma.mealLog.delete({
       where: {
