@@ -4,6 +4,8 @@ import {
   UserContext,
   MealLogResponse,
   BulkUpdateMealInput,
+  MealFilters,
+  PaginationParams,
 } from '../types/meal.types';
 import { BadRequestError, ForbiddenError, NotFoundError } from '@/shared/errors';
 
@@ -100,6 +102,36 @@ class MealService {
     });
 
     return mealLogs.map((log) => this.transformMealLog(log));
+  }
+
+  async getMealLogs(filters: MealFilters, pagination: PaginationParams, userContext: UserContext) {
+    // Students can only see their own meal logs
+    if (userContext.role === 'STUDENT') {
+      filters.studentId = userContext.userId;
+    }
+
+    // House tutors can only see their floor
+    if (userContext.role === 'HOUSE_TUTOR') {
+      if (!userContext.assignedFloor) {
+        throw new ForbiddenError('House Tutor must have an assigned floor');
+      }
+      filters.floor = userContext.assignedFloor;
+    }
+
+    const { mealLogs, total } = await mealRepository.findAll(filters, pagination);
+
+    const page = pagination.page || 1;
+    const limit = pagination.limit || 50;
+
+    return {
+      mealLogs: mealLogs.map((log) => this.transformMealLog(log)),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   // ============================================================================
