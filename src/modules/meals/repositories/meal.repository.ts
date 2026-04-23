@@ -71,6 +71,21 @@ class MealRepository {
     return await Promise.all(operations);
   }
 
+  async findStudentHistory(studentId: string, dateFrom: Date, dateTo: Date) {
+    return await prisma.mealLog.findMany({
+      where: {
+        studentId,
+        date: {
+          gte: dateFrom,
+          lte: dateTo,
+        },
+      },
+      orderBy: {
+        date: 'asc',
+      },
+    });
+  }
+
   async findByStudentAndDate(studentId: string, date: Date) {
     return await prisma.mealLog.findUnique({
       where: {
@@ -215,21 +230,22 @@ class MealRepository {
     });
   }
 
-  async findStudentHistory(studentId: string, dateFrom: Date, dateTo: Date) {
-    return await prisma.mealLog.findMany({
-      where: {
-        studentId,
-        date: {
-          gte: dateFrom,
-          lte: dateTo,
+  async findStudent(studentId: string) {
+    return await prisma.user.findUnique({
+      where: { id: studentId },
+      select: {
+        id: true,
+        role: true,
+        accountStatus: true,
+        currentRoomId: true,
+        currentRoom: {
+          select: {
+            floor: true,
+          },
         },
-      },
-      orderBy: {
-        date: 'asc',
       },
     });
   }
-
   async delete(studentId: string, date: Date) {
     return await prisma.mealLog.delete({
       where: {
