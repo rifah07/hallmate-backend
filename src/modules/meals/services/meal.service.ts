@@ -105,7 +105,6 @@ class MealService {
   }
 
   async getMealLogs(filters: MealFilters, pagination: PaginationParams, userContext: UserContext) {
-    // Students can only see their own meal logs
     if (userContext.role === 'STUDENT') {
       filters.studentId = userContext.userId;
     }
@@ -132,6 +131,33 @@ class MealService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  async getMealLogByDate(
+    studentId: string,
+    date: Date | string,
+    userContext: UserContext,
+  ): Promise<MealLogResponse | null> {
+    const mealDate = typeof date === 'string' ? new Date(date) : date;
+    mealDate.setHours(0, 0, 0, 0);
+
+    if (userContext.role === 'STUDENT' && userContext.userId !== studentId) {
+      throw new ForbiddenError('You can only view your own meal logs');
+    }
+
+    const mealLog = await mealRepository.findByStudentAndDate(studentId, mealDate);
+
+    if (!mealLog) {
+      return null;
+    }
+
+    if (userContext.role === 'HOUSE_TUTOR') {
+      if (mealLog.student.currentRoom?.floor !== userContext.assignedFloor) {
+        throw new ForbiddenError('You can only view meal logs for students on your floor');
+      }
+    }
+
+    return this.transformMealLog(mealLog);
   }
 
   // ============================================================================
