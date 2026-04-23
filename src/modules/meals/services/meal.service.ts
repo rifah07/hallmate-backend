@@ -1,5 +1,10 @@
 import mealRepository from '../repositories/meal.repository';
-import { UpdateMealInput, UserContext, MealLogResponse } from '../types/meal.types';
+import {
+  UpdateMealInput,
+  UserContext,
+  MealLogResponse,
+  BulkUpdateMealInput,
+} from '../types/meal.types';
 import { BadRequestError, ForbiddenError, NotFoundError } from '@/shared/errors';
 
 class MealService {
@@ -45,6 +50,56 @@ class MealService {
     });
 
     return this.transformMealLog(mealLog);
+  }
+
+  async bulkUpdateMealLogs(
+    input: BulkUpdateMealInput,
+    userContext: UserContext,
+  ): Promise<MealLogResponse[]> {
+    // Only dining staff and admins can bulk update
+    if (
+      userContext.role !== 'SUPER_ADMIN' &&
+      userContext.role !== 'PROVOST' &&
+      userContext.role !== 'DINING_STAFF'
+    ) {
+      throw new ForbiddenError('Only dining staff and admins can perform bulk updates');
+    }
+
+    const mealDate = typeof input.date === 'string' ? new Date(input.date) : input.date;
+
+    // Validate date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    mealDate.setHours(0, 0, 0, 0);
+
+    if (mealDate > today) {
+      throw new BadRequestError('Cannot log meals for future dates');
+    }
+
+    // Verify all students exist and are active
+    const students = await mealRepository.findStudentsByIds(input);
+
+    if (students.length !== input.studentIds.length) {
+      throw new BadRequestError('One or more students not found');
+    }
+
+    const invalidStudents = students.filter(
+      (s) => s.role !== 'STUDENT' || s.accountStatus !== 'ACTIVE',
+    );
+
+    if (invalidStudents.length > 0) {
+      throw new BadRequestError('All users must be active students');
+    }
+
+    const mealLogs = await mealRepository.bulkUpsertMealLogs({
+      studentIds: input.studentIds,
+      date: mealDate,
+      breakfast: input.breakfast,
+      lunch: input.lunch,
+      dinner: input.dinner,
+    });
+
+    return mealLogs.map((log) => this.transformMealLog(log));
   }
 
   // ============================================================================
