@@ -1,5 +1,5 @@
 import prisma from '@/config/database.config';
-import { MealFilters, PaginationParams } from '../types/meal.types';
+import { BulkUpdateMealInput, MealFilters, PaginationParams } from '../types/meal.types';
 import { Prisma } from '@prisma/client';
 
 class MealRepository {
@@ -243,6 +243,21 @@ class MealRepository {
             floor: true,
           },
         },
+      },
+    });
+  }
+
+  async findStudentsByIds(input: BulkUpdateMealInput) {
+    return await prisma.user.findMany({
+      where: {
+        id: {
+          in: input.studentIds,
+        },
+      },
+      select: {
+        id: true,
+        role: true,
+        accountStatus: true,
       },
     });
   }
