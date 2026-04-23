@@ -7,6 +7,7 @@ import {
   MealFilters,
   PaginationParams,
   StudentMealHistory,
+  MealStatistics,
 } from '../types/meal.types';
 import { BadRequestError, ForbiddenError, NotFoundError } from '@/shared/errors';
 
@@ -214,6 +215,55 @@ class MealService {
       },
     };
   }
+
+  async getStatisticsByDate(
+    date: Date | string,
+    userContext: UserContext,
+  ): Promise<MealStatistics> {
+    // Only staff can view statistics
+    if (userContext.role === 'STUDENT' || userContext.role === 'PARENT') {
+      throw new ForbiddenError('Only staff can view meal statistics');
+    }
+
+    const mealDate = typeof date === 'string' ? new Date(date) : date;
+    mealDate.setHours(0, 0, 0, 0);
+
+    const logs = await mealRepository.getStatisticsByDate(mealDate);
+    const totalStudents = await mealRepository.getTotalStudentsWithRooms();
+
+    const breakfastCount = logs.filter((l) => l.breakfast).length;
+    const lunchCount = logs.filter((l) => l.lunch).length;
+    const dinnerCount = logs.filter((l) => l.dinner).length;
+
+    const stats: MealStatistics = {
+      date: mealDate,
+      totalStudents,
+      breakfast: {
+        count: breakfastCount,
+        percentage: totalStudents > 0 ? (breakfastCount / totalStudents) * 100 : 0,
+      },
+      lunch: {
+        count: lunchCount,
+        percentage: totalStudents > 0 ? (lunchCount / totalStudents) * 100 : 0,
+      },
+      dinner: {
+        count: dinnerCount,
+        percentage: totalStudents > 0 ? (dinnerCount / totalStudents) * 100 : 0,
+      },
+    };
+
+    // Add floor-wise breakdown for admins
+    if (
+      userContext.role === 'SUPER_ADMIN' ||
+      userContext.role === 'PROVOST' ||
+      userContext.role === 'DINING_STAFF'
+    ) {
+      const byFloor = this.calculateFloorStatistics(logs);
+      stats.byFloor = byFloor;
+    }
+
+    return stats;
+  }
   // ============================================================================
   // HELPER METHODS
   // ============================================================================
@@ -261,6 +311,34 @@ class MealService {
     }
 
     throw new ForbiddenError('You do not have permission to update meal logs');
+  }
+
+  private calculateFloorStatistics(logs: any[]) {
+    const floorStats = new Map<number, { breakfast: number; lunch: number; dinner: number }>();
+
+    logs.forEach((log) => {
+      const floor = log.student.currentRoom?.floor;
+      if (!floor) return;
+
+      if (!floorStats.has(floor)) {
+        floorStats.set(floor, { breakfast: 0, lunch: 0, dinner: 0 });
+      }
+
+      const stats = floorStats.get(floor)!;
+      if (log.breakfast) stats.breakfast++;
+      if (log.lunch) stats.lunch++;
+      if (log.dinner) stats.dinner++;
+    });
+
+    return Array.from(floorStats.entries())
+      .map(([floor, stats]) => ({
+        floor,
+        breakfast: stats.breakfast,
+        lunch: stats.lunch,
+        dinner: stats.dinner,
+        total: stats.breakfast + stats.lunch + stats.dinner,
+      }))
+      .sort((a, b) => a.floor - b.floor);
   }
 }
 
