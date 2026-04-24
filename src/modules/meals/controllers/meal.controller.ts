@@ -98,6 +98,28 @@ class MealController {
       next(error);
     }
   }
+
+  async getMyMealLogs(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const dateFrom = req.query.dateFrom as string;
+      const dateTo = req.query.dateTo as string;
+
+      if (!dateFrom || !dateTo) {
+        throw new Error('dateFrom and dateTo query parameters are required');
+      }
+
+      const userContext: UserContext = {
+        userId: req.user!.userId,
+        role: req.user!.role,
+        assignedFloor: req.user!.assignedFloor,
+      };
+
+      const history = await mealService.getMyMealLogs(dateFrom, dateTo, userContext);
+      sendSuccess(res, history);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new MealController();
