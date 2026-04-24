@@ -74,6 +74,30 @@ class MealController {
       next(error);
     }
   }
+  async getMealLogByDate(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userContext: UserContext = {
+        userId: req.user!.userId,
+        role: req.user!.role,
+        assignedFloor: req.user!.assignedFloor,
+      };
+
+      const mealLog = await mealService.getMealLogByDate(
+        String(req.params.studentId),
+        String(req.params.date),
+        userContext,
+      );
+
+      if (!mealLog) {
+        sendSuccess(res, null, 'No meal log found for this date');
+        return;
+      }
+
+      sendSuccess(res, mealLog);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new MealController();
