@@ -120,6 +120,25 @@ class MealController {
       next(error);
     }
   }
+
+  async getStatisticsByDate(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userContext: UserContext = {
+        userId: req.user!.userId,
+        role: req.user!.role,
+        assignedFloor: req.user!.assignedFloor,
+      };
+
+      const statistics = await mealService.getStatisticsByDate(
+        String(req.params.date),
+        userContext,
+      );
+
+      sendSuccess(res, statistics);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new MealController();
