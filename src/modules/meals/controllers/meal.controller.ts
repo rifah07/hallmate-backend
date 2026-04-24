@@ -139,6 +139,26 @@ class MealController {
       next(error);
     }
   }
+  async getMonthlyMealSummary(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userContext: UserContext = {
+        userId: req.user!.userId,
+        role: req.user!.role,
+        assignedFloor: req.user!.assignedFloor,
+      };
+
+      const summary = await mealService.getMonthlyMealSummary(
+        String(req.params.studentId),
+        parseInt(String(req.params.month), 10),
+        parseInt(String(req.params.year), 10),
+        userContext,
+      );
+
+      sendSuccess(res, summary);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new MealController();
