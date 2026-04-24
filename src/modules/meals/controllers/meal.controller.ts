@@ -159,6 +159,25 @@ class MealController {
       next(error);
     }
   }
+  async deleteMealLog(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userContext: UserContext = {
+        userId: req.user!.userId,
+        role: req.user!.role,
+        assignedFloor: req.user!.assignedFloor,
+      };
+
+      await mealService.deleteMealLog(
+        String(req.params.studentId),
+        String(req.params.date),
+        userContext,
+      );
+
+      sendSuccess(res, null, 'Meal log deleted successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new MealController();
