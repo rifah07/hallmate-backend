@@ -11,6 +11,7 @@ import { setupSwagger } from './config/swagger.config';
 import userRoutes from './modules/users/routes/user.routes';
 import { roomRoutes } from './modules/rooms';
 import applicationRoutes from './modules/applications/routes/application.routes';
+import { mealRoutes } from './modules/meals';
 
 const app: Application = express();
 
@@ -70,6 +71,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/applications', applicationRoutes);
+app.use('/api/meals', mealRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response, _next: NextFunction) => {
