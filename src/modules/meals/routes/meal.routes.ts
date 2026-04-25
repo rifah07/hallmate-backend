@@ -3,7 +3,11 @@ import mealController from '../controllers/meal.controller';
 import { authenticate } from '@/shared/middleware/authenticate';
 import { authorize } from '@/shared/middleware/authorize';
 import { validate } from '@/shared/middleware/validate';
-import { bulkUpdateMealSchema, mealDateSchema } from '../validations/meal.validation';
+import {
+  bulkUpdateMealSchema,
+  mealQuerySchema,
+  mealDateSchema,
+} from '../validations/meal.validation';
 
 const router = Router();
 
@@ -30,6 +34,18 @@ router.get(
   authorize('SUPER_ADMIN', 'PROVOST', 'DINING_STAFF', 'HOUSE_TUTOR', 'OFFICE_STAFF'),
   validate(mealDateSchema, 'params'),
   mealController.getStatisticsByDate,
+);
+
+// ============================================================================
+// COLLECTION ROUTES
+// ============================================================================
+
+// GET /api/meals - List all meal logs
+router.get(
+  '/',
+  authorize('SUPER_ADMIN', 'PROVOST', 'DINING_STAFF', 'HOUSE_TUTOR', 'OFFICE_STAFF', 'STUDENT'),
+  validate(mealQuerySchema, 'query'),
+  mealController.getAllMealLogs,
 );
 
 export default router;
