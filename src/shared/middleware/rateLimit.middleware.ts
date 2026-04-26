@@ -96,3 +96,15 @@ export const createRateLimiter = (options: {
     next();
   };
 };
+// Pre-configured rate limiters for different use cases
+export const publicRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  maxRequests: 100, // 100 requests per 15 minutes
+  message: 'Too many requests from this IP, please try again later',
+});
+
+export const strictRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  maxRequests: 30, // 30 requests per 15 minutes
+  message: 'Rate limit exceeded for this endpoint',
+});
