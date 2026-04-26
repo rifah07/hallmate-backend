@@ -143,3 +143,21 @@ export interface UserContext {
   role: string;
   assignedFloor?: number | null;
 }
+
+// ============================================================================
+// BATCH OPERATIONS
+// ============================================================================
+export interface BatchMealOperation {
+  studentId: string;
+  date: Date;
+  breakfast?: boolean;
+  lunch?: boolean;
+  dinner?: boolean;
+}
+
+export interface BatchResult {
+  successful: number;
+  failed: number;
+  errors: Array<{ studentId: string; error: string }>;
+  totalProcessed: number;
+}
