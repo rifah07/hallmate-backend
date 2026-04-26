@@ -17,21 +17,7 @@
 
 import prisma from '@/config/database.config';
 import { BadRequestError } from '@/shared/errors';
-
-interface BatchMealOperation {
-  studentId: string;
-  date: Date;
-  breakfast?: boolean;
-  lunch?: boolean;
-  dinner?: boolean;
-}
-
-interface BatchResult {
-  successful: number;
-  failed: number;
-  errors: Array<{ studentId: string; error: string }>;
-  totalProcessed: number;
-}
+import { BatchMealOperation, BatchResult } from '../types/meal.types';
 
 class MealManagementService {
   /**
