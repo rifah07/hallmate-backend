@@ -103,3 +103,13 @@ export const clearCache = (pattern?: string) => {
     }
   });
 };
+
+/**
+ * Pre-configured cache durations
+ */
+export const CACHE_DURATION = {
+  SHORT: 60, // 1 minute - for frequently changing data
+  MEDIUM: 5 * 60, // 5 minutes - for moderately stable data
+  LONG: 15 * 60, // 15 minutes - for stable data
+  VERY_LONG: 60 * 60, // 1 hour - for very stable data
+} as const;
