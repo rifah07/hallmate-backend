@@ -86,3 +86,20 @@ export const cacheResponse = (ttlSeconds: number) => {
     next();
   };
 };
+
+/**
+ * Clear cache for specific patterns
+ * Useful when data is updated
+ */
+export const clearCache = (pattern?: string) => {
+  if (!pattern) {
+    cache.clear();
+    return;
+  }
+
+  cache.forEach((_, key) => {
+    if (key.includes(pattern)) {
+      cache.delete(key);
+    }
+  });
+};
