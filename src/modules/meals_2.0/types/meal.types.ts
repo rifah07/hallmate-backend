@@ -79,3 +79,35 @@ export interface StudentMealStatus {
     };
   };
 }
+
+// ============================================================================
+// KITCHEN PLANNING
+// ============================================================================
+
+export interface MealPlanningReport {
+  date: Date;
+  breakfast: {
+    totalStudents: number;
+    activeMeals: number; // Students who will eat
+    cancelled: number;
+    cancellationRate: number; // Percentage
+  };
+  lunch: {
+    totalStudents: number;
+    activeMeals: number;
+    cancelled: number;
+    cancellationRate: number;
+  };
+  dinner: {
+    totalStudents: number;
+    activeMeals: number;
+    cancelled: number;
+    cancellationRate: number;
+  };
+  byFloor?: {
+    floor: number;
+    breakfast: number;
+    lunch: number;
+    dinner: number;
+  }[];
+}
