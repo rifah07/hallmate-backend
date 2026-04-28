@@ -241,6 +241,7 @@ model User {
   bills             Bill[]
   payments          Payment[]
   mealLogs          MealLog[]
+  mealCancellations MealCancellation[] @relation("MealCancellations")
   gateEntries       GateEntry[]
   visitors          Visitor[]
   notifications     Notification[]
@@ -524,6 +525,41 @@ model MealLog {
   @@unique([studentId, date])
   @@index([studentId])
   @@index([date])
+}
+
+model MealCancellation {
+  id          String   @id @default(uuid())
+  studentId   String
+  student     User     @relation("MealCancellations", fields: [studentId], references: [id], onDelete: Cascade)
+  
+  date        DateTime @db.Date
+  
+  // Which meals are cancelled for this date
+  breakfast   Boolean  @default(false)
+  lunch       Boolean  @default(false)
+  dinner      Boolean  @default(false)
+  
+  // Metadata
+  reason      String?
+  cancelledAt DateTime @default(now())
+  
+  // Indexes for fast queries
+  @@unique([studentId, date])
+  @@index([studentId])
+  @@index([date])
+  @@map("meal_cancellations")
+}
+
+model MealSettings {
+  id                        String  @id @default(uuid())
+  cancellationDeadlineHours Int     @default(24)
+  allowPastCancellation     Boolean @default(false)
+  requireReason             Boolean @default(false)
+  maxCancellationDays       Int     @default(30)
+  
+  updatedAt                 DateTime @updatedAt
+  
+  @@map("meal_settings")
 }
 
 model GateEntry {
