@@ -43,6 +43,17 @@ export interface CancellationResponse {
 }
 
 // ============================================================================
+// MEAL SETTINGS (Admin configurable)
+// ============================================================================
+
+export interface MealSettings {
+  cancellationDeadlineHours: number; // Hours before meal time (default: 24)
+  allowPastCancellation: boolean; // Allow canceling past meals (default: false)
+  requireReason: boolean; // Require reason for cancellation (default: false)
+  maxCancellationDays: number; // Max days in advance to cancel (default: 30)
+}
+
+// ============================================================================
 // DEFAULT MEAL CALCULATION
 // ============================================================================
 
