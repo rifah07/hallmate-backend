@@ -1,5 +1,3 @@
-// src/modules/meals/services/meal-cancellation.service.ts
-
 import repository from '../repositories/meal-cancellation.repository';
 import { CancelMealInput, CancellationResponse } from '../types/meal.types';
 import { BadRequestError } from '@/shared/errors';
@@ -66,6 +64,46 @@ class MealCancellationService {
     return result;
   }
 
+  // ============================================================================
+  // REACTIVATE
+  // ============================================================================
+
+  async reactivateMeals(
+    studentId: string,
+    dates: string[],
+    mealTypes: ('breakfast' | 'lunch' | 'dinner')[],
+  ) {
+    let count = 0;
+    const now = new Date();
+
+    for (const dateStr of dates) {
+      const date = new Date(dateStr);
+      date.setHours(0, 0, 0, 0);
+
+      for (const meal of mealTypes) {
+        if (now > this.getDeadline(date, meal)) {
+          throw new BadRequestError(`Deadline passed for ${meal}`);
+        }
+      }
+
+      const existing = await repository.findCancellation(studentId, date);
+      if (!existing) continue;
+
+      const updated = await repository.updateCancellation(studentId, date, {
+        breakfast: existing.breakfast && !mealTypes.includes('breakfast'),
+        lunch: existing.lunch && !mealTypes.includes('lunch'),
+        dinner: existing.dinner && !mealTypes.includes('dinner'),
+      });
+
+      if (!updated.breakfast && !updated.lunch && !updated.dinner) {
+        await repository.deleteCancellation(studentId, date);
+      }
+
+      count++;
+    }
+
+    return { reactivatedCount: count };
+  }
   // ============================================================================
   // HELPERS
   // ============================================================================
