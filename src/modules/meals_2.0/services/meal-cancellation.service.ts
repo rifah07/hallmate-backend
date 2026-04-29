@@ -1,5 +1,5 @@
 import repository from '../repositories/meal-cancellation.repository';
-import { CancelMealInput, CancellationResponse } from '../types/meal.types';
+import { CancelMealInput, CancellationResponse, StudentMealStatus } from '../types/meal.types';
 import { BadRequestError } from '@/shared/errors';
 
 class MealCancellationService {
@@ -104,6 +104,58 @@ class MealCancellationService {
 
     return { reactivatedCount: count };
   }
+
+  // ============================================================================
+  // STATUS
+  // ============================================================================
+
+  async getStudentMealStatus(
+    studentId: string,
+    dateFrom: Date,
+    dateTo: Date,
+  ): Promise<StudentMealStatus[]> {
+    const student = await repository.findStudent(studentId);
+    if (!student) throw new BadRequestError('Student not found');
+
+    const cancellations = await repository.findCancellationsByRange(studentId, dateFrom, dateTo);
+
+    const map = new Map(cancellations.map((c) => [c.date.toISOString(), c]));
+
+    const result: StudentMealStatus[] = [];
+    const cur = new Date(dateFrom);
+
+    while (cur <= dateTo) {
+      const c = map.get(new Date(cur).toISOString());
+
+      result.push({
+        studentId,
+        studentName: student.name,
+        date: new Date(cur),
+        meals: {
+          breakfast: {
+            active: !c?.breakfast,
+            cancelled: !!c?.breakfast,
+            cancellationDeadline: this.getDeadline(new Date(cur), 'breakfast'),
+          },
+          lunch: {
+            active: !c?.lunch,
+            cancelled: !!c?.lunch,
+            cancellationDeadline: this.getDeadline(new Date(cur), 'lunch'),
+          },
+          dinner: {
+            active: !c?.dinner,
+            cancelled: !!c?.dinner,
+            cancellationDeadline: this.getDeadline(new Date(cur), 'dinner'),
+          },
+        },
+      });
+
+      cur.setDate(cur.getDate() + 1);
+    }
+
+    return result;
+  }
+
   // ============================================================================
   // HELPERS
   // ============================================================================
