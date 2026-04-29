@@ -1,5 +1,10 @@
 import repository from '../repositories/meal-cancellation.repository';
-import { CancelMealInput, CancellationResponse, StudentMealStatus } from '../types/meal.types';
+import {
+  CancelMealInput,
+  CancellationResponse,
+  MealPlanningReport,
+  StudentMealStatus,
+} from '../types/meal.types';
 import { BadRequestError } from '@/shared/errors';
 
 class MealCancellationService {
@@ -156,6 +161,44 @@ class MealCancellationService {
     return result;
   }
 
+  // ============================================================================
+  // REPORT
+  // ============================================================================
+
+  async getMealPlanningReport(date: Date): Promise<MealPlanningReport> {
+    const mealDate = new Date(date);
+    mealDate.setHours(0, 0, 0, 0);
+
+    const totalStudents = await repository.countActiveStudentsWithRooms();
+    const cancellations = await repository.findByDate(mealDate);
+
+    const breakfastCancelled = cancellations.filter((c) => c.breakfast).length;
+    const lunchCancelled = cancellations.filter((c) => c.lunch).length;
+    const dinnerCancelled = cancellations.filter((c) => c.dinner).length;
+
+    return {
+      date: mealDate,
+      breakfast: {
+        totalStudents,
+        activeMeals: totalStudents - breakfastCancelled,
+        cancelled: breakfastCancelled,
+        cancellationRate: (breakfastCancelled / totalStudents) * 100,
+      },
+      lunch: {
+        totalStudents,
+        activeMeals: totalStudents - lunchCancelled,
+        cancelled: lunchCancelled,
+        cancellationRate: (lunchCancelled / totalStudents) * 100,
+      },
+      dinner: {
+        totalStudents,
+        activeMeals: totalStudents - dinnerCancelled,
+        cancelled: dinnerCancelled,
+        cancellationRate: (dinnerCancelled / totalStudents) * 100,
+      },
+      byFloor: [],
+    };
+  }
   // ============================================================================
   // HELPERS
   // ============================================================================
