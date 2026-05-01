@@ -199,6 +199,32 @@ class MealCancellationService {
       byFloor: [],
     };
   }
+
+  // ============================================================================
+  // BULK CANCEL (Admin)
+  // ============================================================================
+
+  async bulkCancelMeals(
+    studentIds: string[],
+    dates: string[],
+    mealTypes: ('breakfast' | 'lunch' | 'dinner')[],
+    reason: string,
+  ): Promise<{ cancelledCount: number }> {
+    const operations: any[] = [];
+
+    for (const studentId of studentIds) {
+      for (const dateStr of dates) {
+        const date = new Date(dateStr);
+        date.setHours(0, 0, 0, 0);
+
+        operations.push(this.buildBulkUpsertOperation(studentId, date, mealTypes, reason));
+      }
+    }
+
+    const cancelledCount = await repository.bulkUpsert(operations);
+
+    return { cancelledCount };
+  }
   // ============================================================================
   // HELPERS
   // ============================================================================
@@ -223,6 +249,22 @@ class MealCancellationService {
     d.setHours(this.MEAL_TIMES[meal], 0, 0, 0);
     d.setHours(d.getHours() - this.DEADLINE_HOURS);
     return d;
+  }
+
+  private buildBulkUpsertOperation(
+    studentId: string,
+    date: Date,
+    mealTypes: ('breakfast' | 'lunch' | 'dinner')[],
+    reason: string,
+  ) {
+    return repository.upsertCancellation({
+      studentId,
+      date,
+      breakfast: mealTypes.includes('breakfast'),
+      lunch: mealTypes.includes('lunch'),
+      dinner: mealTypes.includes('dinner'),
+      reason,
+    });
   }
 }
 
