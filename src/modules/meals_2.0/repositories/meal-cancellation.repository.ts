@@ -127,6 +127,38 @@ class MealCancellationRepository {
 
     return count;
   }
+
+  buildUpsertQuery(data: {
+    studentId: string;
+    date: Date;
+    breakfast?: boolean;
+    lunch?: boolean;
+    dinner?: boolean;
+    reason?: string;
+  }) {
+    return prisma.mealCancellation.upsert({
+      where: {
+        studentId_date: {
+          studentId: data.studentId,
+          date: data.date,
+        },
+      },
+      update: {
+        breakfast: data.breakfast,
+        lunch: data.lunch,
+        dinner: data.dinner,
+        reason: data.reason,
+      },
+      create: {
+        studentId: data.studentId,
+        date: data.date,
+        breakfast: data.breakfast ?? false,
+        lunch: data.lunch ?? false,
+        dinner: data.dinner ?? false,
+        reason: data.reason,
+      },
+    });
+  }
 }
 
 export default new MealCancellationRepository();

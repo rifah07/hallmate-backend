@@ -217,7 +217,16 @@ class MealCancellationService {
         const date = new Date(dateStr);
         date.setHours(0, 0, 0, 0);
 
-        operations.push(this.buildBulkUpsertOperation(studentId, date, mealTypes, reason));
+        operations.push(
+          repository.buildUpsertQuery({
+            studentId,
+            date,
+            breakfast: mealTypes.includes('breakfast'),
+            lunch: mealTypes.includes('lunch'),
+            dinner: mealTypes.includes('dinner'),
+            reason,
+          }),
+        );
       }
     }
 
