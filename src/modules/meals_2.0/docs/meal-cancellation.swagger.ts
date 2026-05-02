@@ -262,3 +262,142 @@
  *             code:
  *               type: string
  */
+
+/**
+ * @swagger
+ * /api/meals/cancel:
+ *   post:
+ *     summary: Cancel meals (Student)
+ *     description: |
+ *       Cancel meals from calendar view. Students can cancel multiple days at once.
+ *
+ *       **Business Rules:**
+ *       - Must cancel at least 24 hours before meal time
+ *       - Cannot cancel past meals
+ *       - Can cancel up to 30 days in advance
+ *       - Can cancel any combination of breakfast/lunch/dinner
+ *
+ *       **Deadlines:**
+ *       - Breakfast (7 AM) → Cancel by previous day 7 AM
+ *       - Lunch (1 PM) → Cancel by previous day 1 PM
+ *       - Dinner (8 PM) → Cancel by previous day 8 PM
+ *     tags:
+ *       - Meals - Cancellation
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CancelMealInput'
+ *     responses:
+ *       '200':
+ *         description: Cancellation processed
+ *       '400':
+ *         description: Validation error
+ *       '401':
+ *         description: Unauthorized
+ *       '403':
+ *         description: Only students can cancel meals
+ */
+
+/**
+ * @swagger
+ * /api/meals/reactivate:
+ *   post:
+ *     summary: Reactivate cancelled meals (Student)
+ *     description: |
+ *       Reactivate previously cancelled meals if still before deadline.
+ *     tags:
+ *       - Meals - Cancellation
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ReactivateMealInput'
+ *     responses:
+ *       '200':
+ *         description: Meals reactivated successfully
+ *       '400':
+ *         description: Deadline passed or invalid request
+ */
+
+/**
+ * @swagger
+ * /api/meals/my-status:
+ *   get:
+ *     summary: Get my meal calendar status (Student)
+ *     description: |
+ *       Get meal status for a date range showing active vs cancelled meals.
+ *     tags:
+ *       - Meals - Cancellation
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - name: dateFrom
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - name: dateTo
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *     responses:
+ *       '200':
+ *         description: Meal status retrieved
+ *       '400':
+ *         description: Invalid date range
+ */
+
+/**
+ * @swagger
+ * /api/meals/planning/{date}:
+ *   get:
+ *     summary: Get meal planning report (Kitchen Staff)
+ *     tags:
+ *       - Meals - Planning
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - name: date
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *     responses:
+ *       '200':
+ *         description: Planning report generated
+ *       '403':
+ *         description: Only dining staff and admins can access
+ */
+
+/**
+ * @swagger
+ * /api/meals/bulk-cancel:
+ *   post:
+ *     summary: Bulk cancel meals (Admin)
+ *     tags:
+ *       - Meals - Cancellation
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/BulkCancelInput'
+ *     responses:
+ *       '200':
+ *         description: Bulk cancellation completed
+ *       '403':
+ *         description: Only admins and dining staff can bulk cancel
+ */
