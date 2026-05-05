@@ -154,6 +154,53 @@ enum PaymentStatus {
 
 // MAIN MODELS
 
+// ─────────────────────────────────────────────
+// (public module)
+// ─────────────────────────────────────────────
+
+enum NoticePriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum PublicApplicationType {
+  SEAT_REQUEST
+  INFORMATION_REQUEST
+  GENERAL_INQUIRY
+  ADMISSION_QUERY
+}
+
+enum GalleryCategory {
+  INFRASTRUCTURE
+  EVENTS
+  SPORTS
+  CULTURAL
+  ACADEMICS
+  DINING
+  GENERAL
+}
+
+enum FacilityCategory {
+  ACCOMMODATION
+  DINING
+  SPORTS
+  ACADEMIC
+  HEALTH
+  RECREATION
+  UTILITIES
+}
+
+enum StaffCategory {
+  ADMINISTRATIVE
+  ACADEMIC
+  SUPPORT
+  SECURITY
+  DINING
+  MAINTENANCE
+}
+
 model RefreshToken {
   id     String @id @default(uuid())
   token  String @unique // store hashed token
@@ -246,6 +293,7 @@ model User {
   visitors          Visitor[]
   notifications     Notification[]
   seatAllocations   SeatAllocation[]
+  provostHistories  ProvostHistory[]  @relation("ProvostHistoryUser")
 
   // Audit
   createdBy String?
@@ -639,4 +687,326 @@ model AuditLog {
   @@index([userId])
   @@index([entity, entityId])
   @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────
+// public models
+// ─────────────────────────────────────────────
+
+model HallInfo {
+  id          String  @id @default(uuid())
+  name        String
+  established Int
+  location    String
+  description String  @db.Text
+  vision      String? @db.Text
+  mission     String? @db.Text
+  capacity    Int
+  totalRooms  Int
+  logoUrl     String?
+  coverUrl    String?
+  mapEmbedUrl String?
+  email       String?
+  phone       String?
+  address     String? @db.Text
+  socialLinks Json? // { facebook, website, etc. }
+
+  isActive  Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PublicPageContent {
+  id      String @id @default(uuid())
+  page    String @unique // "about", "admission", "dining_overview"
+  content Json   // flexible structured content
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([page])
+}
+
+model Facility {
+  id          String           @id @default(uuid())
+  name        String
+  slug        String           @unique
+  category    FacilityCategory
+  description String           @db.Text
+  iconUrl     String?
+  imageUrl    String?
+  isActive    Boolean          @default(true)
+  sortOrder   Int              @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([slug])
+}
+
+model FAQ {
+  id       String  @id @default(uuid())
+  question String
+  answer   String  @db.Text
+  category String  @default("GENERAL")
+  isActive Boolean @default(true)
+  sortOrder Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, isActive])
+}
+
+model GalleryItem {
+  id          String          @id @default(uuid())
+  title       String
+  description String?
+  imageUrl    String
+  thumbnailUrl String?
+  category    GalleryCategory @default(GENERAL)
+  tags        String[]
+  isActive    Boolean         @default(true)
+  sortOrder   Int             @default(0)
+  capturedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, isActive])
+}
+
+model PublicNotice {
+  id      String        @id @default(uuid())
+  title   String
+  slug    String        @unique
+  content String        @db.Text
+  summary String?
+
+  pdfUrl   String?
+  imageUrl String?
+
+  priority    NoticePriority @default(NORMAL)
+  category    String         @default("GENERAL")
+  tags        String[]
+
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
+  expiresAt   DateTime?
+  views       Int       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([isPublished, expiresAt])
+  @@index([category])
+  @@index([createdAt])
+}
+
+model PublicEvent {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  description String   @db.Text
+  summary     String?
+  venue       String?
+  imageUrl    String?
+
+  startDate DateTime
+  endDate   DateTime?
+  isAllDay  Boolean   @default(false)
+
+  tags        String[]
+  isPublished Boolean  @default(false)
+  isFeatured  Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([isPublished, startDate])
+  @@index([isFeatured])
+}
+
+model Achievement {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @db.Text
+  category    String   @default("GENERAL")
+  imageUrl    String?
+  year        Int
+  isActive    Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+  sortOrder   Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([year, isActive])
+  @@index([category])
+}
+
+model StaffProfile {
+  id          String        @id @default(uuid())
+  name        String
+  designation String
+  category    StaffCategory
+  department  String?
+  email       String?
+  phone       String?
+  photoUrl    String?
+  bio         String?       @db.Text
+  qualifications String?   @db.Text
+  joiningDate DateTime?
+  isPublic    Boolean       @default(true)
+  sortOrder   Int           @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, isPublic])
+}
+
+model HouseTutorProfile {
+  id          String   @id @default(uuid())
+  name        String
+  designation String   @default("House Tutor")
+  department  String
+  floor       Int?
+  wing        String?
+  email       String?
+  phone       String?
+  photoUrl    String?
+  bio         String?  @db.Text
+  officeHours String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([floor])
+}
+
+model DiningInfo {
+  id           String  @id @default(uuid())
+  mealPlan     Json    // { breakfast, lunch, dinner: { time, price, description } }
+  weeklyMenu   Json?   // { monday: { breakfast, lunch, dinner }, ... }
+  specialDiets String[]
+  capacity     Int?
+  location     String?
+  imageUrl     String?
+  contactPhone String?
+  notice       String? @db.Text
+  isActive     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdmissionInfo {
+  id               String   @id @default(uuid())
+  session          String
+  eligibility      String   @db.Text
+  process          String   @db.Text
+  requiredDocs     String[]
+  importantDates   Json?    // { applicationStart, applicationEnd, resultDate }
+  seatCapacity     Int?
+  applicationFee   Float?
+  contactEmail     String?
+  contactPhone     String?
+  faqItems         Json?
+  isActive         Boolean  @default(true)
+  isCurrent        Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isCurrent, isActive])
+}
+
+model ContactSubmission {
+  id      String  @id @default(uuid())
+  name    String
+  email   String
+  phone   String?
+  subject String
+  message String  @db.Text
+  isRead  Boolean @default(false)
+  repliedAt DateTime?
+
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+model PublicApplication {
+  id     String                @id @default(uuid())
+  type   PublicApplicationType
+  status ApplicationStatus     @default(PENDING)
+
+  // Applicant info
+  applicantName  String
+  applicantEmail String
+  applicantPhone String
+  studentId      String?
+  program        String?
+  department     String?
+  session        String?
+
+  // Application data
+  subject     String
+  message     String  @db.Text
+  attachments String[]
+
+  // Response (safe to expose)
+  responseNote String?   @db.Text
+  respondedAt  DateTime?
+
+  // Internal only (never expose)
+  assignedTo String?
+  internalNote String? @db.Text
+
+  ipAddress String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type, status])
+  @@index([applicantEmail])
+  @@index([createdAt])
+}
+
+model ProvostHistory {
+  id            String  @id @default(uuid())
+  name          String
+  photoUrl      String? // Cloudinary secure_url
+  photoPublicId String? // Cloudinary public_id — never exposed publicly
+
+  designation String  @default("Provost")
+  department  String?
+
+  tenureStart DateTime
+  tenureEnd   DateTime? // null = currently serving
+  isCurrent   Boolean   @default(false)
+
+  bio       String? @db.Text
+  sortOrder Int     @default(0)
+
+  // Link to User- used by self-edit guard so PROVOST cannot edit their own record
+  userId String?
+  user   User?   @relation("ProvostHistoryUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isCurrent])
+  @@index([tenureStart])
+  @@index([userId])
 }
