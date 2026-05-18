@@ -686,3 +686,78 @@
  *           type: integer
  *           example: 5
  */
+// ============================================================================
+// TAGS
+// ============================================================================
+
+/**
+ * @swagger
+ * tags:
+ *   - name: Public
+ *     description: Publicly accessible read-only endpoints — no authentication required
+ *   - name: Provost Management
+ *     description: Provost history write operations — requires SUPER_ADMIN or PROVOST role
+ */
+
+// ============================================================================
+// HALL INFO
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/public/hall-info:
+ *   get:
+ *     tags: [Public]
+ *     summary: Get hall information
+ *     description: |
+ *       Returns general information about the hall including name, history,
+ *       capacity, contact details, and social links.
+ *       Response is cached for 1 hour.
+ *     responses:
+ *       200:
+ *         description: Hall info retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/HallInfo'
+ */
+
+// ============================================================================
+// ABOUT
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/public/about:
+ *   get:
+ *     tags: [Public]
+ *     summary: Get about page content
+ *     description: |
+ *       Returns hall info summary alongside flexible structured content
+ *       (history, milestones, values) from the CMS page content table.
+ *       Response is cached for 1 hour.
+ *     responses:
+ *       200:
+ *         description: About content retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         hallInfo:
+ *                           $ref: '#/components/schemas/HallInfo'
+ *                         pageContent:
+ *                           type: object
+ *                           nullable: true
+ *                           description: Flexible CMS content (history, milestones, values)
+ */
