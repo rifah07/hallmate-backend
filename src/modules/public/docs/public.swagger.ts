@@ -982,3 +982,88 @@
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
+// ============================================================================
+// HOUSE TUTORS
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/public/house-tutors:
+ *   get:
+ *     tags: [Public]
+ *     summary: Get all active house tutors
+ *     description: |
+ *       Returns all active house tutor profiles ordered by floor and sort order.
+ *       Response is cached for 15 minutes.
+ *     responses:
+ *       200:
+ *         description: House tutors retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/HouseTutor'
+ */
+
+// ============================================================================
+// STAFF
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/public/staff:
+ *   get:
+ *     tags: [Public]
+ *     summary: Get public staff list
+ *     description: |
+ *       Returns paginated public staff profiles (isPublic = true only).
+ *       Supports filtering by category and free-text search.
+ *       Response is cached for 15 minutes.
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *           maximum: 100
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *           enum: [ADMINISTRATIVE, ACADEMIC, SUPPORT, SECURITY, DINING, MAINTENANCE]
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Case-insensitive search on name, designation, department
+ *     responses:
+ *       200:
+ *         description: Staff list retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/StaffProfile'
+ *                 meta:
+ *                   $ref: '#/components/schemas/PublicPaginationMeta'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ */
