@@ -1531,3 +1531,98 @@
  *         $ref: '#/components/responses/TooManyRequests'
  */
 
+// ============================================================================
+// PUBLIC APPLICATION
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/public/applications:
+ *   post:
+ *     tags: [Public]
+ *     summary: Submit a public application
+ *     description: |
+ *       Submits an application for seat request, information request, or admission query.
+ *       Status always starts as PENDING — use the tracking endpoint to check updates.
+ *       Rate limited to 5 requests per 15 minutes per IP.
+ *
+ *       **Internal fields never exposed:** assignedTo, internalNote, ipAddress
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/PublicApplicationBody'
+ *     responses:
+ *       201:
+ *         description: Application submitted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                           format: uuid
+ *                           description: Save this ID to track your application
+ *                         type:
+ *                           type: string
+ *                         status:
+ *                           type: string
+ *                           example: "PENDING"
+ *                         createdAt:
+ *                           type: string
+ *                           format: date-time
+ *                     message:
+ *                       type: string
+ *                       example: "Application submitted. Tracking ID: <uuid>"
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       429:
+ *         $ref: '#/components/responses/TooManyRequests'
+ */
+
+// ============================================================================
+// APPLICATION TRACKING
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/public/applications/track/{applicationId}:
+ *   get:
+ *     tags: [Public]
+ *     summary: Track a public application by ID
+ *     description: |
+ *       Returns the current status of a previously submitted application.
+ *       Only safe public fields are returned — internal notes and assigned
+ *       staff are never exposed. Response is NOT cached (live status expected).
+ *     parameters:
+ *       - in: path
+ *         name: applicationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: The tracking ID returned when the application was submitted
+ *     responses:
+ *       200:
+ *         description: Application status retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/ApplicationTrackingResponse'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
