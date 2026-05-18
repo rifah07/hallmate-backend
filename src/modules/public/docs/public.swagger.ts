@@ -1399,3 +1399,135 @@
  *       400:
  *         $ref: '#/components/responses/ValidationError'
  */
+// ============================================================================
+// FAQ
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/public/faq:
+ *   get:
+ *     tags: [Public]
+ *     summary: Get frequently asked questions
+ *     description: |
+ *       Returns all active FAQs, optionally filtered by category.
+ *       Ordered by category then sort order.
+ *       Response is cached for 1 hour.
+ *     parameters:
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *           example: "ADMISSION"
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Case-insensitive search on question and answer
+ *     responses:
+ *       200:
+ *         description: FAQs retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/FAQ'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ */
+
+// ============================================================================
+// ADMISSION
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/public/admission:
+ *   get:
+ *     tags: [Public]
+ *     summary: Get current admission information
+ *     description: |
+ *       Returns the currently active admission info (isCurrent = true) including
+ *       eligibility criteria, application process, required documents, and
+ *       important dates. Response is cached for 15 minutes.
+ *     responses:
+ *       200:
+ *         description: Admission info retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         current:
+ *                           $ref: '#/components/schemas/AdmissionInfo'
+ *                         extra:
+ *                           type: object
+ *                           nullable: true
+ *                           description: Additional CMS content for the admission page
+ */
+
+// ============================================================================
+// CONTACT FORM
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/public/contact:
+ *   post:
+ *     tags: [Public]
+ *     summary: Submit a contact form message
+ *     description: |
+ *       Stores the contact message for review by hall staff.
+ *       Rate limited to 5 requests per 15 minutes per IP.
+ *       The sender's IP address is stored internally for abuse tracking
+ *       but is never returned in any response.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ContactSubmissionBody'
+ *     responses:
+ *       201:
+ *         description: Message submitted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                           format: uuid
+ *                         name:
+ *                           type: string
+ *                         email:
+ *                           type: string
+ *                         subject:
+ *                           type: string
+ *                         createdAt:
+ *                           type: string
+ *                           format: date-time
+ *                     message:
+ *                       example: "Message submitted. We will get back to you shortly."
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       429:
+ *         $ref: '#/components/responses/TooManyRequests'
+ */
+
