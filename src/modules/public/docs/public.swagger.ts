@@ -1251,3 +1251,151 @@
  *         $ref: '#/components/responses/ValidationError'
  */
 
+// ============================================================================
+// NOTICES
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/public/notices:
+ *   get:
+ *     tags: [Public]
+ *     summary: Get published non-expired notices
+ *     description: |
+ *       Returns paginated notices that are published and not yet expired.
+ *       Ordered by priority descending, then published date descending.
+ *       Response is cached for 1 minute.
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *           maximum: 100
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *           example: "ADMISSION"
+ *       - in: query
+ *         name: priority
+ *         schema:
+ *           type: string
+ *           enum: [LOW, NORMAL, HIGH, URGENT]
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Case-insensitive search on title and summary
+ *     responses:
+ *       200:
+ *         description: Notices retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/PublicNotice'
+ *                 meta:
+ *                   $ref: '#/components/schemas/PublicPaginationMeta'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *
+ * /api/public/notices/{noticeId}:
+ *   get:
+ *     tags: [Public]
+ *     summary: Get a single notice by ID
+ *     description: |
+ *       Returns full notice content including the body text and image URL.
+ *       Increments the view counter on each call (fire-and-forget, non-blocking).
+ *       Response is cached for 5 minutes.
+ *     parameters:
+ *       - in: path
+ *         name: noticeId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Notice retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/PublicNoticeDetail'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+
+// ============================================================================
+// GALLERY
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/public/gallery:
+ *   get:
+ *     tags: [Public]
+ *     summary: Get gallery items
+ *     description: |
+ *       Returns paginated gallery items (isActive = true only).
+ *       Supports filtering by category and free-text search.
+ *       Response is cached for 5 minutes.
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *           maximum: 100
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *           enum: [INFRASTRUCTURE, EVENTS, SPORTS, CULTURAL, ACADEMICS, DINING, GENERAL]
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Case-insensitive search on title and description
+ *     responses:
+ *       200:
+ *         description: Gallery items retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/GalleryItem'
+ *                 meta:
+ *                   $ref: '#/components/schemas/PublicPaginationMeta'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ */
