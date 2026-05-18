@@ -1067,3 +1067,187 @@
  *       400:
  *         $ref: '#/components/responses/ValidationError'
  */
+// ============================================================================
+// FACILITIES
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/public/facilities:
+ *   get:
+ *     tags: [Public]
+ *     summary: Get hall facilities
+ *     description: |
+ *       Returns all active facilities, optionally filtered by category.
+ *       Response is cached for 1 hour.
+ *     parameters:
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *           enum: [ACCOMMODATION, DINING, SPORTS, ACADEMIC, HEALTH, RECREATION, UTILITIES]
+ *     responses:
+ *       200:
+ *         description: Facilities retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Facility'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ */
+
+// ============================================================================
+// DINING
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/public/dining:
+ *   get:
+ *     tags: [Public]
+ *     summary: Get dining hall information
+ *     description: |
+ *       Returns the active dining plan including meal timings, prices,
+ *       weekly menu, and dietary information.
+ *       Response is cached for 5 minutes.
+ *     responses:
+ *       200:
+ *         description: Dining info retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/DiningInfo'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+
+// ============================================================================
+// ACHIEVEMENTS
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/public/achievements:
+ *   get:
+ *     tags: [Public]
+ *     summary: Get hall achievements
+ *     description: |
+ *       Returns paginated achievements, ordered by featured-first then year descending.
+ *       Supports filtering by category and year.
+ *       Response is cached for 15 minutes.
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *           maximum: 100
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *           example: "SPORTS"
+ *       - in: query
+ *         name: year
+ *         schema:
+ *           type: integer
+ *           example: 2024
+ *     responses:
+ *       200:
+ *         description: Achievements retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Achievement'
+ *                 meta:
+ *                   $ref: '#/components/schemas/PublicPaginationMeta'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ */
+
+// ============================================================================
+// EVENTS
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/public/events:
+ *   get:
+ *     tags: [Public]
+ *     summary: Get published hall events
+ *     description: |
+ *       Returns paginated published events. Use `upcoming=true` to get only
+ *       future events ordered soonest-first. Use `featured=true` to get
+ *       featured events only. Response is cached for 1 minute.
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *           maximum: 100
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Case-insensitive search on title and summary
+ *       - in: query
+ *         name: upcoming
+ *         schema:
+ *           type: boolean
+ *         description: If true, only returns events with startDate >= now, ordered soonest-first
+ *       - in: query
+ *         name: featured
+ *         schema:
+ *           type: boolean
+ *         description: If true, only returns featured events
+ *     responses:
+ *       200:
+ *         description: Events retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/PublicEvent'
+ *                 meta:
+ *                   $ref: '#/components/schemas/PublicPaginationMeta'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ */
+
