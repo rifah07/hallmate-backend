@@ -761,3 +761,224 @@
  *                           nullable: true
  *                           description: Flexible CMS content (history, milestones, values)
  */
+
+// ============================================================================
+// PROVOST (CURRENT — from User table)
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/public/provost:
+ *   get:
+ *     tags: [Public]
+ *     summary: Get current provost info
+ *     description: |
+ *       Returns the currently active provost's basic info from the User table.
+ *       For the full provost history list, use `GET /api/public/provosts`.
+ *       Response is cached for 15 minutes.
+ *     responses:
+ *       200:
+ *         description: Provost info retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/ProvostUser'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+
+// ============================================================================
+// PROVOST HISTORY (public read)
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/public/provosts:
+ *   get:
+ *     tags: [Public]
+ *     summary: Get all provosts with tenure info
+ *     description: |
+ *       Returns all provost history records ordered by current-first,
+ *       then tenure start descending. Includes photo, designation, and bio.
+ *       Internal fields (photoPublicId, userId) are never exposed.
+ *       Response is cached for 15 minutes.
+ *     responses:
+ *       200:
+ *         description: Provost history retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/ProvostHistory'
+ */
+
+// ============================================================================
+// PROVOST HISTORY — admin write
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/public/provosts:
+ *   post:
+ *     tags: [Provost Management]
+ *     summary: Create a provost history record
+ *     description: |
+ *       Creates a new provost history record with optional Cloudinary photo upload.
+ *
+ *       **Business rules:**
+ *       - If `isCurrent` is `"true"`, all other records are automatically unmarked
+ *       - Supply `userId` to link the record to a User account — this activates
+ *         the self-edit guard (the PROVOST with that userId cannot edit/delete this record)
+ *       - Photo is uploaded to Cloudinary under `hallmate/provosts/`
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateProvostHistoryBody'
+ *     responses:
+ *       201:
+ *         description: Provost record created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/ProvostHistory'
+ *                     message:
+ *                       example: "Provost record created"
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *
+ * /api/public/provosts/{id}:
+ *   patch:
+ *     tags: [Provost Management]
+ *     summary: Update a provost history record
+ *     description: |
+ *       Partially updates an existing provost record. All fields are optional.
+ *       If a new photo is uploaded, the old Cloudinary asset is deleted first.
+ *
+ *       **Self-edit rule:**
+ *       A PROVOST whose User account is linked to this record (via `userId`)
+ *       cannot edit it. Only a SUPER_ADMIN can modify their own record.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST (self-edit blocked)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ProvostHistory record ID
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             allOf:
+ *               - $ref: '#/components/schemas/CreateProvostHistoryBody'
+ *               - type: object
+ *                 description: All fields are optional for PATCH
+ *     responses:
+ *       200:
+ *         description: Provost record updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/ProvostHistory'
+ *                     message:
+ *                       example: "Provost record updated"
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         description: Forbidden — PROVOST attempted to edit their own record
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error:
+ *                 message: "You cannot modify your own provost record. Contact the Super Admin."
+ *                 code: "SELF_EDIT_FORBIDDEN"
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *
+ *   delete:
+ *     tags: [Provost Management]
+ *     summary: Delete a provost history record
+ *     description: |
+ *       Permanently deletes a provost record and its associated Cloudinary photo.
+ *       Cloudinary deletion failure is non-fatal — the DB record is still removed.
+ *
+ *       **Self-edit rule:** Same as PATCH — a PROVOST cannot delete their own record.
+ *
+ *       **Access:** SUPER_ADMIN, PROVOST (self-delete blocked)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Provost record deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     message:
+ *                       example: "Provost record deleted"
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         description: Forbidden — PROVOST attempted to delete their own record
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error:
+ *                 message: "You cannot modify your own provost record. Contact the Super Admin."
+ *                 code: "SELF_EDIT_FORBIDDEN"
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
