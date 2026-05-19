@@ -56,6 +56,38 @@ export const hallInfoSchema = z.object({
     .optional(), // JSON string from form
   isActive: isActiveField,
 });
+// ─────────────────────────────────────────────
+// Facility
+// ─────────────────────────────────────────────
+
+export const facilitySchema = z.object({
+  name: z.string().min(2).max(150).trim(),
+  slug: slugField,
+  category: z.enum([
+    'ACCOMMODATION',
+    'DINING',
+    'SPORTS',
+    'ACADEMIC',
+    'HEALTH',
+    'RECREATION',
+    'UTILITIES',
+  ]),
+  description: z.string().min(10).trim(),
+  isActive: isActiveField,
+  sortOrder: sortOrderField,
+});
+
+// ─────────────────────────────────────────────
+// FAQ
+// ─────────────────────────────────────────────
+
+export const faqSchema = z.object({
+  question: z.string().min(5).max(500).trim(),
+  answer: z.string().min(10).trim(),
+  category: z.string().max(50).trim().optional().default('GENERAL'),
+  isActive: isActiveField,
+  sortOrder: sortOrderField,
+});
 
 // ─────────────────────────────────────────────
 // UUID param (reused across all delete/update routes)
@@ -66,3 +98,5 @@ export const idParamSchema = z.object({
 });
 
 export type HallInfoBody = z.infer<typeof hallInfoSchema>;
+export type FacilityBody = z.infer<typeof facilitySchema>;
+export type FAQBody = z.infer<typeof faqSchema>;
