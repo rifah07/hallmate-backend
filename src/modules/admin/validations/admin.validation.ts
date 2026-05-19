@@ -1,7 +1,15 @@
+/**
+ * admin.validation.ts
+ *
+ * All Zod schemas for admin content write operations.
+ * KISS: each schema only validates what that model actually needs.
+ * DRY: shared field definitions (slug, sortOrder, isActive) defined once.
+ */
+
 import { z } from 'zod';
 
 // ─────────────────────────────────────────────
-// Shared field definitions - defined once, reused
+// Shared field definitions — defined once, reused
 // ─────────────────────────────────────────────
 
 const slugField = z
@@ -56,6 +64,7 @@ export const hallInfoSchema = z.object({
     .optional(), // JSON string from form
   isActive: isActiveField,
 });
+
 // ─────────────────────────────────────────────
 // Facility
 // ─────────────────────────────────────────────
@@ -90,6 +99,58 @@ export const faqSchema = z.object({
 });
 
 // ─────────────────────────────────────────────
+// Dining Info
+// ─────────────────────────────────────────────
+
+export const diningInfoSchema = z.object({
+  mealPlan: z.string().transform((v) => JSON.parse(v)), // JSON string from form
+  weeklyMenu: z
+    .string()
+    .transform((v) => JSON.parse(v))
+    .optional(),
+  specialDiets: z
+    .union([
+      z.array(z.string()),
+      z.string().transform((v) =>
+        v
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+      ),
+    ])
+    .optional()
+    .default([]),
+  capacity: z
+    .union([z.number().int().min(1), z.string().transform((v) => parseInt(v, 10))])
+    .optional(),
+  location: z.string().max(200).trim().optional(),
+  contactPhone: z.string().max(20).optional(),
+  notice: z.string().max(1000).trim().optional(),
+  isActive: isActiveField,
+});
+
+// ─────────────────────────────────────────────
+// Achievement
+// ─────────────────────────────────────────────
+
+export const achievementSchema = z.object({
+  title: z.string().min(2).max(300).trim(),
+  description: z.string().min(10).trim(),
+  category: z.string().max(50).trim().optional().default('GENERAL'),
+  year: z.union([
+    z
+      .number()
+      .int()
+      .min(1900)
+      .max(new Date().getFullYear() + 1),
+    z.string().transform((v) => parseInt(v, 10)),
+  ]),
+  isActive: isActiveField,
+  isFeatured: isFeaturedField,
+  sortOrder: sortOrderField,
+});
+
+// ─────────────────────────────────────────────
 // UUID param (reused across all delete/update routes)
 // ─────────────────────────────────────────────
 
@@ -100,3 +161,5 @@ export const idParamSchema = z.object({
 export type HallInfoBody = z.infer<typeof hallInfoSchema>;
 export type FacilityBody = z.infer<typeof facilitySchema>;
 export type FAQBody = z.infer<typeof faqSchema>;
+export type DiningInfoBody = z.infer<typeof diningInfoSchema>;
+export type AchievementBody = z.infer<typeof achievementSchema>;
