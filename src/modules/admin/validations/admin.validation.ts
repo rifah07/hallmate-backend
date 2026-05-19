@@ -218,6 +218,51 @@ export const galleryItemSchema = z.object({
 });
 
 // ─────────────────────────────────────────────
+// House Tutor Profile
+// ─────────────────────────────────────────────
+
+export const houseTutorSchema = z.object({
+  name: z.string().min(2).max(100).trim(),
+  designation: z.string().max(100).trim().optional().default('House Tutor'),
+  department: z.string().max(150).trim(),
+  floor: z
+    .union([z.number().int().min(1), z.string().transform((v) => parseInt(v, 10))])
+    .optional(),
+  wing: z.string().max(5).optional(),
+  email: z.string().email().optional(),
+  phone: z.string().max(20).optional(),
+  bio: z.string().max(2000).trim().optional(),
+  officeHours: z.string().max(200).trim().optional(),
+  isActive: isActiveField,
+  sortOrder: sortOrderField,
+});
+
+// ─────────────────────────────────────────────
+// Staff Profile
+// ─────────────────────────────────────────────
+
+export const staffProfileSchema = z.object({
+  name: z.string().min(2).max(100).trim(),
+  designation: z.string().min(2).max(150).trim(),
+  category: z.enum(['ADMINISTRATIVE', 'ACADEMIC', 'SUPPORT', 'SECURITY', 'DINING', 'MAINTENANCE']),
+  department: z.string().max(150).trim().optional(),
+  email: z.string().email().optional(),
+  phone: z.string().max(20).optional(),
+  bio: z.string().max(2000).trim().optional(),
+  qualifications: z.string().max(1000).trim().optional(),
+  joiningDate: z
+    .string()
+    .refine((v) => !isNaN(Date.parse(v)), 'Invalid date')
+    .transform((v) => new Date(v))
+    .optional(),
+  isPublic: z
+    .union([z.boolean(), z.string().transform((v) => v === 'true')])
+    .optional()
+    .default(true),
+  sortOrder: sortOrderField,
+});
+
+// ─────────────────────────────────────────────
 // UUID param (reused across all delete/update routes)
 // ─────────────────────────────────────────────
 
@@ -233,3 +278,5 @@ export type AchievementBody = z.infer<typeof achievementSchema>;
 export type NoticeBody = z.infer<typeof noticeSchema>;
 export type EventBody = z.infer<typeof eventSchema>;
 export type GalleryItemBody = z.infer<typeof galleryItemSchema>;
+export type HouseTutorBody = z.infer<typeof houseTutorSchema>;
+export type StaffProfileBody = z.infer<typeof staffProfileSchema>;
