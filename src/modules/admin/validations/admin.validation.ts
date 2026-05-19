@@ -1,11 +1,3 @@
-/**
- * admin.validation.ts
- *
- * All Zod schemas for admin content write operations.
- * KISS: each schema only validates what that model actually needs.
- * DRY: shared field definitions (slug, sortOrder, isActive) defined once.
- */
-
 import { z } from 'zod';
 
 // ─────────────────────────────────────────────
@@ -151,6 +143,81 @@ export const achievementSchema = z.object({
 });
 
 // ─────────────────────────────────────────────
+// Public Notice
+// ─────────────────────────────────────────────
+
+export const noticeSchema = z.object({
+  title: z.string().min(2).max(300).trim(),
+  slug: slugField,
+  content: z.string().min(10).trim(),
+  summary: z.string().max(500).trim().optional(),
+  pdfUrl: z.string().url().optional(),
+  priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']).optional().default('NORMAL'),
+  category: z.string().max(50).trim().optional().default('GENERAL'),
+  tags: tagsField,
+  isPublished: isPublishedField,
+  publishedAt: z
+    .string()
+    .refine((v) => !isNaN(Date.parse(v)), 'Invalid date')
+    .transform((v) => new Date(v))
+    .optional(),
+  expiresAt: z
+    .string()
+    .refine((v) => !isNaN(Date.parse(v)), 'Invalid date')
+    .transform((v) => new Date(v))
+    .optional(),
+});
+
+// ─────────────────────────────────────────────
+// Public Event
+// ─────────────────────────────────────────────
+
+export const eventSchema = z.object({
+  title: z.string().min(2).max(300).trim(),
+  slug: slugField,
+  description: z.string().min(10).trim(),
+  summary: z.string().max(500).trim().optional(),
+  venue: z.string().max(200).trim().optional(),
+  startDate: z
+    .string()
+    .refine((v) => !isNaN(Date.parse(v)), 'Invalid date')
+    .transform((v) => new Date(v)),
+  endDate: z
+    .string()
+    .refine((v) => !isNaN(Date.parse(v)), 'Invalid date')
+    .transform((v) => new Date(v))
+    .optional(),
+  isAllDay: z
+    .union([z.boolean(), z.string().transform((v) => v === 'true')])
+    .optional()
+    .default(false),
+  tags: tagsField,
+  isPublished: isPublishedField,
+  isFeatured: isFeaturedField,
+});
+
+// ─────────────────────────────────────────────
+// Gallery Item
+// ─────────────────────────────────────────────
+
+export const galleryItemSchema = z.object({
+  title: z.string().min(2).max(200).trim(),
+  description: z.string().max(500).trim().optional(),
+  category: z
+    .enum(['INFRASTRUCTURE', 'EVENTS', 'SPORTS', 'CULTURAL', 'ACADEMICS', 'DINING', 'GENERAL'])
+    .optional()
+    .default('GENERAL'),
+  tags: tagsField,
+  isActive: isActiveField,
+  sortOrder: sortOrderField,
+  capturedAt: z
+    .string()
+    .refine((v) => !isNaN(Date.parse(v)), 'Invalid date')
+    .transform((v) => new Date(v))
+    .optional(),
+});
+
+// ─────────────────────────────────────────────
 // UUID param (reused across all delete/update routes)
 // ─────────────────────────────────────────────
 
@@ -163,3 +230,6 @@ export type FacilityBody = z.infer<typeof facilitySchema>;
 export type FAQBody = z.infer<typeof faqSchema>;
 export type DiningInfoBody = z.infer<typeof diningInfoSchema>;
 export type AchievementBody = z.infer<typeof achievementSchema>;
+export type NoticeBody = z.infer<typeof noticeSchema>;
+export type EventBody = z.infer<typeof eventSchema>;
+export type GalleryItemBody = z.infer<typeof galleryItemSchema>;
