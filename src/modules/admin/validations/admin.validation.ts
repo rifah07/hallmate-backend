@@ -263,6 +263,56 @@ export const staffProfileSchema = z.object({
 });
 
 // ─────────────────────────────────────────────
+// Admission Info
+// ─────────────────────────────────────────────
+
+export const admissionInfoSchema = z.object({
+  session: z.string().min(2).max(20).trim(),
+  eligibility: z.string().min(10).trim(),
+  process: z.string().min(10).trim(),
+  requiredDocs: z
+    .union([
+      z.array(z.string()),
+      z.string().transform((v) =>
+        v
+          .split('\n')
+          .map((s) => s.trim())
+          .filter(Boolean),
+      ),
+    ])
+    .optional()
+    .default([]),
+  importantDates: z
+    .string()
+    .transform((v) => JSON.parse(v))
+    .optional(),
+  seatCapacity: z
+    .union([z.number().int().min(1), z.string().transform((v) => parseInt(v, 10))])
+    .optional(),
+  applicationFee: z
+    .union([z.number().min(0), z.string().transform((v) => parseFloat(v))])
+    .optional(),
+  contactEmail: z.string().email().optional(),
+  contactPhone: z.string().max(20).optional(),
+  faqItems: z
+    .string()
+    .transform((v) => JSON.parse(v))
+    .optional(),
+  isActive: isActiveField,
+  isCurrent: z.union([z.boolean(), z.string().transform((v) => v === 'true')]).optional(),
+});
+
+// ─────────────────────────────────────────────
+// Page Content (about, admission overview etc.)
+// ─────────────────────────────────────────────
+
+export const pageContentSchema = z.object({
+  page: z.string().min(2).max(50).trim(),
+  content: z.string().transform((v) => JSON.parse(v)), // JSON string
+  isActive: isActiveField,
+});
+
+// ─────────────────────────────────────────────
 // UUID param (reused across all delete/update routes)
 // ─────────────────────────────────────────────
 
@@ -280,3 +330,5 @@ export type EventBody = z.infer<typeof eventSchema>;
 export type GalleryItemBody = z.infer<typeof galleryItemSchema>;
 export type HouseTutorBody = z.infer<typeof houseTutorSchema>;
 export type StaffProfileBody = z.infer<typeof staffProfileSchema>;
+export type AdmissionInfoBody = z.infer<typeof admissionInfoSchema>;
+export type PageContentBody = z.infer<typeof pageContentSchema>;
