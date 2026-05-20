@@ -39,3 +39,34 @@ export const houseTutorRepo = makeCRUD(prisma.houseTutorProfile);
 export const staffRepo = makeCRUD(prisma.staffProfile);
 export const admissionRepo = makeCRUD(prisma.admissionInfo);
 export const pageContentRepo = makeCRUD(prisma.publicPageContent);
+
+// ─────────────────────────────────────────────
+// Specialty queries that don't fit the generic
+// pattern — kept here so service stays Prisma-free
+// ─────────────────────────────────────────────
+
+export const adminRepository = {
+  /** Enforce single active hall info */
+  deactivateAllHallInfo: () =>
+    prisma.hallInfo.updateMany({ where: { isActive: true }, data: { isActive: false } }),
+
+  /** Enforce single current admission */
+  deactivateCurrentAdmission: (excludeId?: string) =>
+    prisma.admissionInfo.updateMany({
+      where: { isCurrent: true, ...(excludeId && { id: { not: excludeId } }) },
+      data: { isCurrent: false },
+    }),
+
+  /** Check slug uniqueness for models that have slugs */
+  isSlugTaken: async (
+    model: 'publicNotice' | 'publicEvent' | 'facility',
+    slug: string,
+    excludeId?: string,
+  ): Promise<boolean> => {
+    const record = await (prisma[model] as any).findFirst({
+      where: { slug, ...(excludeId && { id: { not: excludeId } }) },
+      select: { id: true },
+    });
+    return !!record;
+  },
+};
