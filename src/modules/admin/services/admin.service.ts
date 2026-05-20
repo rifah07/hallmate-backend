@@ -170,3 +170,46 @@ const staffService = makeContentService<StaffProfileBody>(staffRepo, {
 });
 const admissionService = makeContentService<AdmissionInfoBody>(admissionRepo);
 const pageContentService = makeContentService<PageContentBody>(pageContentRepo);
+
+// ─────────────────────────────────────────────
+// Exported functions
+// Thin wrappers that add model-specific business
+// rules on top of the generic service.
+// ─────────────────────────────────────────────
+
+// ── Hall Info ────────────────────────────────
+
+export async function createHallInfo(body: HallInfoBody, file?: Express.Multer.File) {
+  // Business rule: only one active hall info record
+  await adminRepository.deactivateAllHallInfo();
+  return hallInfoService.create(body, file);
+}
+
+export const updateHallInfo = (
+  id: string,
+  body: Partial<HallInfoBody>,
+  file?: Express.Multer.File,
+) => hallInfoService.update(id, body, file);
+export const deleteHallInfo = (id: string) => hallInfoService.delete(id);
+
+// ── Facility ─────────────────────────────────
+
+export async function createFacility(body: FacilityBody, file?: Express.Multer.File) {
+  const taken = await adminRepository.isSlugTaken('facility', body.slug);
+  if (taken) throw new ConflictError(`Slug "${body.slug}" is already in use`);
+  return facilityService.create(body, file);
+}
+
+export async function updateFacility(
+  id: string,
+  body: Partial<FacilityBody>,
+  file?: Express.Multer.File,
+) {
+  if (body.slug) {
+    const taken = await adminRepository.isSlugTaken('facility', body.slug, id);
+    if (taken) throw new ConflictError(`Slug "${body.slug}" is already in use`);
+  }
+  return facilityService.update(id, body, file);
+}
+
+export const deleteFacility = (id: string) => facilityService.delete(id);
