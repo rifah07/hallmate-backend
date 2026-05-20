@@ -115,3 +115,58 @@ function makeContentService<TBody extends Record<string, any>>(
     },
   };
 }
+
+// ─────────────────────────────────────────────
+// Service instances — one line per model
+// Models with images pass folder + field names.
+// Models without images omit options entirely.
+// ─────────────────────────────────────────────
+
+const hallInfoService = makeContentService<HallInfoBody>(hallInfoRepo, {
+  folder: 'hallmate/hall',
+  imageField: 'coverUrl',
+  publicIdField: 'coverPublicId',
+});
+const facilityService = makeContentService<FacilityBody>(facilityRepo, {
+  folder: 'hallmate/facilities',
+  imageField: 'imageUrl',
+  publicIdField: 'imagePublicId',
+});
+const faqService = makeContentService<FAQBody>(faqRepo);
+const diningService = makeContentService<DiningInfoBody>(diningRepo, {
+  folder: 'hallmate/dining',
+  imageField: 'imageUrl',
+  publicIdField: 'imagePublicId',
+});
+const achievementService = makeContentService<AchievementBody>(achievementRepo, {
+  folder: 'hallmate/achievements',
+  imageField: 'imageUrl',
+  publicIdField: 'imagePublicId',
+});
+const noticeService = makeContentService<NoticeBody>(noticeRepo, {
+  folder: 'hallmate/notices',
+  imageField: 'imageUrl',
+  publicIdField: 'imagePublicId',
+});
+const eventService = makeContentService<EventBody>(eventRepo, {
+  folder: 'hallmate/events',
+  imageField: 'imageUrl',
+  publicIdField: 'imagePublicId',
+});
+const galleryService = makeContentService<GalleryItemBody>(galleryRepo, {
+  folder: 'hallmate/gallery',
+  imageField: 'imageUrl',
+  publicIdField: 'imagePublicId',
+});
+const houseTutorService = makeContentService<HouseTutorBody>(houseTutorRepo, {
+  folder: 'hallmate/tutors',
+  imageField: 'photoUrl',
+  publicIdField: 'photoPublicId',
+});
+const staffService = makeContentService<StaffProfileBody>(staffRepo, {
+  folder: 'hallmate/staff',
+  imageField: 'photoUrl',
+  publicIdField: 'photoPublicId',
+});
+const admissionService = makeContentService<AdmissionInfoBody>(admissionRepo);
+const pageContentService = makeContentService<PageContentBody>(pageContentRepo);
