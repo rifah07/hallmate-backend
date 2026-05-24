@@ -230,3 +230,27 @@ export const updateDiningInfo = (
   file?: Express.Multer.File,
 ) => diningService.update(id, body, file);
 export const deleteDiningInfo = (id: string) => diningService.delete(id);
+
+// ── Achievement ──────────────────────────────
+
+export const createAchievement = (body: AchievementBody, file?: Express.Multer.File) =>
+  achievementService.create(body, file);
+export const updateAchievement = (
+  id: string,
+  body: Partial<AchievementBody>,
+  file?: Express.Multer.File,
+) => achievementService.update(id, body, file);
+export const deleteAchievement = (id: string) => achievementService.delete(id);
+
+// ── Notice ───────────────────────────────────
+
+export async function createNotice(body: NoticeBody, file?: Express.Multer.File) {
+  const taken = await adminRepository.isSlugTaken('publicNotice', body.slug);
+  if (taken) throw new ConflictError(`Slug "${body.slug}" is already in use`);
+  // Auto-set publishedAt if publishing now
+  const data = {
+    ...body,
+    publishedAt: body.isPublished && !body.publishedAt ? new Date() : body.publishedAt,
+  };
+  return noticeService.create(data, file);
+}
