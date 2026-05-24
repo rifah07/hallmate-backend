@@ -213,3 +213,20 @@ export async function updateFacility(
 }
 
 export const deleteFacility = (id: string) => facilityService.delete(id);
+
+// ── FAQ ──────────────────────────────────────
+
+export const createFAQ = (body: FAQBody) => faqService.create(body);
+export const updateFAQ = (id: string, body: Partial<FAQBody>) => faqService.update(id, body);
+export const deleteFAQ = (id: string) => faqService.delete(id);
+
+// ── Dining Info ──────────────────────────────
+
+export const createDiningInfo = (body: DiningInfoBody, file?: Express.Multer.File) =>
+  diningService.create(body, file);
+export const updateDiningInfo = (
+  id: string,
+  body: Partial<DiningInfoBody>,
+  file?: Express.Multer.File,
+) => diningService.update(id, body, file);
+export const deleteDiningInfo = (id: string) => diningService.delete(id);
