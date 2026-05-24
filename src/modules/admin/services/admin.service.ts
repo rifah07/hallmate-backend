@@ -342,3 +342,10 @@ export async function updateAdmissionInfo(id: string, body: Partial<AdmissionInf
 }
 
 export const deleteAdmissionInfo = (id: string) => admissionService.delete(id);
+
+// ── Page Content ─────────────────────────────
+
+export const upsertPageContent = (body: PageContentBody) => pageContentRepo.create(body); // upsert handled at repo level if needed
+export const updatePageContent = (id: string, body: Partial<PageContentBody>) =>
+  pageContentService.update(id, body);
+export const deletePageContent = (id: string) => pageContentService.delete(id);
