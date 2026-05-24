@@ -254,3 +254,41 @@ export async function createNotice(body: NoticeBody, file?: Express.Multer.File)
   };
   return noticeService.create(data, file);
 }
+
+export async function updateNotice(
+  id: string,
+  body: Partial<NoticeBody>,
+  file?: Express.Multer.File,
+) {
+  if (body.slug) {
+    const taken = await adminRepository.isSlugTaken('publicNotice', body.slug, id);
+    if (taken) throw new ConflictError(`Slug "${body.slug}" is already in use`);
+  }
+  const data = {
+    ...body,
+    ...(body.isPublished && !body.publishedAt ? { publishedAt: new Date() } : {}),
+  };
+  return noticeService.update(id, data, file);
+}
+
+export const deleteNotice = (id: string) => noticeService.delete(id);
+
+// ── Event ────────────────────────────────────
+
+export async function createEvent(body: EventBody, file?: Express.Multer.File) {
+  const taken = await adminRepository.isSlugTaken('publicEvent', body.slug);
+  if (taken) throw new ConflictError(`Slug "${body.slug}" is already in use`);
+  return eventService.create(body, file);
+}
+
+export async function updateEvent(
+  id: string,
+  body: Partial<EventBody>,
+  file?: Express.Multer.File,
+) {
+  if (body.slug) {
+    const taken = await adminRepository.isSlugTaken('publicEvent', body.slug, id);
+    if (taken) throw new ConflictError(`Slug "${body.slug}" is already in use`);
+  }
+  return eventService.update(id, body, file);
+}
