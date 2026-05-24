@@ -305,3 +305,40 @@ export const updateGalleryItem = (
   file?: Express.Multer.File,
 ) => galleryService.update(id, body, file);
 export const deleteGalleryItem = (id: string) => galleryService.delete(id);
+
+// ── House Tutor ──────────────────────────────
+
+export const createHouseTutor = (body: HouseTutorBody, file?: Express.Multer.File) =>
+  houseTutorService.create(body, file);
+export const updateHouseTutor = (
+  id: string,
+  body: Partial<HouseTutorBody>,
+  file?: Express.Multer.File,
+) => houseTutorService.update(id, body, file);
+export const deleteHouseTutor = (id: string) => houseTutorService.delete(id);
+
+// ── Staff Profile ────────────────────────────
+
+export const createStaffProfile = (body: StaffProfileBody, file?: Express.Multer.File) =>
+  staffService.create(body, file);
+export const updateStaffProfile = (
+  id: string,
+  body: Partial<StaffProfileBody>,
+  file?: Express.Multer.File,
+) => staffService.update(id, body, file);
+export const deleteStaffProfile = (id: string) => staffService.delete(id);
+
+// ── Admission Info ───────────────────────────
+
+export async function createAdmissionInfo(body: AdmissionInfoBody) {
+  // Business rule: only one current admission at a time
+  if (body.isCurrent) await adminRepository.deactivateCurrentAdmission();
+  return admissionService.create(body);
+}
+
+export async function updateAdmissionInfo(id: string, body: Partial<AdmissionInfoBody>) {
+  if (body.isCurrent) await adminRepository.deactivateCurrentAdmission(id);
+  return admissionService.update(id, body);
+}
+
+export const deleteAdmissionInfo = (id: string) => admissionService.delete(id);
