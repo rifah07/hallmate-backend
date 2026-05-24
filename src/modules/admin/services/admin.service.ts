@@ -292,3 +292,16 @@ export async function updateEvent(
   }
   return eventService.update(id, body, file);
 }
+
+export const deleteEvent = (id: string) => eventService.delete(id);
+
+// ── Gallery ──────────────────────────────────
+
+export const createGalleryItem = (body: GalleryItemBody, file?: Express.Multer.File) =>
+  galleryService.create(body, file);
+export const updateGalleryItem = (
+  id: string,
+  body: Partial<GalleryItemBody>,
+  file?: Express.Multer.File,
+) => galleryService.update(id, body, file);
+export const deleteGalleryItem = (id: string) => galleryService.delete(id);
