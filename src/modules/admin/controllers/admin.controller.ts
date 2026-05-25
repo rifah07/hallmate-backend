@@ -115,3 +115,24 @@ export const noticeHandlers = makeHandlers(
   { created: 'Notice created', updated: 'Notice updated', deleted: 'Notice deleted' },
   true,
 );
+
+
+export const eventHandlers = makeHandlers(
+  adminService.createEvent,
+  adminService.updateEvent,
+  adminService.deleteEvent,
+  { created: 'Event created', updated: 'Event updated', deleted: 'Event deleted' },
+  true,
+);
+
+export const galleryHandlers = makeHandlers(
+  adminService.createGalleryItem,
+  adminService.updateGalleryItem,
+  adminService.deleteGalleryItem,
+  {
+    created: 'Gallery item created',
+    updated: 'Gallery item updated',
+    deleted: 'Gallery item deleted',
+  },
+  true,
+);
