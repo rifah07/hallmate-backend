@@ -75,3 +75,23 @@ export const facilityHandlers = makeHandlers(
   { created: 'Facility created', updated: 'Facility updated', deleted: 'Facility deleted' },
   true,
 );
+
+export const faqHandlers = makeHandlers(
+  adminService.createFAQ,
+  adminService.updateFAQ,
+  adminService.deleteFAQ,
+  { created: 'FAQ created', updated: 'FAQ updated', deleted: 'FAQ deleted' },
+  false, // no image
+);
+
+export const diningHandlers = makeHandlers(
+  adminService.createDiningInfo,
+  adminService.updateDiningInfo,
+  adminService.deleteDiningInfo,
+  {
+    created: 'Dining info created',
+    updated: 'Dining info updated',
+    deleted: 'Dining info deleted',
+  },
+  true,
+);
