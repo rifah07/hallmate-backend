@@ -116,7 +116,6 @@ export const noticeHandlers = makeHandlers(
   true,
 );
 
-
 export const eventHandlers = makeHandlers(
   adminService.createEvent,
   adminService.updateEvent,
@@ -159,4 +158,28 @@ export const staffHandlers = makeHandlers(
     deleted: 'Staff profile deleted',
   },
   true,
+);
+
+export const admissionHandlers = makeHandlers(
+  adminService.createAdmissionInfo,
+  adminService.updateAdmissionInfo,
+  adminService.deleteAdmissionInfo,
+  {
+    created: 'Admission info created',
+    updated: 'Admission info updated',
+    deleted: 'Admission info deleted',
+  },
+  false, // no image
+);
+
+export const pageContentHandlers = makeHandlers(
+  adminService.upsertPageContent,
+  adminService.updatePageContent,
+  adminService.deletePageContent,
+  {
+    created: 'Page content created',
+    updated: 'Page content updated',
+    deleted: 'Page content deleted',
+  },
+  false,
 );
