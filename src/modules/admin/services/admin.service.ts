@@ -1,17 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  *
- * DRY: The generic makeContentService() factory produces
- * create/update/delete for any model that supports image uploads.
- * Models without images just pass { hasImage: false }.
- *
- * KISS: Each exported service function is the public API.
- * Complex models (notice, event, gallery) get their own focused functions.
- * Simple models (FAQ, achievement) use the generic factory directly.
+ * Cache is cleared HERE - after a confirmed successful DB write.
  */
 
 import { cloudinaryService } from '@/shared/services/cloudinary.service';
 import { BadRequestError, NotFoundError, ConflictError } from '@/shared/errors';
+import { clearCache } from '@/shared/middleware/cache.middleware';
 import {
   hallInfoRepo,
   facilityRepo,
@@ -44,9 +38,7 @@ import type {
 
 // ─────────────────────────────────────────────
 // Generic content service factory
-//
-// Produces create/update/delete for a repo.
-// Handles optional image upload/delete via Cloudinary.
+// cacheKeys: cleared ONLY after a successful write
 // ─────────────────────────────────────────────
 
 function makeContentService<TBody extends Record<string, any>>(
@@ -57,12 +49,22 @@ function makeContentService<TBody extends Record<string, any>>(
     delete: (id: string) => Promise<any>;
   },
   options: {
-    folder?: string; // Cloudinary folder - if set, image upload is supported
-    imageField?: string; // DB field name for image URL (default: 'imageUrl')
-    publicIdField?: string; // DB field name for Cloudinary public ID (default: 'imagePublicId')
+    folder?: string;
+    imageField?: string;
+    publicIdField?: string;
+    cacheKeys?: string[]; // cleared after every successful mutation
   } = {},
 ) {
-  const { folder, imageField = 'imageUrl', publicIdField = 'imagePublicId' } = options;
+  const {
+    folder,
+    imageField = 'imageUrl',
+    publicIdField = 'imagePublicId',
+    cacheKeys = [],
+  } = options;
+
+  function bustCache() {
+    cacheKeys.forEach(clearCache);
+  }
 
   async function uploadImage(file: Express.Multer.File) {
     if (!folder) throw new BadRequestError('Image upload not supported for this resource');
@@ -81,7 +83,9 @@ function makeContentService<TBody extends Record<string, any>>(
         if (publicIdField) data[publicIdField] = uploaded.publicId;
       }
 
-      return repo.create(data);
+      const result = await repo.create(data);
+      bustCache(); // ← only fires if create() didn't throw
+      return result;
     },
 
     async update(id: string, body: Partial<TBody>, file?: Express.Multer.File) {
@@ -91,7 +95,6 @@ function makeContentService<TBody extends Record<string, any>>(
       const data: any = { ...body };
 
       if (file) {
-        // Delete old Cloudinary asset - non-fatal
         if (existing[publicIdField]) {
           await cloudinaryService.deleteImage(existing[publicIdField]).catch(() => {});
         }
@@ -100,7 +103,9 @@ function makeContentService<TBody extends Record<string, any>>(
         if (publicIdField) data[publicIdField] = uploaded.publicId;
       }
 
-      return repo.update(id, data);
+      const result = await repo.update(id, data);
+      bustCache(); // ← only fires if update() didn't throw
+      return result;
     },
 
     async delete(id: string) {
@@ -111,76 +116,88 @@ function makeContentService<TBody extends Record<string, any>>(
         await cloudinaryService.deleteImage(existing[publicIdField]).catch(() => {});
       }
 
-      return repo.delete(id);
+      const result = await repo.delete(id);
+      bustCache(); // ← only fires if delete() didn't throw
+      return result;
     },
   };
 }
 
 // ─────────────────────────────────────────────
-// Service instances — one line per model
-// Models with images pass folder + field names.
-// Models without images omit options entirely.
+// Service instances — cacheKeys defined here
+// alongside the model they belong to
 // ─────────────────────────────────────────────
 
 const hallInfoService = makeContentService<HallInfoBody>(hallInfoRepo, {
   folder: 'hallmate/hall',
   imageField: 'coverUrl',
   publicIdField: 'coverPublicId',
+  cacheKeys: ['/hall-info', '/about'],
 });
 const facilityService = makeContentService<FacilityBody>(facilityRepo, {
   folder: 'hallmate/facilities',
   imageField: 'imageUrl',
   publicIdField: 'imagePublicId',
+  cacheKeys: ['/facilities'],
 });
-const faqService = makeContentService<FAQBody>(faqRepo);
+const faqService = makeContentService<FAQBody>(faqRepo, { cacheKeys: ['/faq'] });
 const diningService = makeContentService<DiningInfoBody>(diningRepo, {
   folder: 'hallmate/dining',
   imageField: 'imageUrl',
   publicIdField: 'imagePublicId',
+  cacheKeys: ['/dining'],
 });
 const achievementService = makeContentService<AchievementBody>(achievementRepo, {
   folder: 'hallmate/achievements',
   imageField: 'imageUrl',
   publicIdField: 'imagePublicId',
+  cacheKeys: ['/achievements'],
 });
 const noticeService = makeContentService<NoticeBody>(noticeRepo, {
   folder: 'hallmate/notices',
   imageField: 'imageUrl',
   publicIdField: 'imagePublicId',
+  cacheKeys: ['/notices'],
 });
 const eventService = makeContentService<EventBody>(eventRepo, {
   folder: 'hallmate/events',
   imageField: 'imageUrl',
   publicIdField: 'imagePublicId',
+  cacheKeys: ['/events'],
 });
 const galleryService = makeContentService<GalleryItemBody>(galleryRepo, {
   folder: 'hallmate/gallery',
   imageField: 'imageUrl',
   publicIdField: 'imagePublicId',
+  cacheKeys: ['/gallery'],
 });
 const houseTutorService = makeContentService<HouseTutorBody>(houseTutorRepo, {
   folder: 'hallmate/tutors',
   imageField: 'photoUrl',
   publicIdField: 'photoPublicId',
+  cacheKeys: ['/house-tutors'],
 });
 const staffService = makeContentService<StaffProfileBody>(staffRepo, {
   folder: 'hallmate/staff',
   imageField: 'photoUrl',
   publicIdField: 'photoPublicId',
+  cacheKeys: ['/staff'],
 });
-const admissionService = makeContentService<AdmissionInfoBody>(admissionRepo);
-const pageContentService = makeContentService<PageContentBody>(pageContentRepo);
+const admissionService = makeContentService<AdmissionInfoBody>(admissionRepo, {
+  cacheKeys: ['/admission'],
+});
+const pageContentService = makeContentService<PageContentBody>(pageContentRepo, {
+  cacheKeys: ['/about', '/admission'],
+});
 
 // ─────────────────────────────────────────────
-// Exported functions
-// Thin wrappers that add model-specific business
-// rules on top of the generic service.
+// Exported service functions
+// Thin wrappers adding model-specific business rules
 // ─────────────────────────────────────────────
 
 // ── Hall Info ────────────────────────────────
 
 export async function createHallInfo(body: HallInfoBody, file?: Express.Multer.File) {
-  // Business rule: only one active hall info record
   await adminRepository.deactivateAllHallInfo();
   return hallInfoService.create(body, file);
 }
@@ -247,7 +264,6 @@ export const deleteAchievement = (id: string) => achievementService.delete(id);
 export async function createNotice(body: NoticeBody, file?: Express.Multer.File) {
   const taken = await adminRepository.isSlugTaken('publicNotice', body.slug);
   if (taken) throw new ConflictError(`Slug "${body.slug}" is already in use`);
-  // Auto-set publishedAt if publishing now
   const data = {
     ...body,
     publishedAt: body.isPublished && !body.publishedAt ? new Date() : body.publishedAt,
@@ -331,7 +347,6 @@ export const deleteStaffProfile = (id: string) => staffService.delete(id);
 // ── Admission Info ───────────────────────────
 
 export async function createAdmissionInfo(body: AdmissionInfoBody) {
-  // Business rule: only one current admission at a time
   if (body.isCurrent) await adminRepository.deactivateCurrentAdmission();
   return admissionService.create(body);
 }
@@ -345,7 +360,7 @@ export const deleteAdmissionInfo = (id: string) => admissionService.delete(id);
 
 // ── Page Content ─────────────────────────────
 
-export const upsertPageContent = (body: PageContentBody) => pageContentRepo.create(body); // upsert handled at repo level if needed
+export const upsertPageContent = (body: PageContentBody) => pageContentRepo.create(body);
 export const updatePageContent = (id: string, body: Partial<PageContentBody>) =>
   pageContentService.update(id, body);
 export const deletePageContent = (id: string) => pageContentService.delete(id);
