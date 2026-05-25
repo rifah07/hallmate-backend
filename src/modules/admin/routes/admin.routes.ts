@@ -1,10 +1,6 @@
 /**
- * every route follows the same middleware chain:
- *   authenticate → authorize → [upload] → validate → handler
- *
- * Access: SUPER_ADMIN full access.
- *         PROVOST full access except hall-info (read-only for them).
- *         HOUSE_TUTOR no write access (public reads only).
+ * Correct middleware chain:
+ *   authenticate → authorize → [upload → handleMulterError] → validate → controller
  */
 
 import { Router } from 'express';
@@ -12,7 +8,6 @@ import { authenticate } from '@/shared/middleware/authenticate';
 import { authorize } from '@/shared/middleware/authorize';
 import { uploadImage, handleMulterError } from '@/shared/middleware/upload.middleware';
 import { validate } from '@/shared/middleware/validate';
-import { clearCache } from '@/shared/middleware/cache.middleware';
 import { strictRateLimiter } from '@/shared/middleware/rateLimit.middleware';
 import { z } from 'zod';
 
@@ -49,7 +44,7 @@ import {
 const router = Router();
 
 // ─────────────────────────────────────────────
-// Shared auth middleware applied to ALL routes
+// Shared middleware — applied to ALL routes
 // ─────────────────────────────────────────────
 
 router.use(authenticate);
@@ -58,9 +53,8 @@ router.use(strictRateLimiter);
 // ─────────────────────────────────────────────
 // Route registration factory
 //
-// Wires POST / PATCH /:id / DELETE /:id
-// for a given resource path, handler set,
-// validation schema, and optional image upload.
+// Wires POST / PATCH /:id / DELETE /:id.
+// No cache logic here — that's the service's job.
 // ─────────────────────────────────────────────
 
 function registerContentRoutes(options: {
@@ -69,57 +63,33 @@ function registerContentRoutes(options: {
   schema: z.ZodObject<any>;
   roles?: string[];
   hasImage?: boolean;
-  cacheKeys?: string[];
 }) {
-  const {
-    path,
-    handlers,
-    schema,
-    roles = ['SUPER_ADMIN', 'PROVOST'],
-    hasImage = false,
-    cacheKeys = [],
-  } = options;
-
-  const bustCache = cacheKeys.length
-    ? (_req: any, _res: any, next: any) => {
-        cacheKeys.forEach(clearCache);
-        next();
-      }
-    : (_req: any, _res: any, next: any) => next();
+  const { path, handlers, schema, roles = ['SUPER_ADMIN', 'PROVOST'], hasImage = false } = options;
 
   const uploadMiddleware = hasImage ? [uploadImage.single('image'), handleMulterError] : [];
 
   const authMiddleware = authorize(...(roles as any[]));
 
   // POST — full schema validation
-  router.post(
-    path,
-    authMiddleware,
-    ...uploadMiddleware,
-    validate(schema, 'body'),
-    bustCache,
-    handlers.create,
-  );
+  router.post(path, authMiddleware, ...uploadMiddleware, validate(schema, 'body'), handlers.create);
 
-  // PATCH /:id — partial schema (all fields optional)
+  // PATCH /:id — all fields optional
   router.patch(
     `${path}/:id`,
     authMiddleware,
     ...uploadMiddleware,
     validate(schema.partial(), 'body'),
-    bustCache,
     handlers.update,
   );
 
   // DELETE /:id
-  router.delete(`${path}/:id`, authMiddleware, bustCache, handlers.delete);
+  router.delete(`${path}/:id`, authMiddleware, handlers.delete);
 }
 
 // ─────────────────────────────────────────────
 // Route registration table
-// This is the SINGLE SOURCE OF TRUTH for all
-// admin content endpoints. Adding a new content
-// model = adding one entry here.
+// Single source of truth for all admin content
+// endpoints. Adding a model = one entry here.
 // ─────────────────────────────────────────────
 
 registerContentRoutes({
@@ -128,7 +98,6 @@ registerContentRoutes({
   schema: hallInfoSchema,
   roles: ['SUPER_ADMIN'], // PROVOST cannot change hall info
   hasImage: true,
-  cacheKeys: ['/hall-info', '/about'],
 });
 
 registerContentRoutes({
@@ -136,7 +105,6 @@ registerContentRoutes({
   handlers: facilityHandlers,
   schema: facilitySchema,
   hasImage: true,
-  cacheKeys: ['/facilities'],
 });
 
 registerContentRoutes({
@@ -144,7 +112,6 @@ registerContentRoutes({
   handlers: faqHandlers,
   schema: faqSchema,
   hasImage: false,
-  cacheKeys: ['/faq'],
 });
 
 registerContentRoutes({
@@ -152,7 +119,6 @@ registerContentRoutes({
   handlers: diningHandlers,
   schema: diningInfoSchema,
   hasImage: true,
-  cacheKeys: ['/dining'],
 });
 
 registerContentRoutes({
@@ -160,7 +126,6 @@ registerContentRoutes({
   handlers: achievementHandlers,
   schema: achievementSchema,
   hasImage: true,
-  cacheKeys: ['/achievements'],
 });
 
 registerContentRoutes({
@@ -168,7 +133,6 @@ registerContentRoutes({
   handlers: noticeHandlers,
   schema: noticeSchema,
   hasImage: true,
-  cacheKeys: ['/notices'],
 });
 
 registerContentRoutes({
@@ -176,7 +140,6 @@ registerContentRoutes({
   handlers: eventHandlers,
   schema: eventSchema,
   hasImage: true,
-  cacheKeys: ['/events'],
 });
 
 registerContentRoutes({
@@ -184,7 +147,6 @@ registerContentRoutes({
   handlers: galleryHandlers,
   schema: galleryItemSchema,
   hasImage: true,
-  cacheKeys: ['/gallery'],
 });
 
 registerContentRoutes({
@@ -192,7 +154,6 @@ registerContentRoutes({
   handlers: houseTutorHandlers,
   schema: houseTutorSchema,
   hasImage: true,
-  cacheKeys: ['/house-tutors'],
 });
 
 registerContentRoutes({
@@ -200,7 +161,6 @@ registerContentRoutes({
   handlers: staffHandlers,
   schema: staffProfileSchema,
   hasImage: true,
-  cacheKeys: ['/staff'],
 });
 
 registerContentRoutes({
@@ -208,7 +168,6 @@ registerContentRoutes({
   handlers: admissionHandlers,
   schema: admissionInfoSchema,
   hasImage: false,
-  cacheKeys: ['/admission'],
 });
 
 registerContentRoutes({
@@ -216,7 +175,6 @@ registerContentRoutes({
   handlers: pageContentHandlers,
   schema: pageContentSchema,
   hasImage: false,
-  cacheKeys: ['/about', '/admission'],
 });
 
 export default router;
