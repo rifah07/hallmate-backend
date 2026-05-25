@@ -136,3 +136,27 @@ export const galleryHandlers = makeHandlers(
   },
   true,
 );
+
+export const houseTutorHandlers = makeHandlers(
+  adminService.createHouseTutor,
+  adminService.updateHouseTutor,
+  adminService.deleteHouseTutor,
+  {
+    created: 'House tutor created',
+    updated: 'House tutor updated',
+    deleted: 'House tutor deleted',
+  },
+  true,
+);
+
+export const staffHandlers = makeHandlers(
+  adminService.createStaffProfile,
+  adminService.updateStaffProfile,
+  adminService.deleteStaffProfile,
+  {
+    created: 'Staff profile created',
+    updated: 'Staff profile updated',
+    deleted: 'Staff profile deleted',
+  },
+  true,
+);
