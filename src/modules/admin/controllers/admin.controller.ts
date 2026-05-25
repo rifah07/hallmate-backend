@@ -95,3 +95,23 @@ export const diningHandlers = makeHandlers(
   },
   true,
 );
+
+export const achievementHandlers = makeHandlers(
+  adminService.createAchievement,
+  adminService.updateAchievement,
+  adminService.deleteAchievement,
+  {
+    created: 'Achievement created',
+    updated: 'Achievement updated',
+    deleted: 'Achievement deleted',
+  },
+  true,
+);
+
+export const noticeHandlers = makeHandlers(
+  adminService.createNotice,
+  adminService.updateNotice,
+  adminService.deleteNotice,
+  { created: 'Notice created', updated: 'Notice updated', deleted: 'Notice deleted' },
+  true,
+);
