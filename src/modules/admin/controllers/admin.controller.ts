@@ -55,3 +55,23 @@ function makeHandlers(
     },
   };
 }
+
+// ─────────────────────────────────────────────
+// Handler sets — one line per model
+// ─────────────────────────────────────────────
+
+export const hallInfoHandlers = makeHandlers(
+  adminService.createHallInfo,
+  adminService.updateHallInfo,
+  adminService.deleteHallInfo,
+  { created: 'Hall info created', updated: 'Hall info updated', deleted: 'Hall info deleted' },
+  true, // has image (coverUrl)
+);
+
+export const facilityHandlers = makeHandlers(
+  adminService.createFacility,
+  adminService.updateFacility,
+  adminService.deleteFacility,
+  { created: 'Facility created', updated: 'Facility updated', deleted: 'Facility deleted' },
+  true,
+);
