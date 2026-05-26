@@ -937,3 +937,120 @@
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
+// ============================================================================
+// HOUSE TUTORS
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/admin/house-tutors:
+ *   post:
+ *     tags: [Admin - House Tutors]
+ *     summary: Create a house tutor profile
+ *     description: |
+ *       **Access:** SUPER_ADMIN, PROVOST
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminHouseTutorBody'
+ *     responses:
+ *       201:
+ *         description: House tutor created
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *
+ * /api/admin/house-tutors/{id}:
+ *   patch:
+ *     tags: [Admin - House Tutors]
+ *     summary: Update a house tutor profile
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminHouseTutorBody'
+ *     responses:
+ *       200:
+ *         description: House tutor updated
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *
+ *   delete:
+ *     tags: [Admin - House Tutors]
+ *     summary: Delete a house tutor profile
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     responses:
+ *       200:
+ *         description: House tutor deleted
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+
+// ============================================================================
+// STAFF
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/admin/staff:
+ *   post:
+ *     tags: [Admin - Staff]
+ *     summary: Create a staff profile
+ *     description: |
+ *       **Access:** SUPER_ADMIN, PROVOST
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminStaffProfileBody'
+ *     responses:
+ *       201:
+ *         description: Staff profile created
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *
+ * /api/admin/staff/{id}:
+ *   patch:
+ *     tags: [Admin - Staff]
+ *     summary: Update a staff profile
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminStaffProfileBody'
+ *     responses:
+ *       200:
+ *         description: Staff profile updated
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *
+ *   delete:
+ *     tags: [Admin - Staff]
+ *     summary: Delete a staff profile
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     responses:
+ *       200:
+ *         description: Staff profile deleted
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
