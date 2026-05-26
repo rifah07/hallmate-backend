@@ -414,3 +414,90 @@
  *   - name: Admin - Page Content
  *     description: CMS page content management
  */
+// ============================================================================
+// HALL INFO (SUPER_ADMIN only)
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/admin/hall-info:
+ *   post:
+ *     tags: [Admin - Hall Info]
+ *     summary: Create hall info (replaces existing)
+ *     description: |
+ *       Creates a new hall info record. Automatically deactivates any
+ *       existing active record — only one active hall info exists at a time.
+ *       **Access:** SUPER_ADMIN only
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminHallInfoBody'
+ *     responses:
+ *       201:
+ *         description: Hall info created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *
+ * /api/admin/hall-info/{id}:
+ *   patch:
+ *     tags: [Admin - Hall Info]
+ *     summary: Update hall info
+ *     description: |
+ *       Partially updates an existing hall info record.
+ *       If a new image is uploaded, the old Cloudinary asset is deleted first.
+ *       **Access:** SUPER_ADMIN only
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminHallInfoBody'
+ *     responses:
+ *       200:
+ *         description: Hall info updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *
+ *   delete:
+ *     tags: [Admin - Hall Info]
+ *     summary: Delete hall info
+ *     description: |
+ *       Deletes a hall info record and its Cloudinary cover image.
+ *       **Access:** SUPER_ADMIN only
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     responses:
+ *       200:
+ *         description: Hall info deleted
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
