@@ -689,3 +689,126 @@
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
+// ============================================================================
+// ACHIEVEMENTS
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/admin/achievements:
+ *   post:
+ *     tags: [Admin - Achievements]
+ *     summary: Create an achievement
+ *     description: |
+ *       **Access:** SUPER_ADMIN, PROVOST
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminAchievementBody'
+ *     responses:
+ *       201:
+ *         description: Achievement created
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *
+ * /api/admin/achievements/{id}:
+ *   patch:
+ *     tags: [Admin - Achievements]
+ *     summary: Update an achievement
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminAchievementBody'
+ *     responses:
+ *       200:
+ *         description: Achievement updated
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *
+ *   delete:
+ *     tags: [Admin - Achievements]
+ *     summary: Delete an achievement
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     responses:
+ *       200:
+ *         description: Achievement deleted
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+
+// ============================================================================
+// NOTICES
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/admin/notices:
+ *   post:
+ *     tags: [Admin - Notices]
+ *     summary: Create a notice
+ *     description: |
+ *       Slug must be unique. Setting isPublished to "true" auto-sets publishedAt
+ *       to now if publishedAt is not explicitly provided.
+ *       **Access:** SUPER_ADMIN, PROVOST
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminNoticeBody'
+ *     responses:
+ *       201:
+ *         description: Notice created
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       409:
+ *         description: Slug already in use
+ *
+ * /api/admin/notices/{id}:
+ *   patch:
+ *     tags: [Admin - Notices]
+ *     summary: Update a notice
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminNoticeBody'
+ *     responses:
+ *       200:
+ *         description: Notice updated
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       409:
+ *         description: Slug already in use
+ *
+ *   delete:
+ *     tags: [Admin - Notices]
+ *     summary: Delete a notice
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     responses:
+ *       200:
+ *         description: Notice deleted
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
