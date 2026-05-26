@@ -501,3 +501,191 @@
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
+// ============================================================================
+// FACILITIES
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/admin/facilities:
+ *   post:
+ *     tags: [Admin - Facilities]
+ *     summary: Create a facility
+ *     description: |
+ *       Slug must be unique. Image uploaded to Cloudinary under `hallmate/facilities/`.
+ *       **Access:** SUPER_ADMIN, PROVOST
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminFacilityBody'
+ *     responses:
+ *       201:
+ *         description: Facility created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       409:
+ *         description: Slug already in use
+ *
+ * /api/admin/facilities/{id}:
+ *   patch:
+ *     tags: [Admin - Facilities]
+ *     summary: Update a facility
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminFacilityBody'
+ *     responses:
+ *       200:
+ *         description: Facility updated
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       409:
+ *         description: Slug already in use
+ *
+ *   delete:
+ *     tags: [Admin - Facilities]
+ *     summary: Delete a facility
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     responses:
+ *       200:
+ *         description: Facility deleted
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+
+// ============================================================================
+// FAQ
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/admin/faq:
+ *   post:
+ *     tags: [Admin - FAQ]
+ *     summary: Create a FAQ entry
+ *     description: |
+ *       **Access:** SUPER_ADMIN, PROVOST
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminFAQBody'
+ *     responses:
+ *       201:
+ *         description: FAQ created
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *
+ * /api/admin/faq/{id}:
+ *   patch:
+ *     tags: [Admin - FAQ]
+ *     summary: Update a FAQ entry
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminFAQBody'
+ *     responses:
+ *       200:
+ *         description: FAQ updated
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *
+ *   delete:
+ *     tags: [Admin - FAQ]
+ *     summary: Delete a FAQ entry
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     responses:
+ *       200:
+ *         description: FAQ deleted
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+
+// ============================================================================
+// DINING
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/admin/dining:
+ *   post:
+ *     tags: [Admin - Dining]
+ *     summary: Create dining info
+ *     description: |
+ *       mealPlan and weeklyMenu are JSON strings (multipart/form-data limitation).
+ *       **Access:** SUPER_ADMIN, PROVOST
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminDiningBody'
+ *     responses:
+ *       201:
+ *         description: Dining info created
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *
+ * /api/admin/dining/{id}:
+ *   patch:
+ *     tags: [Admin - Dining]
+ *     summary: Update dining info
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminDiningBody'
+ *     responses:
+ *       200:
+ *         description: Dining info updated
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *
+ *   delete:
+ *     tags: [Admin - Dining]
+ *     summary: Delete dining info
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     responses:
+ *       200:
+ *         description: Dining info deleted
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
