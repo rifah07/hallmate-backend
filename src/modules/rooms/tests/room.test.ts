@@ -371,7 +371,9 @@ describe('Rooms Module', () => {
     }, 15000);
 
     it('should reject student access', async () => {
-      const res = await request(app).get('/api/rooms').set('Authorization', `Bearer ${studentToken}`);
+      const res = await request(app)
+        .get('/api/rooms')
+        .set('Authorization', `Bearer ${studentToken}`);
 
       expect(res.status).toBe(403);
     }, 15000);

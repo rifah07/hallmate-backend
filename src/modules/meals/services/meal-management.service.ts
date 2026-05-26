@@ -1,12 +1,12 @@
 // OPtimized one not used yet
 /**
  * SYSTEM DESIGN LESSON 7: BATCH PROCESSING & OPTIMIZATION
- * 
+ *
  * Real-World Scenario:
  * - Dining staff needs to mark attendance for 200 students
  * - Without optimization: 200 individual database calls
  * - With batching: 1 database call
- * 
+ *
  * Optimization Techniques:
  * 1. Batch operations (reduce DB round trips)
  * 2. Transaction management (consistency)
@@ -22,10 +22,10 @@ import { BatchMealOperation, BatchResult } from '../types/meal.types';
 class MealManagementService {
   /**
    * OPTIMIZATION 1: Batch Upsert
-   * 
+   *
    * Instead of: 200 sequential database calls
    * We do: 1 batch operation
-   * 
+   *
    * Performance Gain: ~95% faster
    */
   async batchUpsertMealLogs(operations: BatchMealOperation[]): Promise<BatchResult> {
@@ -105,13 +105,10 @@ class MealManagementService {
 
   /**
    * OPTIMIZATION 2: Bulk Delete
-   * 
+   *
    * Delete meal logs for multiple students/dates efficiently
    */
-  async bulkDeleteMealLogs(
-    studentIds: string[],
-    dates: Date[],
-  ): Promise<{ deletedCount: number }> {
+  async bulkDeleteMealLogs(studentIds: string[], dates: Date[]): Promise<{ deletedCount: number }> {
     // Normalize dates
     const normalizedDates = dates.map((d) => {
       const date = new Date(d);
@@ -131,7 +128,7 @@ class MealManagementService {
 
   /**
    * OPTIMIZATION 3: Aggregated Meal Report
-   * 
+   *
    * Get meal statistics for multiple students in one query
    * Useful for billing, reports
    */
@@ -200,7 +197,7 @@ class MealManagementService {
 
   /**
    * OPTIMIZATION 4: Mark All Present/Absent
-   * 
+   *
    * Quick operation for dining staff
    * "Mark all floor 3 students as present for breakfast"
    */
@@ -245,7 +242,7 @@ class MealManagementService {
 
   /**
    * OPTIMIZATION 5: Daily Meal Summary (Pre-aggregated)
-   * 
+   *
    * Get quick summary without complex queries
    */
   async getDailySummary(date: Date): Promise<{
