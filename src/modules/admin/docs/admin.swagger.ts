@@ -382,3 +382,35 @@
  *           type: string
  *           enum: ["true", "false"]
  */
+// ============================================================================
+// TAGS
+// ============================================================================
+
+/**
+ * @swagger
+ * tags:
+ *   - name: Admin - Hall Info
+ *     description: Hall information management (SUPER_ADMIN only)
+ *   - name: Admin - Facilities
+ *     description: Facilities management
+ *   - name: Admin - FAQ
+ *     description: FAQ management
+ *   - name: Admin - Dining
+ *     description: Dining info management
+ *   - name: Admin - Achievements
+ *     description: Achievements management
+ *   - name: Admin - Notices
+ *     description: Notice management
+ *   - name: Admin - Events
+ *     description: Events management
+ *   - name: Admin - Gallery
+ *     description: Gallery management
+ *   - name: Admin - House Tutors
+ *     description: House tutor profiles management
+ *   - name: Admin - Staff
+ *     description: Staff profiles management
+ *   - name: Admin - Admission
+ *     description: Admission info management
+ *   - name: Admin - Page Content
+ *     description: CMS page content management
+ */
