@@ -1054,3 +1054,123 @@
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
+// ============================================================================
+// ADMISSION INFO
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/admin/admission:
+ *   post:
+ *     tags: [Admin - Admission]
+ *     summary: Create admission info
+ *     description: |
+ *       Setting isCurrent to "true" automatically unmarks all other current admissions.
+ *       **Access:** SUPER_ADMIN, PROVOST
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminAdmissionBody'
+ *     responses:
+ *       201:
+ *         description: Admission info created
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *
+ * /api/admin/admission/{id}:
+ *   patch:
+ *     tags: [Admin - Admission]
+ *     summary: Update admission info
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminAdmissionBody'
+ *     responses:
+ *       200:
+ *         description: Admission info updated
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *
+ *   delete:
+ *     tags: [Admin - Admission]
+ *     summary: Delete admission info
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     responses:
+ *       200:
+ *         description: Admission info deleted
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+
+// ============================================================================
+// PAGE CONTENT
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/admin/page-content:
+ *   post:
+ *     tags: [Admin - Page Content]
+ *     summary: Create a CMS page content entry
+ *     description: |
+ *       The `page` field is the unique identifier (e.g. "about", "admission").
+ *       `content` must be a valid JSON string.
+ *       **Access:** SUPER_ADMIN, PROVOST
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminPageContentBody'
+ *     responses:
+ *       201:
+ *         description: Page content created
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *
+ * /api/admin/page-content/{id}:
+ *   patch:
+ *     tags: [Admin - Page Content]
+ *     summary: Update a CMS page content entry
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminPageContentBody'
+ *     responses:
+ *       200:
+ *         description: Page content updated
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *
+ *   delete:
+ *     tags: [Admin - Page Content]
+ *     summary: Delete a CMS page content entry
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     responses:
+ *       200:
+ *         description: Page content deleted
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
