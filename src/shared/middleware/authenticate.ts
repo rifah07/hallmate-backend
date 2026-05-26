@@ -40,7 +40,7 @@ export const authenticate = async (
         accountStatus: true,
         isDeleted: true,
         passwordChangedAt: true,
-        assignedFloor: true
+        assignedFloor: true,
       },
     });
 

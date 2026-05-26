@@ -306,7 +306,11 @@ class MealService {
     };
   }
 
-  async deleteMealLog(studentId: string, date: Date | string, userContext: UserContext): Promise<void> {
+  async deleteMealLog(
+    studentId: string,
+    date: Date | string,
+    userContext: UserContext,
+  ): Promise<void> {
     // Only admins and dining staff can delete
     if (
       userContext.role !== 'SUPER_ADMIN' &&
@@ -315,16 +319,16 @@ class MealService {
     ) {
       throw new ForbiddenError('Only admins and dining staff can delete meal logs');
     }
- 
+
     const mealDate = typeof date === 'string' ? new Date(date) : date;
     mealDate.setHours(0, 0, 0, 0);
- 
+
     const mealLog = await mealRepository.findByStudentAndDate(studentId, mealDate);
- 
+
     if (!mealLog) {
       throw new NotFoundError('Meal log not found');
     }
- 
+
     await mealRepository.delete(studentId, mealDate);
   }
 
