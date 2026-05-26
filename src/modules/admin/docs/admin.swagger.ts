@@ -812,3 +812,128 @@
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
+// ============================================================================
+// EVENTS
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/admin/events:
+ *   post:
+ *     tags: [Admin - Events]
+ *     summary: Create an event
+ *     description: |
+ *       Slug must be unique.
+ *       **Access:** SUPER_ADMIN, PROVOST
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminEventBody'
+ *     responses:
+ *       201:
+ *         description: Event created
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       409:
+ *         description: Slug already in use
+ *
+ * /api/admin/events/{id}:
+ *   patch:
+ *     tags: [Admin - Events]
+ *     summary: Update an event
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminEventBody'
+ *     responses:
+ *       200:
+ *         description: Event updated
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       409:
+ *         description: Slug already in use
+ *
+ *   delete:
+ *     tags: [Admin - Events]
+ *     summary: Delete an event
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     responses:
+ *       200:
+ *         description: Event deleted
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+
+// ============================================================================
+// GALLERY
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/admin/gallery:
+ *   post:
+ *     tags: [Admin - Gallery]
+ *     summary: Create a gallery item
+ *     description: |
+ *       Image is required on create.
+ *       **Access:** SUPER_ADMIN, PROVOST
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminGalleryItemBody'
+ *     responses:
+ *       201:
+ *         description: Gallery item created
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *
+ * /api/admin/gallery/{id}:
+ *   patch:
+ *     tags: [Admin - Gallery]
+ *     summary: Update a gallery item
+ *     description: |
+ *       Image is optional on update. If provided, the old Cloudinary asset is deleted first.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminGalleryItemBody'
+ *     responses:
+ *       200:
+ *         description: Gallery item updated
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *
+ *   delete:
+ *     tags: [Admin - Gallery]
+ *     summary: Delete a gallery item and its Cloudinary image
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     responses:
+ *       200:
+ *         description: Gallery item deleted
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
