@@ -1,6 +1,10 @@
 /**
  * Correct middleware chain:
- *   authenticate → authorize → [upload → handleMulterError] → validate → controller
+ *  authenticate → authorize → upload → validate → controller
+                                                    ↓
+                                              service write
+                                                    ↓
+                                            if no throw → clearCache()
  */
 
 import { Router } from 'express';
