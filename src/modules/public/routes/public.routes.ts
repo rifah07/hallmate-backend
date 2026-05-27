@@ -1,3 +1,17 @@
+/**
+ * The chain reads left to right — each middleware has a single job:
+ *
+ *   authenticate     → who are you?
+ *   authorize        → are you allowed?
+ *   denyProvostSelf  → are you trying to edit yourself?
+ *   uploadImage      → handle file from multipart/form-data
+ *   handleMulterError→ catch upload errors before validate()
+ *   validate()       → is the data shape correct?
+ *   clearCache       → bust stale cache after writes
+ *   controller       → call service, send response
+ *
+ */
+
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '@/shared/middleware/authenticate';
 import { authorize } from '@/shared/middleware/authorize';
@@ -5,7 +19,7 @@ import { uploadImage, handleMulterError } from '@/shared/middleware/upload.middl
 import { validate } from '@/shared/middleware/validate';
 import { sendError } from '@/shared/utils/response.util';
 import { publicRateLimiter, strictRateLimiter } from '@/shared/middleware/rateLimit.middleware';
-import { cacheResponse, clearCache, CACHE_DURATION } from '@/shared/middleware/cache.middleware';
+import { cacheResponse, CACHE_DURATION } from '@/shared/middleware/cache.middleware';
 import { provostHistoryBodySchema } from '../validations/public.validation';
 import * as controller from '../controllers/public.controller';
 import * as service from '../services/public.service';
@@ -19,9 +33,6 @@ const router = Router();
 // that is linked to their own User account.
 // This is a DATA-LEVEL rule, not a role-level rule,
 // so it cannot be expressed with authorize() alone.
-//
-// SUPER_ADMIN always passes through.
-// Historical records with no userId always pass through.
 // ─────────────────────────────────────────────
 
 const denyProvostSelfEdit = async (
@@ -32,9 +43,9 @@ const denyProvostSelfEdit = async (
   try {
     if (req.user?.role === 'SUPER_ADMIN') return next();
 
-    const id = req.params.id as string;
-    const record = await service.getProvostRecordInternal(id);
-    if (!record) return next();
+    const record = await service.getProvostRecordInternal(req.params.id as string);
+    if (!record) return next(); // 404 handled downstream by controller
+
     if (record.userId && record.userId === req.user?.userId) {
       sendError(
         res,
@@ -49,18 +60,6 @@ const denyProvostSelfEdit = async (
   } catch (err) {
     next(err);
   }
-};
-
-// ─────────────────────────────────────────────
-// Cache-busting middleware (inline, reusable)
-// Placed BEFORE the controller so cache is cleared
-// even if the controller throws (edge case safety).
-// ─────────────────────────────────────────────
-
-const bustProvostCache = (_req: Request, _res: Response, next: NextFunction) => {
-  clearCache('/provosts');
-  clearCache('/provost');
-  next();
 };
 
 // ─────────────────────────────────────────────
@@ -154,7 +153,7 @@ router.post('/contact', strictRateLimiter, controller.submitContact);
 router.post('/applications', strictRateLimiter, controller.submitApplication);
 
 // ─────────────────────────────────────────────
-// PROVOST HISTORY - protected write routes
+// PROVOST HISTORY — protected write routes
 //
 // POST   /provosts       → SUPER_ADMIN, PROVOST
 // PATCH  /provosts/:id  → SUPER_ADMIN, PROVOST (self-edit blocked)
@@ -168,7 +167,6 @@ router.post(
   uploadImage.single('photo'),
   handleMulterError,
   validate(provostHistoryBodySchema, 'body'),
-  bustProvostCache,
   controller.createProvost,
 );
 
@@ -180,7 +178,6 @@ router.patch(
   uploadImage.single('photo'),
   handleMulterError,
   validate(provostHistoryBodySchema.partial(), 'body'),
-  bustProvostCache,
   controller.updateProvost,
 );
 
@@ -189,7 +186,6 @@ router.delete(
   authenticate,
   authorize('SUPER_ADMIN', 'PROVOST'),
   denyProvostSelfEdit,
-  bustProvostCache,
   controller.deleteProvost,
 );
 
