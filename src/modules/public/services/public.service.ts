@@ -1,4 +1,15 @@
+/**
+ *
+ * This layer owns ALL business logic. It:
+ *  - Calls the repository (never Prisma directly)
+ *  - Throws AppErrors when business rules are violated
+ *  - Orchestrates multi-step operations (upload → DB → cache)
+ *  - Knows nothing about HTTP (no Request/Response imports)
+ *
+ */
+
 import { cloudinaryService } from '@/shared/services/cloudinary.service';
+import { clearCache } from '@/shared/middleware/cache.middleware';
 import { NotFoundError, BadRequestError } from '@/shared/errors';
 import { publicRepository } from '../repositories/public.repository';
 import type {
@@ -226,7 +237,7 @@ export async function trackApplication(applicationId: string) {
 }
 
 // ─────────────────────────────────────────────
-// 17. Provost History — read
+// 17. Provost History - read
 // ─────────────────────────────────────────────
 
 export async function getProvostHistory() {
@@ -307,7 +318,7 @@ export async function updateProvostRecord(
     await publicRepository.unmarkAllCurrentProvosts(id);
   }
 
-  return publicRepository.updateProvostRecord(id, {
+  const result = await publicRepository.updateProvostRecord(id, {
     ...(body.name !== undefined && { name: body.name }),
     ...(body.designation !== undefined && { designation: body.designation }),
     ...(body.department !== undefined && { department: body.department }),
@@ -333,4 +344,6 @@ export async function deleteProvostRecord(id: string) {
   }
 
   await publicRepository.deleteProvostRecord(id);
+  clearCache('/provosts');
+  clearCache('/provost');
 }
