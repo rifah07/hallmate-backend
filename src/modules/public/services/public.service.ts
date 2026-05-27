@@ -1,11 +1,13 @@
 /**
- *
  * This layer owns ALL business logic. It:
  *  - Calls the repository (never Prisma directly)
  *  - Throws AppErrors when business rules are violated
  *  - Orchestrates multi-step operations (upload → DB → cache)
  *  - Knows nothing about HTTP (no Request/Response imports)
  *
+ * If you read a function here and it feels like it could be a
+ * sentence in plain English ("create provost record", "track
+ * application"), it's in the right layer.
  */
 
 import { cloudinaryService } from '@/shared/services/cloudinary.service';
@@ -237,7 +239,7 @@ export async function trackApplication(applicationId: string) {
 }
 
 // ─────────────────────────────────────────────
-// 17. Provost History - read
+// 17. Provost History — read
 // ─────────────────────────────────────────────
 
 export async function getProvostHistory() {
@@ -254,7 +256,7 @@ export async function getProvostRecordInternal(id: string) {
 }
 
 // ─────────────────────────────────────────────
-// 17. Provost History - write
+// 17. Provost History — write
 // ─────────────────────────────────────────────
 
 export async function createProvostRecord(body: ProvostHistoryBody, file?: Express.Multer.File) {
@@ -302,12 +304,13 @@ export async function updateProvostRecord(
 
   let photoUrl = existing.photoUrl ?? undefined;
   let photoPublicId = existing.photoPublicId ?? undefined;
+  const oldPublicId = existing.photoPublicId ?? undefined;
 
   if (file) {
-    // Delete old asset first — non-fatal if it fails (asset may already be gone)
-    if (existing.photoPublicId) {
-      await cloudinaryService.deleteImage(existing.photoPublicId).catch(() => {});
-    }
+    // Upload new asset FIRST — DB update happens after.
+    // If DB fails, new Cloudinary asset is orphaned — non-fatal.
+    // Old asset is NOT deleted yet — it must remain valid until
+    // DB confirms the new URL is saved.
     const uploaded = await cloudinaryService.uploadImage(file.buffer, PROVOST_FOLDER);
     photoUrl = uploaded.url;
     photoPublicId = uploaded.publicId;
@@ -331,19 +334,27 @@ export async function updateProvostRecord(
     photoUrl,
     photoPublicId,
   });
+
+  // DB update confirmed - now safe to delete the old Cloudinary asset
+  if (file && oldPublicId) {
+    await cloudinaryService.deleteImage(oldPublicId).catch(() => {});
+  }
+
+  return result;
 }
 
 export async function deleteProvostRecord(id: string) {
   const existing = await publicRepository.findProvostByIdInternal(id);
   if (!existing) throw new NotFoundError('Provost record not found');
 
-  // Clean up Cloudinary asset before deleting DB record
-  // Order matters: if DB delete fails, we don't want an orphaned Cloudinary asset
+  // Delete DB record FIRST - if this fails, Cloudinary asset remains valid.
+  // Delete Cloudinary AFTER DB confirms success - failure here is non-fatal.
+  await publicRepository.deleteProvostRecord(id);
+
   if (existing.photoPublicId) {
     await cloudinaryService.deleteImage(existing.photoPublicId).catch(() => {});
   }
 
-  await publicRepository.deleteProvostRecord(id);
   clearCache('/provosts');
   clearCache('/provost');
 }
