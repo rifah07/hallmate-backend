@@ -23,6 +23,7 @@ const options: swaggerJsdoc.Options = {
     './src/modules/applications/docs/applications.swagger.ts',
     './src/modules/meals_2.0/docs/meal-cancellation.swagger.ts',
     './src/modules/public/docs/public.swagger.ts',
+    './src/modules/admin/docs/admin.swagger.ts',
     // add other modules
   ],
 };

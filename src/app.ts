@@ -13,6 +13,7 @@ import { roomRoutes } from './modules/rooms';
 import applicationRoutes from './modules/applications/routes/application.routes';
 import { mealRoutes } from './modules/meals';
 import { publicRouter } from './modules/public';
+import { adminRouter } from './modules/admin';
 
 const app: Application = express();
 
@@ -74,6 +75,7 @@ app.use('/api/rooms', roomRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/meals', mealRoutes);
 app.use('/api/public', publicRouter);
+app.use('/api/admin', adminRouter);
 
 // 404 handler
 app.use((_req: Request, res: Response, _next: NextFunction) => {

@@ -1,1 +1,1 @@
-export { default as adminContentRouter } from './routes/admin.routes';
+export { default as adminRouter } from './routes/admin.routes';
