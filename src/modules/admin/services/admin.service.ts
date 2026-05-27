@@ -1,6 +1,6 @@
 /**
  *
- * Cache is cleared HERE - after a confirmed successful DB write.
+ * Cache is cleared HERE — after a confirmed successful DB write.
  */
 
 import { cloudinaryService } from '@/shared/services/cloudinary.service';
@@ -93,11 +93,11 @@ function makeContentService<TBody extends Record<string, any>>(
       if (!existing) throw new NotFoundError('Record not found');
 
       const data: any = { ...body };
+      const oldPublicId: string | undefined = existing[publicIdField] ?? undefined;
 
       if (file) {
-        if (existing[publicIdField]) {
-          await cloudinaryService.deleteImage(existing[publicIdField]).catch(() => {});
-        }
+        // Upload new asset FIRST — if DB fails, new asset orphaned (non-fatal).
+        // Do NOT delete old asset yet — it must stay valid until DB confirms.
         const uploaded = await uploadImage(file);
         data[imageField] = uploaded.url;
         if (publicIdField) data[publicIdField] = uploaded.publicId;
@@ -105,6 +105,12 @@ function makeContentService<TBody extends Record<string, any>>(
 
       const result = await repo.update(id, data);
       bustCache(); // ← only fires if update() didn't throw
+
+      // DB confirmed — now safe to delete old Cloudinary asset
+      if (file && oldPublicId) {
+        await cloudinaryService.deleteImage(oldPublicId).catch(() => {});
+      }
+
       return result;
     },
 
@@ -112,19 +118,22 @@ function makeContentService<TBody extends Record<string, any>>(
       const existing = await repo.findById(id);
       if (!existing) throw new NotFoundError('Record not found');
 
+      // Delete DB record FIRST — if this fails, Cloudinary asset stays valid.
+      // Delete Cloudinary AFTER DB confirms — failure here is non-fatal.
+      const result = await repo.delete(id);
+      bustCache(); // ← only fires if delete() didn't throw
+
       if (existing[publicIdField]) {
         await cloudinaryService.deleteImage(existing[publicIdField]).catch(() => {});
       }
 
-      const result = await repo.delete(id);
-      bustCache(); // ← only fires if delete() didn't throw
       return result;
     },
   };
 }
 
 // ─────────────────────────────────────────────
-// Service instances — cacheKeys defined here
+// Service instances - cacheKeys defined here
 // alongside the model they belong to
 // ─────────────────────────────────────────────
 
