@@ -260,21 +260,6 @@ class MealCancellationService {
     return d;
   }
 
-  private buildBulkUpsertOperation(
-    studentId: string,
-    date: Date,
-    mealTypes: ('breakfast' | 'lunch' | 'dinner')[],
-    reason: string,
-  ) {
-    return repository.upsertCancellation({
-      studentId,
-      date,
-      breakfast: mealTypes.includes('breakfast'),
-      lunch: mealTypes.includes('lunch'),
-      dinner: mealTypes.includes('dinner'),
-      reason,
-    });
-  }
 }
 
 export default new MealCancellationService();

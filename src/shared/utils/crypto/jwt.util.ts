@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { env } from '@/config/env.config';
 
@@ -32,7 +33,9 @@ export const generateAccessToken = (payload: JWTPayload): string => {
  * Generate refresh token
  */
 export const generateRefreshToken = (payload: JWTPayload): string => {
-  return jwt.sign(payload, env.JWT_REFRESH_SECRET, refreshTokenOptions);
+  // jwtid: without it, two logins in the same second sign identical tokens
+  // and the second one fails the unique index on RefreshToken.token.
+  return jwt.sign(payload, env.JWT_REFRESH_SECRET, { ...refreshTokenOptions, jwtid: randomUUID() });
 };
 
 /**

@@ -287,7 +287,14 @@ class RoomService {
 
     this.checkFloorAccess(room.floor, userContext);
 
-    if (room.status !== 'AVAILABLE') {
+    // The most specific answer first: "bed 2 is taken" beats "room is full".
+    const bedOccupant = await roomRepository.findOccupantByRoomAndBed(roomId, data.bedNumber);
+    if (bedOccupant) {
+      throw new ConflictError(`Bed ${data.bedNumber} is already occupied`);
+    }
+
+    // Same rule as transfer: a partly filled room still has free beds.
+    if (room.status !== 'AVAILABLE' && room.status !== 'PARTIALLY_OCCUPIED') {
       throw new BadRequestError(
         `Room is currently ${room.status.toLowerCase()} and cannot accept new occupants`,
       );
@@ -295,11 +302,6 @@ class RoomService {
 
     if (data.bedNumber < 1 || data.bedNumber > room.capacity) {
       throw new BadRequestError(`Bed number must be between 1 and ${room.capacity}`);
-    }
-
-    const bedOccupant = await roomRepository.findOccupantByRoomAndBed(roomId, data.bedNumber);
-    if (bedOccupant) {
-      throw new ConflictError(`Bed ${data.bedNumber} is already occupied`);
     }
 
     const existingAssignment = await roomRepository.findOccupantByUserAndRoom(data.userId, roomId);

@@ -2,7 +2,8 @@ import { Resend } from 'resend';
 import { env } from '@/config/env.config';
 import logger from '../logger.util';
 
-const resend = new Resend(env.RESEND_API_KEY);
+// No key = no client: Resend 6 throws on an empty key at construction.
+const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
 
 interface EmailOptions {
   to: string;
@@ -16,8 +17,9 @@ class EmailService {
    */
   async sendEmail(options: EmailOptions): Promise<void> {
     try {
-      // If no API key in development, just log
-      if (!env.RESEND_API_KEY && env.NODE_ENV === 'development') {
+      // Without a key, outside production, log instead of sending
+      if (!resend) {
+        if (env.NODE_ENV === 'production') throw new Error('RESEND_API_KEY is not set');
         logger.info('📧 Email would be sent (dev mode):');
         logger.info(`To: ${options.to}`);
         logger.info(`Subject: ${options.subject}`);
