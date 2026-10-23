@@ -115,6 +115,14 @@ router.post(
 );
 
 // POST /api/applications/:applicationId/cancel - Cancel application
+// The other student in a swap agrees (only she can; checked in the service)
+router.post(
+  '/:applicationId/consent',
+  authorize('STUDENT'),
+  validate(applicationIdSchema, 'params'),
+  applicationController.consentToSwap,
+);
+
 router.post(
   '/:applicationId/cancel',
   authorize('SUPER_ADMIN', 'PROVOST', 'STUDENT'),

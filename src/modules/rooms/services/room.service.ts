@@ -1,3 +1,4 @@
+import { notificationService } from '@/modules/notifications';
 import roomRepository from '../repositories/room.repository';
 import {
   CreateRoomInput,
@@ -333,6 +334,17 @@ class RoomService {
     );
 
     const updatedRoom = await roomRepository.findById(roomId);
+    await notificationService.notify(
+      [data.userId],
+      {
+        type: 'ROOM_UPDATED',
+        title: 'You have a room',
+        message: `You were assigned to room ${room.roomNumber}, bed ${data.bedNumber}.`,
+        entityType: 'Room',
+        entityId: roomId,
+      },
+      { email: true },
+    );
     return this.transformRoom(updatedRoom!);
   }
 
@@ -361,6 +373,13 @@ class RoomService {
     await roomRepository.unassignStudent(roomId, userId, newStatus);
 
     const updatedRoom = await roomRepository.findById(roomId);
+    await notificationService.notify([userId], {
+      type: 'ROOM_UPDATED',
+      title: 'You were removed from your room',
+      message: `You are no longer assigned to room ${room.roomNumber}. Contact the hall office with questions.`,
+      entityType: 'Room',
+      entityId: roomId,
+    });
     return this.transformRoom(updatedRoom!);
   }
 
@@ -429,16 +448,28 @@ class RoomService {
     const targetNewStatus: RoomStatus =
       targetNewOccupancy >= targetRoom.capacity ? 'OCCUPIED' : 'PARTIALLY_OCCUPIED';
 
-    await roomRepository.unassignStudent(roomId, data.userId, sourceNewStatus);
-    await roomRepository.assignStudent(
-      data.targetRoomId,
-      data.userId,
-      data.targetBedNumber,
-      targetNewStatus,
-      data.transferDate,
-    );
+    await roomRepository.transferStudent({
+      userId: data.userId,
+      fromRoomId: roomId,
+      fromStatus: sourceNewStatus,
+      toRoomId: data.targetRoomId,
+      toBed: data.targetBedNumber,
+      toStatus: targetNewStatus,
+      date: data.transferDate ? new Date(data.transferDate) : undefined,
+    });
 
     const updatedTargetRoom = await roomRepository.findById(data.targetRoomId);
+    await notificationService.notify(
+      [data.userId],
+      {
+        type: 'ROOM_UPDATED',
+        title: 'Your room changed',
+        message: `You were moved to room ${updatedTargetRoom!.roomNumber}, bed ${data.targetBedNumber}.`,
+        entityType: 'Room',
+        entityId: data.targetRoomId,
+      },
+      { email: true },
+    );
     return this.transformRoom(updatedTargetRoom!);
   }
 

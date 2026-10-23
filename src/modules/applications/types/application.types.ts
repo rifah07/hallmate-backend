@@ -19,6 +19,7 @@ export interface AssignApplicationInput {
 export interface RespondToApplicationInput {
   status: ApplicationStatus;
   responseNote: string;
+  allocation?: { roomId: string; bedNumber: number };
 }
 
 export interface ApplicationFilters {
