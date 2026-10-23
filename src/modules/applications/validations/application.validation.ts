@@ -30,7 +30,6 @@ const seatSwapDataSchema = z.object({
   targetStudentId: z.string().uuid('Invalid student ID'),
   targetRoomId: z.string().uuid('Invalid room ID'),
   reason: z.string().min(10, 'Reason must be at least 10 characters'),
-  targetStudentConsent: z.boolean(),
 });
 
 const leaveApplicationDataSchema = z.object({
@@ -144,6 +143,13 @@ export const assignApplicationSchema = z.object({
 export const respondToApplicationSchema = z.object({
   status: z.enum(['APPROVED', 'REJECTED', 'CANCELLED']),
   responseNote: z.string().min(10, 'Response note must be at least 10 characters'),
+  // Required when approving a seat application or a transfer: where she goes
+  allocation: z
+    .object({
+      roomId: z.string().uuid('Invalid room ID'),
+      bedNumber: z.number().int().min(1).max(4),
+    })
+    .optional(),
 });
 
 // ============================================================================

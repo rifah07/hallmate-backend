@@ -173,7 +173,7 @@ export const updateUserValidation = z.object({
       email: z.string().email('Invalid email format').optional(),
       phone: z.string().regex(bdPhoneRegex, 'Invalid Bangladeshi phone number').optional(),
       bloodGroup: bloodGroupEnum.optional(),
-      photo: z.string().url('Invalid photo URL').optional(),
+      // photo is set only through the upload endpoint
 
       // Student-specific
       department: z.string().optional(),
@@ -218,9 +218,16 @@ export const updateAccountStatusValidation = z.object({
     userId: z.string().uuid('Invalid user ID format'),
   }),
   query: z.object({}).optional(),
-  body: z.object({
-    accountStatus: accountStatusEnum,
-  }),
+  body: z
+    .object({
+      accountStatus: accountStatusEnum,
+      reason: z.string().trim().min(5).max(500).optional(),
+    })
+    // She will see this on her "seat cancelled" page, so it must exist
+    .refine((b) => b.accountStatus !== 'SEAT_CANCELLED' || b.reason, {
+      message: 'A reason is required when cancelling a seat',
+      path: ['reason'],
+    }),
 });
 
 /**
@@ -248,9 +255,14 @@ export const restoreUserValidation = z.object({
 export const searchUsersValidation = z.object({
   params: z.object({}).optional(),
   query: z.object({
-    q: z.string().min(1, 'Search query is required'),
+    q: z.string().min(1, 'Search query is required').max(100),
     page: z.string().regex(/^\d+$/).optional().default('1'),
-    limit: z.string().regex(/^\d+$/).optional().default('20'),
+    limit: z
+      .string()
+      .regex(/^\d+$/)
+      .refine((v) => Number(v) <= 100, 'Limit must be at most 100')
+      .optional()
+      .default('20'),
   }),
 });
 

@@ -121,11 +121,11 @@ router.get(
 /**
  * @route GET /
  * @desc Retrieve a list of all rooms.
- * @access SUPER_ADMIN, PROVOST, HOUSE_TUTOR, OFFICE_STAFF
+ * @access SUPER_ADMIN, PROVOST, HOUSE_TUTOR
  */
 router.get(
   '/',
-  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR', 'OFFICE_STAFF'),
+  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR'),
   validate(getAllRoomsValidation),
   roomController.getAllRooms,
 );
@@ -149,11 +149,11 @@ router.post(
 /**
  * @route GET /:roomId
  * @desc Retrieve details of a specific room by ID.
- * @access SUPER_ADMIN, PROVOST, HOUSE_TUTOR, OFFICE_STAFF
+ * @access SUPER_ADMIN, PROVOST, HOUSE_TUTOR
  */
 router.get(
   '/:roomId',
-  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR', 'OFFICE_STAFF'),
+  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR'),
   validate(getRoomByIdValidation),
   roomController.getRoomById,
 );

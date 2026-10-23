@@ -13,6 +13,11 @@ class AuthRepository {
     });
   }
 
+  /** Login only: also finds removed accounts so she can be told why. */
+  async findByUniversityIdForLogin(universityId: string): Promise<User | null> {
+    return await prisma.user.findUnique({ where: { universityId } });
+  }
+
   /**
    * Find user by ID
    */
@@ -35,16 +40,39 @@ class AuthRepository {
   }
 
   /**
-   * Update in failed login attempts and optionally lock account
+   * Count a wrong password; after `max` in a row, lock for `lockMs`.
+   * The increment is atomic so parallel guesses can't skip the count.
+   * Returns true when this attempt triggered the lock.
    */
-  async updateFailedAttempts(userId: string, attempts: number, shouldLock: boolean = false) {
-    return await prisma.user.update({
+  async recordFailedLogin(userId: string, max: number, lockMs: number): Promise<boolean> {
+    const { failedLoginAttempts } = await prisma.user.update({
       where: { id: userId },
-      data: {
-        failedLoginAttempts: attempts,
-        ...(shouldLock && { accountStatus: 'LOCKED' }),
-      },
+      data: { failedLoginAttempts: { increment: 1 } },
+      select: { failedLoginAttempts: true },
     });
+    if (failedLoginAttempts < max) return false;
+    await prisma.user.update({
+      where: { id: userId },
+      data: { failedLoginAttempts: 0, lockedUntil: new Date(Date.now() + lockMs) },
+    });
+    return true;
+  }
+
+  async clearFailedLogins(userId: string): Promise<void> {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { failedLoginAttempts: 0, lockedUntil: null },
+    });
+  }
+
+  /** Count a wrong one-time or reset code; returns the new total. */
+  async recordFailedOtp(userId: string): Promise<number> {
+    const { otpAttempts } = await prisma.user.update({
+      where: { id: userId },
+      data: { otpAttempts: { increment: 1 } },
+      select: { otpAttempts: true },
+    });
+    return otpAttempts;
   }
 
   /**
@@ -58,6 +86,7 @@ class AuthRepository {
         isFirstLogin: false,
         oneTimePassword: null,
         otpExpiresAt: null,
+        otpAttempts: 0,
         passwordChangedAt: new Date(),
       },
     });
@@ -72,6 +101,7 @@ class AuthRepository {
       data: {
         passwordResetToken: hashedToken,
         passwordResetExpires: expiresAt,
+        otpAttempts: 0,
       },
     });
   }
@@ -85,6 +115,10 @@ class AuthRepository {
       data: {
         passwordResetToken: null,
         passwordResetExpires: null,
+        otpAttempts: 0,
+        // A completed reset proves inbox ownership: lift a brute-force lock too
+        failedLoginAttempts: 0,
+        lockedUntil: null,
       },
     });
   }

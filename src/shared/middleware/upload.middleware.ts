@@ -39,15 +39,6 @@ const documentFileFilter = (
   }
 };
 
-// No file filter - accept any file type
-const anyFileFilter = (
-  _req: Request,
-  _file: Express.Multer.File,
-  cb: multer.FileFilterCallback,
-) => {
-  cb(null, true);
-};
-
 // Image upload instance (for profile pictures)
 export const uploadImage = multer({
   storage,
@@ -66,20 +57,22 @@ export const uploadDocument = multer({
   },
 });
 
-// General upload instance (no restrictions)
-export const uploadAny = multer({
+// PDF upload instance (notices). The browser's MIME type is only a first
+// filter; services check the file really starts with %PDF.
+export const uploadPdf = multer({
   storage,
-  fileFilter: anyFileFilter,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB max
-  },
+  fileFilter: (_req, file, cb) =>
+    file.mimetype === 'application/pdf'
+      ? cb(null, true)
+      : cb(new BadRequestError('Only PDF files are allowed')),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
 });
 
 // Multer error handler middleware
 export const handleMulterError = (err: any, _req: Request, _res: any, next: any) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
-      return next(new BadRequestError('File size too large. Maximum size is 10MB'));
+      return next(new BadRequestError('File is too large'));
     }
     if (err.code === 'LIMIT_UNEXPECTED_FILE') {
       return next(new BadRequestError('Unexpected field name'));

@@ -34,7 +34,7 @@ router.get('/my-logs', authorize('STUDENT'), mealController.getMyMealLogs);
 // GET /api/meals/statistics/:date - Get statistics for a date
 router.get(
   '/statistics/:date',
-  authorize('SUPER_ADMIN', 'PROVOST', 'DINING_STAFF', 'HOUSE_TUTOR', 'OFFICE_STAFF'),
+  authorize('SUPER_ADMIN', 'PROVOST', 'DINING_STAFF', 'HOUSE_TUTOR'),
   validate(mealDateSchema, 'params'),
   mealController.getStatisticsByDate,
 );
@@ -46,7 +46,7 @@ router.get(
 // GET /api/meals - List all meal logs
 router.get(
   '/',
-  authorize('SUPER_ADMIN', 'PROVOST', 'DINING_STAFF', 'HOUSE_TUTOR', 'OFFICE_STAFF', 'STUDENT'),
+  authorize('SUPER_ADMIN', 'PROVOST', 'DINING_STAFF', 'HOUSE_TUTOR', 'STUDENT'),
   validate(mealQuerySchema, 'query'),
   mealController.getAllMealLogs,
 );
@@ -58,7 +58,7 @@ router.get(
 // GET /api/meals/:studentId/:month/:year - Get monthly summary
 router.get(
   '/:studentId/:month/:year',
-  authorize('SUPER_ADMIN', 'PROVOST', 'DINING_STAFF', 'OFFICE_STAFF', 'STUDENT'),
+  authorize('SUPER_ADMIN', 'PROVOST', 'DINING_STAFF', 'STUDENT'),
   validate(studentIdSchema, 'params'),
   validate(monthYearSchema, 'params'),
   mealController.getMonthlyMealSummary,
@@ -67,16 +67,18 @@ router.get(
 // GET /api/meals/:studentId/:date - Get meal log by date
 router.get(
   '/:studentId/:date',
-  authorize('SUPER_ADMIN', 'PROVOST', 'DINING_STAFF', 'HOUSE_TUTOR', 'OFFICE_STAFF', 'STUDENT'),
+  authorize('SUPER_ADMIN', 'PROVOST', 'DINING_STAFF', 'HOUSE_TUTOR', 'STUDENT'),
   validate(studentIdSchema, 'params'),
   validate(mealDateSchema, 'params'),
   mealController.getMealLogByDate,
 );
 
 // PUT /api/meals/:studentId/:date - Update meal log
+// Students change meals only through cancellations (POST /api/meals/cancel), which
+// enforce the deadline; editing logs directly would rewrite past meals.
 router.put(
   '/:studentId/:date',
-  authorize('SUPER_ADMIN', 'PROVOST', 'DINING_STAFF', 'HOUSE_TUTOR', 'STUDENT'),
+  authorize('SUPER_ADMIN', 'PROVOST', 'DINING_STAFF', 'HOUSE_TUTOR'),
   validate(studentIdSchema, 'params'),
   validate(mealDateSchema, 'params'),
   validate(updateMealSchema, 'body'),

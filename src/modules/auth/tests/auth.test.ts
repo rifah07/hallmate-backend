@@ -83,7 +83,7 @@ describe('Auth Module', () => {
         confirmPassword: 'NewPass@123',
       });
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(401); // same answer as a wrong code: reveals nothing
       expect(res.body.success).toBe(false);
     }, 15000);
 
@@ -95,7 +95,7 @@ describe('Auth Module', () => {
         confirmPassword: 'NewPass@123',
       });
 
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(401); // unknown IDs look like wrong codes
     }, 15000);
 
     it('should reject mismatched passwords', async () => {

@@ -19,6 +19,23 @@ const envSchema = z.object({
     .min(8, 'SUPER_ADMIN_PASSWORD must be at least 8 characters long'),
   RESEND_API_KEY: z.string(),
   FROM_EMAIL: z.string().optional(),
+  // Shared with the web app's /api proxy; lets it pass the reader's IP
+  INTERNAL_API_KEY: z
+    .string()
+    .min(32)
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+  // Online payments. Unset = the pay button answers "not available yet";
+  // the office can still record cash and bank payments.
+  SSLCOMMERZ_STORE_ID: z.string().optional(),
+  SSLCOMMERZ_STORE_PASSWORD: z.string().optional(),
+  SSLCOMMERZ_LIVE: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+  // Public URLs the gateway sends the payer and its IPN back to
+  API_PUBLIC_URL: z.string().url().default('http://localhost:5000'),
+  WEB_APP_URL: z.string().url().default('http://localhost:3000'),
 });
 
 const envValidation = envSchema.safeParse(process.env);

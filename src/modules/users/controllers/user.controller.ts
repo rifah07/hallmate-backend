@@ -21,6 +21,7 @@ class UserController {
     this.updateAccountStatus = this.updateAccountStatus.bind(this);
     this.deleteUser = this.deleteUser.bind(this);
     this.restoreUser = this.restoreUser.bind(this);
+    this.reissueOneTimePassword = this.reissueOneTimePassword.bind(this);
     this.getUserStatistics = this.getUserStatistics.bind(this);
     this.bulkCreateUsers = this.bulkCreateUsers.bind(this);
     this.getUsersByRole = this.getUsersByRole.bind(this);
@@ -196,8 +197,13 @@ class UserController {
   ): Promise<void> {
     try {
       const { userId } = req.params;
-      const { accountStatus } = req.body;
-      const user = await userService.updateAccountStatus(userId, accountStatus);
+      const { accountStatus, reason } = req.body;
+      const user = await userService.updateAccountStatus(
+        userId,
+        accountStatus,
+        req.user!.userId,
+        reason,
+      );
       sendSuccess(res, user, 'Account status updated successfully');
     } catch (error) {
       next(error);
@@ -219,6 +225,24 @@ class UserController {
       const { userId } = req.params;
       await userService.deleteUser(userId, req.user.userId);
       sendSuccess(res, null, 'User deleted successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * POST /api/users/:userId/reissue-otp
+   * Super admin and provost — authorization handled by middleware
+   */
+  async reissueOneTimePassword(
+    req: Request<{ userId: string }>,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      if (!req.user) throw new AppError('User not authenticated', 401);
+      const user = await userService.reissueOneTimePassword(req.params.userId, req.user.userId);
+      sendSuccess(res, user, 'A new one-time password was emailed to the user.');
     } catch (error) {
       next(error);
     }

@@ -2,6 +2,10 @@
 const config = {
   preset: 'ts-jest',
   testEnvironment: 'node',
+  setupFiles: ['<rootDir>/jest.setup.js'],
+  // Suites share one database; in parallel one suite's cleanup can delete
+  // rows another is using mid-test. One worker keeps them independent.
+  maxWorkers: 1,
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },

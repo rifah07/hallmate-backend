@@ -1,4 +1,3 @@
-import prisma from '@/database/prisma/client';
 import applicationRepository from '../repositories/application.repository';
 import {
   CreateApplicationInput,
@@ -11,9 +10,20 @@ import {
   ApplicationResponse,
 } from '../types/application.types';
 import { BadRequestError, NotFoundError, ForbiddenError, ConflictError } from '@/shared/errors/';
+import { notificationService } from '@/modules/notifications';
 import { ApplicationType } from '@prisma/client';
-import { roomRepository } from '@/modules/rooms';
+import { roomRepository, roomService } from '@/modules/rooms';
+import userService from '@/modules/users/services/user.service';
 import userRepository from '@/modules/users/repositories/user.repository';
+
+// "COMPLAINT" → "complaint", "SEAT_TRANSFER" → "seat transfer application"
+const LABELS: Partial<Record<string, string>> = {
+  COMPLAINT: 'complaint',
+  MAINTENANCE: 'maintenance request',
+  LEAVE: 'leave application',
+};
+const label = (type: string) =>
+  LABELS[type] ?? `${type.replace(/_/g, ' ').toLowerCase()} application`;
 
 class ApplicationService {
   async createApplication(
@@ -42,6 +52,27 @@ class ApplicationService {
       studentId: userContext.userId,
       data: input.data,
       attachments: input.attachments,
+    });
+
+    if (input.type === 'SEAT_SWAP') {
+      await notificationService.notify(
+        [(input.data as { targetStudentId: string }).targetStudentId],
+        {
+          type: 'APPLICATION_SUBMITTED',
+          title: 'A student wants to swap beds with you',
+          message: `${application.student.name} asked to swap beds with you. Open the request to agree or ignore it.`,
+          entityType: 'Application',
+          entityId: application.id,
+        },
+      );
+    }
+
+    await notificationService.notifyStaffOfStudent(userContext.userId, {
+      type: 'APPLICATION_SUBMITTED',
+      title: `New ${label(input.type)}`,
+      message: `A student submitted a new ${label(input.type)}. Open it to review.`,
+      entityType: 'Application',
+      entityId: application.id,
     });
 
     return this.transformApplication(application);
@@ -178,6 +209,14 @@ class ApplicationService {
 
     const assigned = await applicationRepository.assign(id, input.assignedTo, input.assignedToRole);
 
+    await notificationService.notify([input.assignedTo], {
+      type: 'APPLICATION_ASSIGNED',
+      title: `A ${label(application.type)} was assigned to you`,
+      message: `Please review and respond to this ${label(application.type)}.`,
+      entityType: 'Application',
+      entityId: id,
+    });
+
     return this.transformApplication(assigned);
   }
 
@@ -202,11 +241,30 @@ class ApplicationService {
       throw new BadRequestError('Invalid status');
     }
 
+    // Do the real-world change first: if the bed is taken or the room is
+    // full, this throws and the application stays pending, untouched.
+    if (input.status === 'APPROVED') {
+      await this.applyApproval(application, input, userContext);
+    }
+
     const responded = await applicationRepository.respond(
       id,
       input.status,
       input.responseNote,
       new Date(),
+    );
+
+    const decision = input.status.toLowerCase();
+    await notificationService.notify(
+      [application.studentId],
+      {
+        type: 'APPLICATION_UPDATED',
+        title: `Your ${label(application.type)} was ${decision}`,
+        message: input.responseNote ?? `Your ${label(application.type)} was ${decision}.`,
+        entityType: 'Application',
+        entityId: id,
+      },
+      { email: true }, // a decision is worth an email
     );
 
     return this.transformApplication(responded);
@@ -236,6 +294,17 @@ class ApplicationService {
     }
 
     const cancelled = await applicationRepository.cancel(id);
+
+    // Tell the student only when someone else cancelled it
+    if (userContext.userId !== application.studentId) {
+      await notificationService.notify([application.studentId], {
+        type: 'APPLICATION_UPDATED',
+        title: `Your ${label(application.type)} was cancelled`,
+        message: `The hall office cancelled your ${label(application.type)}.`,
+        entityType: 'Application',
+        entityId: id,
+      });
+    }
 
     return this.transformApplication(cancelled);
   }
@@ -331,6 +400,108 @@ class ApplicationService {
     }
   }
 
+  /** The other student in a swap agrees. Only she can, and only once. */
+  async consentToSwap(id: string, userContext: UserContext): Promise<ApplicationResponse> {
+    const application = await applicationRepository.findById(id);
+    const data = application?.data as
+      { targetStudentId?: string; consentedAt?: string } | undefined;
+    // Same 404 whether it doesn't exist or isn't addressed to her
+    if (
+      !application ||
+      application.type !== 'SEAT_SWAP' ||
+      data?.targetStudentId !== userContext.userId
+    ) {
+      throw new NotFoundError('Application not found');
+    }
+    if (application.status !== 'PENDING') {
+      throw new BadRequestError('This request is no longer pending');
+    }
+    if (data.consentedAt) {
+      throw new ConflictError('You have already agreed to this swap');
+    }
+
+    const updated = await applicationRepository.update(id, {
+      data: { ...data, consentedAt: new Date().toISOString() },
+    });
+    await notificationService.notify([application.studentId], {
+      type: 'APPLICATION_UPDATED',
+      title: 'Your swap request was accepted',
+      message: 'The other student agreed. The hall office will now review it.',
+      entityType: 'Application',
+      entityId: id,
+    });
+    return this.transformApplication(updated);
+  }
+
+  private async applyApproval(
+    application: { id: string; type: ApplicationType; studentId: string; data: unknown },
+    input: RespondToApplicationInput,
+    userContext: UserContext,
+  ): Promise<void> {
+    const studentId = application.studentId;
+    const data = application.data as Record<string, string | undefined>;
+    const needAllocation = () => {
+      if (!input.allocation) {
+        throw new BadRequestError('Choose a room and bed (allocation) to approve this application');
+      }
+      return input.allocation;
+    };
+
+    switch (application.type) {
+      case 'SEAT_APPLICATION': {
+        const { roomId, bedNumber } = needAllocation();
+        await roomService.assignStudent(roomId, { userId: studentId, bedNumber }, userContext);
+        return;
+      }
+      case 'SEAT_TRANSFER': {
+        const { roomId, bedNumber } = needAllocation();
+        const current = await roomRepository.findUserCurrentRoom(studentId);
+        if (!current) throw new BadRequestError('The student no longer has a room to move from');
+        await roomService.transferStudent(
+          current.roomId,
+          { userId: studentId, targetRoomId: roomId, targetBedNumber: bedNumber },
+          userContext,
+        );
+        return;
+      }
+      case 'SEAT_CANCELLATION': {
+        const current = await roomRepository.findUserCurrentRoom(studentId);
+        if (current) await roomService.unassignStudent(current.roomId, studentId, userContext);
+        await userService.updateAccountStatus(
+          studentId,
+          'SEAT_CANCELLED',
+          userContext.userId,
+          `Cancelled at your request: ${data.reason}`,
+        );
+        return;
+      }
+      case 'SEAT_SWAP': {
+        if (!data.consentedAt || !data.targetStudentId) {
+          throw new BadRequestError('The other student has not agreed to this swap yet');
+        }
+        const [mine, theirs] = await Promise.all([
+          roomRepository.findUserCurrentRoom(studentId),
+          roomRepository.findUserCurrentRoom(data.targetStudentId),
+        ]);
+        if (!mine || !theirs) throw new BadRequestError('Both students must still have a bed');
+        await roomRepository.swapStudents(
+          { userId: studentId, roomId: mine.roomId, bed: mine.bedNumber },
+          { userId: theirs.userId, roomId: theirs.roomId, bed: theirs.bedNumber },
+        );
+        await notificationService.notify([theirs.userId], {
+          type: 'ROOM_UPDATED',
+          title: 'Your bed changed',
+          message: `Your swap was approved. You are now in room ${mine.room.roomNumber}, bed ${mine.bedNumber}.`,
+          entityType: 'Room',
+          entityId: mine.roomId,
+        });
+        return;
+      }
+      default:
+        return; // leave, complaint, maintenance: the decision is the outcome
+    }
+  }
+
   private async validateApplicationRules(
     type: ApplicationType,
     data: any,
@@ -421,7 +592,8 @@ class ApplicationService {
       throw new BadRequestError('You do not have a room assigned to transfer from');
     }
 
-    if (data.currentRoomId !== currentRoom.id) {
+    // findUserCurrentRoom returns the occupant row; its roomId is the room
+    if (data.currentRoomId !== currentRoom.roomId) {
       throw new BadRequestError('Current room ID does not match your assigned room');
     }
 
@@ -474,7 +646,8 @@ class ApplicationService {
       throw new BadRequestError('You do not have a room assigned');
     }
 
-    if (data.currentRoomId !== currentRoom.id) {
+    // findUserCurrentRoom returns the occupant row; its roomId is the room
+    if (data.currentRoomId !== currentRoom.roomId) {
       throw new BadRequestError('Current room ID does not match your assigned room');
     }
 
@@ -507,8 +680,8 @@ class ApplicationService {
     }
 
     const [presentRoom, targetRoom] = await Promise.all([
-      prisma.room.findUnique({ where: { id: data.currentRoomId } }),
-      prisma.room.findUnique({ where: { id: data.targetRoomId } }),
+      roomRepository.findById(data.currentRoomId),
+      roomRepository.findById(data.targetRoomId),
     ]);
 
     if (!presentRoom || !targetRoom) {
@@ -523,10 +696,8 @@ class ApplicationService {
     if (hasPendingSwap) {
       throw new ConflictError('You already have a pending seat swap application');
     }
-
-    if (!data.targetStudentConsent) {
-      throw new BadRequestError('Target student consent is required for room swap');
-    }
+    // Consent is given later by the other student herself (POST .../consent);
+    // a flag typed in by the requester proves nothing.
   }
   private async validateLeaveApplication(data: any, studentId: string): Promise<void> {
     const currentRoom = await roomRepository.findUserCurrentRoom(studentId);

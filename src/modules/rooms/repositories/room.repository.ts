@@ -1,4 +1,4 @@
-import { prisma } from '@/database/prisma/client';
+import { prisma } from '@/config/database.config';
 import { RoomType, Prisma, RoomStatus } from '@prisma/client';
 import { RoomFilters, PaginationParams } from '../types/room.types';
 
@@ -184,6 +184,8 @@ class RoomRepository {
         where: { id: roomId },
         data: { currentOccupancy: { increment: 1 }, status: newStatus },
       }),
+      // Kept in the same transaction: floor checks read user.currentRoom
+      prisma.user.update({ where: { id: userId }, data: { currentRoomId: roomId } }),
     ]);
 
     return occupant;
@@ -198,9 +200,64 @@ class RoomRepository {
         where: { id: roomId },
         data: { currentOccupancy: { decrement: 1 }, status: newStatus },
       }),
+      prisma.user.update({ where: { id: userId }, data: { currentRoomId: null } }),
     ]);
 
     return result;
+  }
+
+  /**
+   * Move one student in a single transaction: if the new bed is taken in
+   * the meantime, nothing changes and she keeps her old bed.
+   */
+  async transferStudent(move: {
+    userId: string;
+    fromRoomId: string;
+    fromStatus: RoomStatus;
+    toRoomId: string;
+    toBed: number;
+    toStatus: RoomStatus;
+    date?: Date;
+  }) {
+    await prisma.$transaction([
+      prisma.roomOccupant.deleteMany({ where: { roomId: move.fromRoomId, userId: move.userId } }),
+      prisma.room.update({
+        where: { id: move.fromRoomId },
+        data: { currentOccupancy: { decrement: 1 }, status: move.fromStatus },
+      }),
+      prisma.roomOccupant.create({
+        data: {
+          roomId: move.toRoomId,
+          userId: move.userId,
+          bedNumber: move.toBed,
+          assignedDate: move.date ?? new Date(),
+        },
+      }),
+      prisma.room.update({
+        where: { id: move.toRoomId },
+        data: { currentOccupancy: { increment: 1 }, status: move.toStatus },
+      }),
+      prisma.user.update({ where: { id: move.userId }, data: { currentRoomId: move.toRoomId } }),
+    ]);
+  }
+
+  /**
+   * Two students trade beds. Delete both rows, then recreate them swapped:
+   * updating in place would collide with the unique (room, bed) and
+   * (user) indexes halfway through. Occupancy counts don't change.
+   */
+  async swapStudents(a: { userId: string; roomId: string; bed: number }, b: typeof a) {
+    await prisma.$transaction([
+      prisma.roomOccupant.deleteMany({ where: { userId: { in: [a.userId, b.userId] } } }),
+      prisma.roomOccupant.createMany({
+        data: [
+          { userId: a.userId, roomId: b.roomId, bedNumber: b.bed },
+          { userId: b.userId, roomId: a.roomId, bedNumber: a.bed },
+        ],
+      }),
+      prisma.user.update({ where: { id: a.userId }, data: { currentRoomId: b.roomId } }),
+      prisma.user.update({ where: { id: b.userId }, data: { currentRoomId: a.roomId } }),
+    ]);
   }
 
   async findOccupantByRoomAndBed(roomId: string, bedNumber: number) {

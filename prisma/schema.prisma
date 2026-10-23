@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ENUMS
@@ -121,35 +120,27 @@ enum ComplaintStatus {
 }
 
 enum BillType {
-  RENT
-  MESS
-  ELECTRICITY
+  SEAT_RENEWAL
   FINE
-  CAUTION_MONEY
   OTHER
 }
 
 enum BillStatus {
-  UNPAID
-  PROCESSING
+  UNPAID // "overdue" = UNPAID past dueDate, computed when read
   PAID
-  OVERDUE
   CANCELLED
 }
 
 enum PaymentGateway {
-  BKASH
-  NAGAD
-  BANK_TRANSFER
+  SSLCOMMERZ // bKash, Nagad, Rocket and cards through one gateway
   CASH
-  SSLCOMMERZ
+  BANK_TRANSFER
 }
 
 enum PaymentStatus {
   PENDING
   SUCCESS
   FAILED
-  REFUNDED
 }
 
 // MAIN MODELS
@@ -237,6 +228,8 @@ model User {
   password             String
   accountStatus        AccountStatus @default(ACTIVE)
   failedLoginAttempts  Int           @default(0)
+  lockedUntil          DateTime? // brute-force lock; expires by itself
+  otpAttempts          Int           @default(0) // wrong one-time/reset codes
   isFirstLogin         Boolean       @default(true)
   oneTimePassword      String?
   otpExpiresAt         DateTime?
@@ -289,7 +282,6 @@ model User {
   payments          Payment[]
   mealLogs          MealLog[]
   mealCancellations MealCancellation[] @relation("MealCancellations")
-  gateEntries       GateEntry[]
   visitors          Visitor[]
   notifications     Notification[]
   seatAllocations   SeatAllocation[]
@@ -341,7 +333,7 @@ model GuardianInfo {
 model RoomOccupant {
   id           String   @id @default(uuid())
   roomId       String
-  userId       String
+  userId       String   @unique // one bed per student, even under concurrent assigns
   bedNumber    Int // 1-4
   assignedDate DateTime @default(now())
 
@@ -476,45 +468,43 @@ model Bill {
   id     String     @id @default(uuid())
   type   BillType
   status BillStatus @default(UNPAID)
+  title  String // "Seat renewal 2027"
+  period String // "2027" for a yearly renewal
 
   studentId String
   student   User   @relation(fields: [studentId], references: [id])
 
-  amount  Float
-  month   Int
-  year    Int
+  amount  Int // whole taka: never Float for money (0.1 + 0.2 !== 0.3)
   dueDate DateTime
   paidAt  DateTime?
 
-  // Fine calculation
-  lateFee Float @default(0)
-
-  // Relations
-  payments Payment[]
+  createdBy String
+  payments  Payment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([studentId, type, month, year])
-  @@index([studentId])
-  @@index([status])
-  @@index([dueDate])
+  @@unique([studentId, type, period]) // issuing a renewal twice can't double-bill
+  @@index([studentId, createdAt])
+  @@index([status, dueDate])
 }
 
 model Payment {
-  id     String @id @default(uuid())
+  id     String @id @default(uuid()) // also the gateway's tran_id
   billId String
   bill   Bill   @relation(fields: [billId], references: [id])
 
   studentId String
   student   User   @relation(fields: [studentId], references: [id])
 
-  amount  Float
+  amount  Int
   gateway PaymentGateway
   status  PaymentStatus  @default(PENDING)
 
-  transactionId   String? @unique
+  method          String? // what the gateway reports, e.g. "BKASH-BKash"
+  reference       String? // gateway val_id, or a bank slip / receipt number
   gatewayResponse Json?
+  recordedBy      String? // staff who recorded a cash or bank payment
 
   paidAt DateTime?
 
@@ -522,40 +512,34 @@ model Payment {
   updatedAt DateTime @updatedAt
 
   @@index([billId])
-  @@index([studentId])
-  @@index([status])
-  @@index([transactionId])
+  @@index([studentId, createdAt])
 }
 
 model Notice {
   id      String @id @default(uuid())
   title   String
   content String @db.Text
+  pdfUrl  String? // the hall publishes many notices as PDFs
 
-  // Attachments
-  pdfUrl   String?
-  imageUrl String?
+  audience    NoticeAudience @default(ALL)
+  targetFloor Int? // set when audience = FLOOR
 
-  // Targeting
-  targetAudience String // ALL, FLOOR_SPECIFIC, YEAR_SPECIFIC, PROGRAM_SPECIFIC
-  targetValue    String?
-
-  priority String @default("NORMAL")
-  category String @default("GENERAL")
-
-  isPublic  Boolean   @default(false)
-  isActive  Boolean   @default(true)
+  priority  NoticePriority @default(NORMAL)
+  isActive  Boolean        @default(true) // withdrawn notices stay for the record
   expiresAt DateTime?
 
   createdBy     String
   createdByRole UserRole
-  views         Int      @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([isActive, isPublic])
-  @@index([createdAt])
+  @@index([isActive, audience, targetFloor, createdAt]) // the residents' feed
+}
+
+enum NoticeAudience {
+  ALL
+  FLOOR
 }
 
 model MealLog {
@@ -610,49 +594,49 @@ model MealSettings {
   @@map("meal_settings")
 }
 
-model GateEntry {
-  id        String @id @default(uuid())
-  studentId String
-  student   User   @relation(fields: [studentId], references: [id])
-
-  entryTime    DateTime?
-  exitTime     DateTime?
-  isLateReturn Boolean   @default(false)
-
-  createdAt DateTime @default(now())
-
-  @@index([studentId])
-  @@index([createdAt])
-}
 
 model Visitor {
-  id        String  @id @default(uuid())
-  name      String
-  nidNumber String
-  phone     String
-  relation  String
-  purpose   String
-  photo     String?
+  id       String @id @default(uuid())
+  name     String
+  phone    String
+  relation String
+  purpose  String
+  // No national ID number stored: the guard checks the card at the gate,
+  // and a table of visitors' ID numbers would be a liability.
+
+  visitDate DateTime      @db.Date // a calendar day in Bangladesh time
+  status    VisitorStatus @default(PENDING)
 
   studentId String
-  student   User   @relation(fields: [studentId], references: [id])
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  approved   Boolean   @default(false)
-  approvedAt DateTime?
+  decidedBy    String?
+  decidedAt    DateTime?
+  decisionNote String?
 
-  entryTime DateTime
-  exitTime  DateTime?
+  checkedInAt  DateTime?
+  checkedOutAt DateTime?
+  guardId      String? // who let her in
 
   createdAt DateTime @default(now())
 
-  @@index([studentId])
-  @@index([entryTime])
+  @@index([studentId, createdAt])
+  @@index([visitDate, status]) // the guard's list for today
+}
+
+enum VisitorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  CHECKED_IN
+  CHECKED_OUT
 }
 
 model Notification {
   id     String @id @default(uuid())
   userId String
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   type    String
   title   String
@@ -666,7 +650,8 @@ model Notification {
 
   createdAt DateTime @default(now())
 
-  @@index([userId, isRead])
+  @@index([userId, isRead]) // unread badge, polled every 30 s
+  @@index([userId, createdAt]) // "my newest first" list with a cursor
   @@index([createdAt])
 }
 

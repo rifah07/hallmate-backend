@@ -1,13 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import 'dotenv/config'; // first: the client reads DATABASE_URL when imported
 import bcrypt from 'bcrypt';
-import * as dotenv from 'dotenv';
-
-//const prisma = new PrismaClient();
-//import prisma from '../src/database/prisma/client';
-
-dotenv.config();
-
-const prisma = new PrismaClient();
+import prisma from '../src/config/database.config';
 
 // Simple hash function (avoid importing from src to prevent path issues)
 async function hashPassword(password: string): Promise<string> {

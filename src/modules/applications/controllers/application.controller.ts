@@ -167,6 +167,23 @@ class ApplicationController {
       next(error);
     }
   }
+  async consentToSwap(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userContext: UserContext = {
+        userId: req.user!.userId,
+        role: req.user!.role,
+        assignedFloor: req.user!.assignedFloor,
+      };
+      const application = await applicationService.consentToSwap(
+        String(req.params.applicationId),
+        userContext,
+      );
+      sendSuccess(res, application, 'You agreed to the swap');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async cancelApplication(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const userContext: UserContext = {
