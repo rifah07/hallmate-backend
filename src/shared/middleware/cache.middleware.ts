@@ -71,14 +71,15 @@ export const cacheResponse = (ttlSeconds: number) => {
 
     // Override json method to cache response
     res.json = function (data: any) {
-      // Cache the response
-      cache.set(cacheKey, {
-        data,
-        expiresAt: Date.now() + ttlSeconds * 1000,
-      });
-
+      // Only successes: a cached 500 would keep failing after the DB recovers
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        cache.set(cacheKey, {
+          data,
+          expiresAt: Date.now() + ttlSeconds * 1000,
+        });
+        res.set('Cache-Control', `public, max-age=${ttlSeconds}`);
+      }
       res.set('X-Cache', 'MISS');
-      res.set('Cache-Control', `public, max-age=${ttlSeconds}`);
 
       return originalJson(data);
     };

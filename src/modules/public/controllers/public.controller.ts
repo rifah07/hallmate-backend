@@ -1,3 +1,4 @@
+import { clientIp } from '@/shared/utils/client-ip.util';
 import { Request, Response, NextFunction } from 'express';
 import { sendSuccess, sendError, sendPaginatedSuccess } from '@/shared/utils/response.util';
 import * as service from '../services/public.service';
@@ -14,10 +15,6 @@ import {
   publicApplicationBodySchema,
   trackApplicationParamSchema,
 } from '../validations/public.validation';
-
-/** Extract real client IP, respecting proxies */
-const getIp = (req: Request) =>
-  (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress;
 
 /**
  * Inline Zod parse for query/param validation on public routes.
@@ -196,7 +193,7 @@ export async function submitContact(req: Request, res: Response, next: NextFunct
   try {
     const body = parseOrFail(contactBodySchema, req.body, res);
     if (!body) return;
-    const data = await service.submitContact(body, getIp(req));
+    const data = await service.submitContact(body, clientIp(req));
     sendSuccess(res, data, 'Message submitted. We will get back to you shortly.', 201);
   } catch (err) {
     next(err);
@@ -207,7 +204,7 @@ export async function submitApplication(req: Request, res: Response, next: NextF
   try {
     const body = parseOrFail(publicApplicationBodySchema, req.body, res);
     if (!body) return;
-    const data = await service.submitPublicApplication(body, getIp(req));
+    const data = await service.submitPublicApplication(body, clientIp(req));
     sendSuccess(res, data, `Application submitted. Tracking ID: ${data.id}`, 201);
   } catch (err) {
     next(err);

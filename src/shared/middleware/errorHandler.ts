@@ -7,12 +7,14 @@ import { AppError, ValidationError } from '../errors';
  * Global error handler middleware
  * Handles all errors thrown in the application
  */
-export const errorHandler = (err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  // Log error
-  logger.error(`Error: ${err.message}`, {
-    name: err.name,
-    stack: err.stack,
-  });
+export const errorHandler = (err: Error, req: Request, res: Response, _next: NextFunction) => {
+  // Server faults with stack; client mistakes (4xx) as one short line
+  const status = err instanceof AppError ? err.statusCode : 500;
+  if (status >= 500) {
+    logger.error(`${req.method} ${req.path} ${err.message}`, { name: err.name, stack: err.stack });
+  } else {
+    logger.warn(`${req.method} ${req.path} ${status} ${err.message}`);
+  }
 
   // Handle custom AppError instances
   if (err instanceof AppError) {

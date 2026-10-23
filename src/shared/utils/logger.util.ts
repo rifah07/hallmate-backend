@@ -23,20 +23,31 @@ const colors = {
 
 winston.addColors(colors);
 
+const isDev = env.NODE_ENV === 'development';
+
+// printf alone drops everything but `message`; keep the stack and any
+// metadata, since that's what you read in Vercel → Logs when something breaks.
+const line = winston.format.printf(({ timestamp, level, message, stack, ...meta }) => {
+  const extra = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
+  return `${timestamp} ${level}: ${message}${extra}${stack ? `\n${stack}` : ''}`;
+});
+
 const format = winston.format.combine(
+  winston.format.errors({ stack: true }),
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-  winston.format.colorize({ all: true }),
-  winston.format.printf((info) => `${info.timestamp} ${info.level}: ${info.message}`),
+  ...(isDev ? [winston.format.colorize({ all: true })] : []), // no ANSI codes in hosted logs
+  line,
 );
 
-const transports = [
-  new winston.transports.Console(),
-  new winston.transports.File({
-    filename: 'logs/error.log',
-    level: 'error',
-  }),
-  new winston.transports.File({ filename: 'logs/combined.log' }),
-];
+// Files only on a developer machine: serverless hosts have a read-only disk
+// and keep stdout themselves.
+const transports: winston.transport[] = [new winston.transports.Console()];
+if (isDev) {
+  transports.push(
+    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
+    new winston.transports.File({ filename: 'logs/combined.log' }),
+  );
+}
 
 const logger = winston.createLogger({
   level: level(),
