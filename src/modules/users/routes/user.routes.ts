@@ -18,6 +18,7 @@ import {
   bulkCreateUsersValidation,
   uploadProfilePictureValidation,
   deleteProfilePictureValidation,
+  searchUsersValidation,
 } from '../validations/user.validation';
 import {
   uploadImage,
@@ -69,7 +70,13 @@ router.post(
 // SEARCH & FILTER ROUTES (before /:userId)
 // ============================================================================
 
-router.get('/search', userController.searchUsers);
+// Staff only: results include phone numbers and room numbers of residents
+router.get(
+  '/search',
+  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR'),
+  validate(searchUsersValidation),
+  userController.searchUsers,
+);
 
 router.get(
   '/role/:role',
@@ -87,7 +94,7 @@ router.get(
 
 router.get(
   '/university/:universityId',
-  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR', 'OFFICE_STAFF'),
+  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR'),
   validate(getUserByUniversityIdValidation),
   userController.getUserByUniversityId,
 );
@@ -98,7 +105,7 @@ router.get(
 
 router.get(
   '/',
-  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR', 'OFFICE_STAFF'),
+  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR'),
   validate(getAllUsersValidation),
   userController.getAllUsers,
 );
@@ -116,7 +123,7 @@ router.post(
 
 router.get(
   '/:userId',
-  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR', 'OFFICE_STAFF'),
+  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR'),
   validate(getUserByIdValidation),
   userController.getUserById,
 );
@@ -142,6 +149,13 @@ router.patch(
   authorize('SUPER_ADMIN', 'PROVOST'),
   validate(updateAccountStatusValidation),
   userController.updateAccountStatus,
+);
+
+router.post(
+  '/:userId/reissue-otp',
+  authorize('SUPER_ADMIN', 'PROVOST'),
+  validate(getUserByIdValidation),
+  userController.reissueOneTimePassword,
 );
 
 router.post(

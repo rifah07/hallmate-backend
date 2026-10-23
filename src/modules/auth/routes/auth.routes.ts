@@ -11,6 +11,7 @@ import {
 import { authenticate } from '@/shared/middleware/authenticate';
 import profileController from '../controllers/profile.controller';
 import { authorize } from '@/shared/middleware/authorize';
+import { authRateLimiter } from '@/shared/middleware/rateLimit.middleware';
 
 const router = Router();
 
@@ -19,14 +20,19 @@ const router = Router();
  * @desc    Login with university ID and password
  * @access  Public
  */
-router.post('/login', validate(loginSchema), authController.login);
+router.post('/login', authRateLimiter, validate(loginSchema), authController.login);
 
 /**
  * @route   POST /api/auth/first-time-login
  * @desc    First-time login with OTP
  * @access  Public
  */
-router.post('/first-time-login', validate(firstTimeLoginSchema), authController.firstTimeLogin);
+router.post(
+  '/first-time-login',
+  authRateLimiter,
+  validate(firstTimeLoginSchema),
+  authController.firstTimeLogin,
+);
 
 /**
  * @route   POST /api/auth/refresh-token
@@ -40,14 +46,24 @@ router.post('/refresh-token', authController.refreshToken);
  * @desc    Request password reset OTP
  * @access  Public
  */
-router.post('/forgot-password', validate(forgotPasswordSchema), authController.forgotPassword);
+router.post(
+  '/forgot-password',
+  authRateLimiter,
+  validate(forgotPasswordSchema),
+  authController.forgotPassword,
+);
 
 /**
  * @route   POST /api/auth/reset-password
  * @desc    Reset password with OTP
  * @access  Public
  */
-router.post('/reset-password', validate(resetPasswordSchema), authController.resetPassword);
+router.post(
+  '/reset-password',
+  authRateLimiter,
+  validate(resetPasswordSchema),
+  authController.resetPassword,
+);
 
 /**
  * @route   POST /api/auth/change-password
@@ -77,7 +93,8 @@ router.get('/profile', authenticate, profileController.getProfile);
  * @desc    Logout user
  * @access  Private (All authenticated users)
  */
-router.post('/logout', authenticate, authController.logout);
+// No access token needed: an expired one must not leave the refresh cookie alive
+router.post('/logout', authController.logout);
 
 /**
  * @route GET /api/auth/users/:id

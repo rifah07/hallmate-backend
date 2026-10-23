@@ -173,7 +173,7 @@ export const updateUserValidation = z.object({
       email: z.string().email('Invalid email format').optional(),
       phone: z.string().regex(bdPhoneRegex, 'Invalid Bangladeshi phone number').optional(),
       bloodGroup: bloodGroupEnum.optional(),
-      photo: z.string().url('Invalid photo URL').optional(),
+      // photo is set only through the upload endpoint
 
       // Student-specific
       department: z.string().optional(),
@@ -248,9 +248,14 @@ export const restoreUserValidation = z.object({
 export const searchUsersValidation = z.object({
   params: z.object({}).optional(),
   query: z.object({
-    q: z.string().min(1, 'Search query is required'),
+    q: z.string().min(1, 'Search query is required').max(100),
     page: z.string().regex(/^\d+$/).optional().default('1'),
-    limit: z.string().regex(/^\d+$/).optional().default('20'),
+    limit: z
+      .string()
+      .regex(/^\d+$/)
+      .refine((v) => Number(v) <= 100, 'Limit must be at most 100')
+      .optional()
+      .default('20'),
   }),
 });
 

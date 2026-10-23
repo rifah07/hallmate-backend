@@ -12,6 +12,21 @@ import {
 import emailService from '@/shared/utils/email/email.service';
 import authRepository from '../repositories/auth.repository';
 
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOGIN_LOCK_MS = 15 * 60 * 1000;
+const MAX_OTP_ATTEMPTS = 5;
+// Statuses that may not sign in or keep a session (authenticate.ts agrees)
+const BLOCKED_STATUS_MESSAGES: Record<string, string> = {
+  LOCKED: 'Your account has been locked. Contact the hall office.',
+  SUSPENDED: 'Your account has been suspended. Contact the hall office.',
+  SEAT_CANCELLED: 'Your seat has been cancelled. Contact the hall office.',
+  INACTIVE: 'Your account is not active. Contact the hall office.',
+  GRADUATED: 'Your residency has ended. Contact the hall office.',
+};
+// Compared against when the account doesn't exist, so a wrong university ID
+// takes as long as a wrong password and response time reveals nothing.
+const dummyHash = hashPassword('timing-equaliser-not-a-password');
+
 class AuthService {
   // Helper to hash refresh token before storing
   private hashToken(token: string): string {
@@ -20,54 +35,47 @@ class AuthService {
   async login(data: LoginInput) {
     const { universityId, password } = data;
 
-    // Find user with password field
     const user = await authRepository.findByUniversityIdForAuth(universityId);
+    const isPasswordValid = await comparePassword(password, user?.password ?? (await dummyHash));
 
     if (!user || user.isDeleted) {
       throw new UnauthorizedError('Invalid credentials');
     }
 
-    if (user.accountStatus === 'LOCKED') {
-      throw new ForbiddenError(
-        'Account locked due to too many failed login attempts. Contact hall office.',
-      );
-    }
-    // Check account status
-    if (user.accountStatus === 'SEAT_CANCELLED') {
-      throw new AppError('Your seat has been cancelled. Contact hall office.', 403);
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      throw new ForbiddenError('Too many failed attempts. Try again in 15 minutes.');
     }
 
-    if (user.accountStatus === 'SUSPENDED') {
-      throw new AppError('Your account has been suspended. Contact hall office.', 403);
-    }
-
-    // Check if first login
-    if (user.isFirstLogin) {
-      throw new AppError('First-time login required. Please use your one-time password.', 403);
-    }
-
-    // Verify password
-    const isPasswordValid = await comparePassword(password, user.password);
     if (!isPasswordValid) {
-      // TRACK FAILED ATTEMPTS
-      const currentAttempts = user.failedLoginAttempts || 0;
-      const newAttempts = currentAttempts + 1;
-
-      if (newAttempts >= 5) {
-        await authRepository.updateFailedAttempts(user.id, newAttempts, true);
-        throw new ForbiddenError(
-          'Account locked due to too many failed login attempts. Contact hall office.',
-        );
+      // New accounts sign in with a one-time password on a separate form;
+      // point them there without revealing anything to a guesser.
+      if (
+        user.isFirstLogin &&
+        user.oneTimePassword &&
+        (await comparePassword(password, user.oneTimePassword))
+      ) {
+        throw new AppError('First-time login required. Please set your password first.', 403);
       }
-
-      await authRepository.updateFailedAttempts(user.id, newAttempts);
-      throw new AppError('Invalid credentials', 401);
+      const locked = await authRepository.recordFailedLogin(
+        user.id,
+        MAX_LOGIN_ATTEMPTS,
+        LOGIN_LOCK_MS,
+      );
+      if (locked) throw new ForbiddenError('Too many failed attempts. Try again in 15 minutes.');
+      throw new UnauthorizedError('Invalid credentials');
     }
 
-    // RESET FAILED ATTEMPTS ON SUCCESS
-    const currentAttempts = user.failedLoginAttempts || 0;
-    if (currentAttempts > 0) {
-      await authRepository.updateFailedAttempts(user.id, 0);
+    // Never issue tokens before activation, whatever the stored password is
+    if (user.isFirstLogin) {
+      throw new AppError('First-time login required. Please set your password first.', 403);
+    }
+
+    // Status is only revealed to someone who knows the password
+    const blocked = BLOCKED_STATUS_MESSAGES[user.accountStatus];
+    if (blocked) throw new ForbiddenError(blocked);
+
+    if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+      await authRepository.clearFailedLogins(user.id);
     }
 
     // Generate tokens
@@ -102,28 +110,32 @@ class AuthService {
     // Find user
     const user = await authRepository.findByUniversityIdForAuth(universityId);
 
-    if (!user) {
-      throw new AppError('User not found', 404);
+    // One answer for every failure, so this form can't be used to find
+    // which university IDs exist or are still unactivated.
+    const invalid = new AppError('Invalid university ID or one-time password', 401);
+    if (!user || !user.isFirstLogin || !user.oneTimePassword) {
+      await dummyHash.then((hash) => comparePassword(oneTimePassword, hash));
+      throw invalid;
     }
 
-    if (!user.isFirstLogin) {
-      throw new AppError('First-time login already completed. Use regular login.', 400);
+    if (user.otpAttempts >= MAX_OTP_ATTEMPTS) {
+      throw new AppError(
+        'Too many wrong codes. Ask the hall office for a new one-time password.',
+        403,
+      );
     }
 
-    if (!user.oneTimePassword) {
-      throw new AppError('No OTP found. Contact administrator.', 400);
-    }
-
-    // Check if OTP expired
     if (user.otpExpiresAt && new Date() > user.otpExpiresAt) {
-      throw new AppError('OTP has expired. Contact administrator for password reset.', 400);
+      throw new AppError(
+        'This one-time password has expired. Ask the hall office for a new one.',
+        400,
+      );
     }
-
-    // Verify OTP
 
     const isOTPValid = await comparePassword(oneTimePassword, user.oneTimePassword);
     if (!isOTPValid) {
-      throw new AppError('Invalid OTP', 401);
+      await authRepository.recordFailedOtp(user.id);
+      throw invalid;
     }
 
     // Hash new password
@@ -190,9 +202,8 @@ class AuthService {
       throw new UnauthorizedError('Account no longer exists');
     }
 
-    if (['SUSPENDED', 'SEAT_CANCELLED', 'INACTIVE', 'GRADUATED'].includes(user.accountStatus)) {
-      throw new ForbiddenError('Your account is not active. Please contact the hall office.');
-    }
+    const blocked = BLOCKED_STATUS_MESSAGES[user.accountStatus];
+    if (blocked) throw new ForbiddenError(blocked);
 
     // Revoke old token (rotation)
     await authRepository.revokeRefreshToken(tokenRecord.id);
@@ -246,9 +257,9 @@ class AuthService {
       return { message: 'If this account exists, an OTP has been sent to your email' };
     }
 
-    // Check account status
-    if (user.accountStatus === 'SUSPENDED' || user.accountStatus === 'SEAT_CANCELLED') {
-      throw new AppError('Your account is not active. Contact hall office.', 403);
+    // Blocked accounts get the same reply and no email
+    if (BLOCKED_STATUS_MESSAGES[user.accountStatus]) {
+      return { message: 'If this account exists, an OTP has been sent to your email' };
     }
 
     // Generate 6-digit OTP
@@ -282,9 +293,15 @@ class AuthService {
       throw new AppError('OTP has expired. Please request a new one.', 400);
     }
 
-    // Verify OTP
+    // A 6-digit code is guessable without a cap; 5 tries, then a new code
+    if (user.otpAttempts >= MAX_OTP_ATTEMPTS) {
+      await authRepository.clearPasswordResetToken(user.id);
+      throw new AppError('Too many wrong codes. Please request a new one.', 400);
+    }
+
     const isOTPValid = await comparePassword(otp, user.passwordResetToken);
     if (!isOTPValid) {
+      await authRepository.recordFailedOtp(user.id);
       throw new AppError('Invalid OTP', 400);
     }
 
@@ -332,8 +349,9 @@ class AuthService {
     // Hash new password
     const hashedPassword = await hashPassword(newPassword);
 
-    // Update password
     await authRepository.updatePassword(user.id, hashedPassword);
+    // Whoever knew the old password may hold a session: end them all
+    await authRepository.revokeAllUserRefreshTokens(user.id);
 
     // Send confirmation email
     await emailService.sendPasswordChangedConfirmation(user.email, user.name);

@@ -236,6 +236,8 @@ model User {
   password             String
   accountStatus        AccountStatus @default(ACTIVE)
   failedLoginAttempts  Int           @default(0)
+  lockedUntil          DateTime? // brute-force lock; expires by itself
+  otpAttempts          Int           @default(0) // wrong one-time/reset codes
   isFirstLogin         Boolean       @default(true)
   oneTimePassword      String?
   otpExpiresAt         DateTime?
@@ -340,7 +342,7 @@ model GuardianInfo {
 model RoomOccupant {
   id           String   @id @default(uuid())
   roomId       String
-  userId       String
+  userId       String   @unique // one bed per student, even under concurrent assigns
   bedNumber    Int // 1-4
   assignedDate DateTime @default(now())
 

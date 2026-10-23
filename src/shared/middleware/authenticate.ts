@@ -6,7 +6,7 @@ import prisma from '@/config/database.config';
 import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 
 // Statuses that must be refused even with a valid token
-const BLOCKED_STATUSES = ['SUSPENDED', 'SEAT_CANCELLED', 'INACTIVE', 'GRADUATED'] as const;
+const BLOCKED_STATUSES = ['LOCKED', 'SUSPENDED', 'SEAT_CANCELLED', 'INACTIVE', 'GRADUATED'] as const;
 
 export const authenticate = async (
   req: Request,

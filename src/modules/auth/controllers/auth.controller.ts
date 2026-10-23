@@ -4,12 +4,15 @@ import { sendSuccess } from '@/shared/utils/response.util';
 import { UnauthorizedError } from '@/shared/errors';
 
 class AuthController {
-  private readonly cookieOptions = {
+  // The web app calls the API through its own same-origin /api proxy, so
+  // the cookie never needs to cross sites: Strict, and only sent to auth routes.
+  private readonly cookieBase = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: (process.env.NODE_ENV === 'production' ? 'none' : 'strict') as 'none' | 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: 'strict' as const,
+    path: '/api/auth',
   };
+  private readonly cookieOptions = { ...this.cookieBase, maxAge: 7 * 24 * 60 * 60 * 1000 };
 
   constructor() {
     this.login = this.login.bind(this);
@@ -72,7 +75,7 @@ class AuthController {
         await authService.logout(refreshToken);
       }
 
-      res.clearCookie('refreshToken');
+      res.clearCookie('refreshToken', this.cookieBase); // options must match or the browser keeps it
       sendSuccess(res, null, 'Logged out successfully');
     } catch (error) {
       next(error);
@@ -112,6 +115,7 @@ class AuthController {
       }
 
       const result = await authService.changePassword(req.user.userId, req.body);
+      res.clearCookie('refreshToken', this.cookieBase); // every session was revoked
       sendSuccess(res, null, result.message);
     } catch (error) {
       next(error);

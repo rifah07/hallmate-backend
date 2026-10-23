@@ -20,7 +20,7 @@ router.use(authenticate);
 // GET /api/applications/statistics - Get statistics
 router.get(
   '/statistics',
-  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR', 'OFFICE_STAFF', 'STUDENT'),
+  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR', 'STUDENT'),
   applicationController.getStatistics,
 );
 
@@ -30,14 +30,21 @@ router.get('/my-applications', authorize('STUDENT'), applicationController.getMy
 // GET /api/applications/assigned - Get applications assigned to me (staff only)
 router.get(
   '/assigned',
-  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR', 'OFFICE_STAFF', 'ASSISTANT_WARDEN'),
+  authorize(
+    'SUPER_ADMIN',
+    'PROVOST',
+    'HOUSE_TUTOR',
+    'OFFICE_STAFF',
+    'MAINTENANCE_STAFF',
+    'ASSISTANT_WARDEN',
+  ),
   applicationController.getAssignedApplications,
 );
 
 // GET /api/applications - List all applications
 router.get(
   '/',
-  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR', 'OFFICE_STAFF', 'STUDENT'),
+  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR', 'STUDENT'),
   validate(applicationQuerySchema, 'query'),
   applicationController.getAllApplications,
 );
@@ -53,7 +60,14 @@ router.post(
 // GET /api/applications/:applicationId - Get application by ID
 router.get(
   '/:applicationId',
-  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR', 'OFFICE_STAFF', 'STUDENT'),
+  authorize(
+    'SUPER_ADMIN',
+    'PROVOST',
+    'HOUSE_TUTOR',
+    'OFFICE_STAFF',
+    'MAINTENANCE_STAFF',
+    'STUDENT',
+  ),
   validate(applicationIdSchema, 'params'),
   applicationController.getApplicationById,
 );
@@ -87,7 +101,14 @@ router.post(
 // POST /api/applications/:applicationId/respond - Respond to application (approve/reject)
 router.post(
   '/:applicationId/respond',
-  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR', 'OFFICE_STAFF', 'ASSISTANT_WARDEN'),
+  authorize(
+    'SUPER_ADMIN',
+    'PROVOST',
+    'HOUSE_TUTOR',
+    'OFFICE_STAFF',
+    'MAINTENANCE_STAFF',
+    'ASSISTANT_WARDEN',
+  ),
   validate(applicationIdSchema, 'params'),
   validate(respondToApplicationSchema, 'body'),
   applicationController.respondToApplication,

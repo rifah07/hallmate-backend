@@ -219,6 +219,25 @@ class UserRepository {
   /**
    * Restore soft-deleted user
    */
+  /** New first-login code; the old one and its wrong-attempt count are gone. */
+  async reissueOneTimePassword(
+    userId: string,
+    hashedOtp: string,
+    otpExpiresAt: Date,
+    actorId: string,
+  ): Promise<User> {
+    const [user] = await prisma.$transaction([
+      prisma.user.update({
+        where: { id: userId },
+        data: { oneTimePassword: hashedOtp, otpExpiresAt, otpAttempts: 0 },
+      }),
+      prisma.auditLog.create({
+        data: { userId: actorId, action: 'REISSUE_OTP', entity: 'User', entityId: userId },
+      }),
+    ]);
+    return user;
+  }
+
   async restore(userId: string): Promise<User> {
     return await prisma.user.update({
       where: { id: userId },

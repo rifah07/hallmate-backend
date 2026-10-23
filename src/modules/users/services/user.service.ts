@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import userRepository from '../repositories/user.repository';
@@ -17,6 +18,48 @@ import { UserRole } from '@prisma/client';
 import logger from '@/shared/utils/logger.util';
 
 class UserService {
+  private editableFields(
+    requester: { id: string; role: string; assignedFloor: number | null },
+    target: { id: string; role: string; currentRoom: { floor: number } | null },
+  ): Set<string> {
+    const personal = ['phone', 'bloodGroup', 'medicalConditions', 'allergies'];
+    const academic = ['name', 'department', 'year', 'program', 'session'];
+
+    if (requester.role === 'SUPER_ADMIN') {
+      return new Set([
+        ...personal,
+        ...academic,
+        'email',
+        'provostMessage',
+        'assignedFloor',
+        'designation',
+      ]);
+    }
+    if (requester.role === 'PROVOST' && target.role !== 'SUPER_ADMIN') {
+      return new Set([
+        ...personal,
+        ...academic,
+        'email',
+        'provostMessage',
+        'assignedFloor',
+        'designation',
+      ]);
+    }
+    // A house tutor looks after the students on her floor, nobody else
+    if (
+      requester.role === 'HOUSE_TUTOR' &&
+      target.role === 'STUDENT' &&
+      requester.assignedFloor != null &&
+      target.currentRoom?.floor === requester.assignedFloor
+    ) {
+      return new Set([...personal, ...academic]);
+    }
+    if (requester.id === target.id) {
+      return new Set(requester.role === 'PROVOST' ? [...personal, 'provostMessage'] : personal);
+    }
+    throw new ForbiddenError('You can only update your own profile');
+  }
+
   private toUserResponse(user: any): UserResponse {
     const {
       password,
@@ -92,7 +135,7 @@ class UserService {
     // Generate OTP and hash password
     const otp = generateOTP();
     const [hashedPassword, hashedOTP] = await Promise.all([
-      hashPassword('PLACEHOLDER'), // placeholder — user sets real password on first login
+      hashPassword(randomBytes(32).toString('hex')), // unusable; the real one is set at first login
       hashPassword(otp),
     ]);
 
@@ -112,14 +155,16 @@ class UserService {
   ): Promise<UserResponse> {
     const existing = await userRepository.findById(userId);
     if (!existing) throw new NotFoundError('User not found');
+    const requester =
+      existing.id === requesterId ? existing : await userRepository.findById(requesterId);
+    if (!requester) throw new ForbiddenError('You can only update your own profile');
 
-    // Ownership check — students can only edit themselves
-    // Admins can edit anyone
-    if (existing.id !== requesterId) {
-      const requester = await userRepository.findById(requesterId);
-      if (!requester || !['SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR'].includes(requester.role)) {
-        throw new ForbiddenError('You can only update your own profile');
-      }
+    // Email is where password-reset codes go, so changing it is an account
+    // takeover unless only the hall's top admins can do it.
+    const allowed = this.editableFields(requester, existing);
+    const blocked = Object.keys(data).filter((field) => !allowed.has(field));
+    if (blocked.length > 0) {
+      throw new ForbiddenError(`You cannot change: ${blocked.join(', ')}`);
     }
 
     // If email is being changed, check it's not taken
@@ -262,6 +307,26 @@ class UserService {
     await userRepository.softDelete(userId, deletedBy);
   }
 
+  async reissueOneTimePassword(userId: string, actorId: string): Promise<UserResponse> {
+    const existing = await userRepository.findById(userId);
+    if (!existing) throw new NotFoundError('User not found');
+    // Activated accounts recover through "forgot password" instead
+    if (!existing.isFirstLogin) {
+      throw new BadRequestError('This account is already activated. Use forgot password instead.');
+    }
+
+    const otp = generateOTP();
+    const otpExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const user = await userRepository.reissueOneTimePassword(
+      userId,
+      await hashPassword(otp),
+      otpExpiresAt,
+      actorId,
+    );
+    await emailService.sendWelcomeEmail(user.email, user.name, otp);
+    return this.toUserResponse(user);
+  }
+
   async restoreUser(userId: string): Promise<UserResponse> {
     const user = await userRepository.restore(userId);
     return this.toUserResponse(user);
@@ -274,7 +339,7 @@ class UserService {
   async bulkCreateUsers(usersData: CreateUserInput[]): Promise<{ created: number }> {
     const otps = usersData.map(() => generateOTP());
     const [hashedPasswords, hashedOTPs] = await Promise.all([
-      Promise.all(usersData.map(() => hashPassword('PLACEHOLDER'))),
+      Promise.all(usersData.map(() => hashPassword(randomBytes(32).toString('hex')))),
       Promise.all(otps.map((otp) => hashPassword(otp))),
     ]);
 
