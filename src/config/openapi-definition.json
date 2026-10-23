@@ -1,0 +1,8 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "HallMate API",
+    "version": "1.0.0",
+    "description": "University Women's Hall Management System - Bangladesh"
+  }
+}

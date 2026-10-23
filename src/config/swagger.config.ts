@@ -1,35 +1,21 @@
-// src/config/swagger.config.ts
+import { existsSync, readFileSync } from 'node:fs';
+import path from 'node:path';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import { Application } from 'express';
+import { env } from './env.config';
+import definition from './openapi-definition.json';
 
-const options: swaggerJsdoc.Options = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'HallMate API',
-      version: '1.0.0',
-      description: "University Women's Hall Management System - Bangladesh",
-    },
-    servers: [
-      { url: 'http://localhost:5000', description: 'Development' },
-      // { url: 'https://hallmate-api.onrender.com', description: 'Production' },
-    ],
-  },
-  apis: [
-    './src/modules/auth/docs/auth.swagger.ts',
-    './src/modules/users/docs/user.swagger.ts',
-    './src/modules/rooms/docs/room.swagger.ts',
-    './src/modules/applications/docs/applications.swagger.ts',
-    './src/modules/meals_2.0/docs/meal-cancellation.swagger.ts',
-    './src/modules/public/docs/public.swagger.ts',
-    './src/modules/admin/docs/admin.swagger.ts',
-    // add other modules
-  ],
-};
+// In a build, scripts/build.mjs has already written the spec next to
+// server.js. In development it's parsed from the docs comments, so edits
+// show up on reload.
+const builtSpec = path.join(__dirname, 'openapi.json');
+const spec = existsSync(builtSpec)
+  ? JSON.parse(readFileSync(builtSpec, 'utf8'))
+  : swaggerJsdoc({ definition, apis: ['src/modules/*/docs/*.swagger.ts'] });
 
-const swaggerSpec = swaggerJsdoc(options);
+spec.servers = [{ url: env.API_PUBLIC_URL }];
 
 export const setupSwagger = (app: Application): void => {
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec));
 };
