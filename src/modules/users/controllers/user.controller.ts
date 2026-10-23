@@ -197,8 +197,13 @@ class UserController {
   ): Promise<void> {
     try {
       const { userId } = req.params;
-      const { accountStatus } = req.body;
-      const user = await userService.updateAccountStatus(userId, accountStatus);
+      const { accountStatus, reason } = req.body;
+      const user = await userService.updateAccountStatus(
+        userId,
+        accountStatus,
+        req.user!.userId,
+        reason,
+      );
       sendSuccess(res, user, 'Account status updated successfully');
     } catch (error) {
       next(error);

@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { notificationService } from '@/modules/notifications';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import userRepository from '../repositories/user.repository';
@@ -174,6 +175,21 @@ class UserService {
     }
 
     const user = await userRepository.update(userId, data);
+    // Someone else edited her record: she should know, by email too, because
+    // an unexpected change (email above all) can mean a compromised staff account.
+    if (requester.id !== existing.id) {
+      await notificationService.notify(
+        [existing.id],
+        {
+          type: 'ACCOUNT_UPDATED',
+          title: 'Your profile was updated',
+          message: `The hall office updated: ${Object.keys(data).join(', ')}. Contact the office if this was not expected.`,
+          entityType: 'User',
+          entityId: existing.id,
+        },
+        { email: true },
+      );
+    }
     return this.toUserResponse(user);
   }
 
@@ -182,14 +198,44 @@ class UserService {
     if (!existing) throw new NotFoundError('User not found');
 
     const user = await userRepository.updateRole(userId, role as any);
+    await notificationService.notify([userId], {
+      type: 'ACCOUNT_UPDATED',
+      title: 'Your role changed',
+      message: `Your HallMate role is now ${role.replace(/_/g, ' ').toLowerCase()}.`,
+      entityType: 'User',
+      entityId: userId,
+    });
     return this.toUserResponse(user);
   }
 
-  async updateAccountStatus(userId: string, accountStatus: string): Promise<UserResponse> {
+  async updateAccountStatus(
+    userId: string,
+    accountStatus: string,
+    actorId: string,
+    reason?: string,
+  ): Promise<UserResponse> {
     const existing = await userRepository.findById(userId);
     if (!existing) throw new NotFoundError('User not found');
 
-    const user = await userRepository.updateAccountStatus(userId, accountStatus as any);
+    const user = await userRepository.updateAccountStatus(
+      userId,
+      accountStatus as any,
+      actorId,
+      reason,
+    );
+    await notificationService.notify(
+      [userId],
+      {
+        type: 'ACCOUNT_UPDATED',
+        title: 'Your account status changed',
+        message:
+          `Your account is now ${accountStatus.replace(/_/g, ' ').toLowerCase()}.` +
+          (reason ? ` Reason: ${reason}` : ''),
+        entityType: 'User',
+        entityId: userId,
+      },
+      { email: true }, // she may be locked out and only see email
+    );
     return this.toUserResponse(user);
   }
 

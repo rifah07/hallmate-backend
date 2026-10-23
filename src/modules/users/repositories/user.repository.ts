@@ -185,10 +185,22 @@ class UserRepository {
   /**
    * Update account status
    */
-  async updateAccountStatus(userId: string, accountStatus: AccountStatus): Promise<User> {
+  async updateAccountStatus(
+    userId: string,
+    accountStatus: AccountStatus,
+    actorId: string,
+    reason?: string,
+  ): Promise<User> {
+    const cancelled = accountStatus === 'SEAT_CANCELLED';
     return await prisma.user.update({
       where: { id: userId },
-      data: { accountStatus, updatedAt: new Date() },
+      data: {
+        accountStatus,
+        // Kept only while cancelled; reactivation clears the old reason
+        cancellationReason: cancelled ? reason : null,
+        cancelledBy: cancelled ? actorId : null,
+        cancelledAt: cancelled ? new Date() : null,
+      },
     });
   }
 

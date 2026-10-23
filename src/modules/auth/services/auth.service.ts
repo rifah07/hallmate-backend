@@ -11,18 +11,11 @@ import {
 } from '../validations/auth.validation';
 import emailService from '@/shared/utils/email/email.service';
 import authRepository from '../repositories/auth.repository';
+import { accountBlock } from '@/shared/utils/account-status.util';
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOGIN_LOCK_MS = 15 * 60 * 1000;
 const MAX_OTP_ATTEMPTS = 5;
-// Statuses that may not sign in or keep a session (authenticate.ts agrees)
-const BLOCKED_STATUS_MESSAGES: Record<string, string> = {
-  LOCKED: 'Your account has been locked. Contact the hall office.',
-  SUSPENDED: 'Your account has been suspended. Contact the hall office.',
-  SEAT_CANCELLED: 'Your seat has been cancelled. Contact the hall office.',
-  INACTIVE: 'Your account is not active. Contact the hall office.',
-  GRADUATED: 'Your residency has ended. Contact the hall office.',
-};
 // Compared against when the account doesn't exist, so a wrong university ID
 // takes as long as a wrong password and response time reveals nothing.
 const dummyHash = hashPassword('timing-equaliser-not-a-password');
@@ -35,10 +28,12 @@ class AuthService {
   async login(data: LoginInput) {
     const { universityId, password } = data;
 
-    const user = await authRepository.findByUniversityIdForAuth(universityId);
+    // Includes removed accounts: with the right password she learns why
+    // she can't get in; with a wrong one she learns nothing.
+    const user = await authRepository.findByUniversityIdForLogin(universityId);
     const isPasswordValid = await comparePassword(password, user?.password ?? (await dummyHash));
 
-    if (!user || user.isDeleted) {
+    if (!user) {
       throw new UnauthorizedError('Invalid credentials');
     }
 
@@ -71,8 +66,8 @@ class AuthService {
     }
 
     // Status is only revealed to someone who knows the password
-    const blocked = BLOCKED_STATUS_MESSAGES[user.accountStatus];
-    if (blocked) throw new ForbiddenError(blocked);
+    const blocked = accountBlock(user);
+    if (blocked) throw blocked;
 
     if (user.failedLoginAttempts > 0 || user.lockedUntil) {
       await authRepository.clearFailedLogins(user.id);
@@ -198,12 +193,12 @@ class AuthService {
 
     const user = tokenRecord.user;
 
-    if (!user || user.isDeleted) {
+    if (!user) {
       throw new UnauthorizedError('Account no longer exists');
     }
 
-    const blocked = BLOCKED_STATUS_MESSAGES[user.accountStatus];
-    if (blocked) throw new ForbiddenError(blocked);
+    const blocked = accountBlock(user);
+    if (blocked) throw blocked;
 
     // Revoke old token (rotation)
     await authRepository.revokeRefreshToken(tokenRecord.id);
@@ -258,7 +253,7 @@ class AuthService {
     }
 
     // Blocked accounts get the same reply and no email
-    if (BLOCKED_STATUS_MESSAGES[user.accountStatus]) {
+    if (accountBlock(user)) {
       return { message: 'If this account exists, an OTP has been sent to your email' };
     }
 

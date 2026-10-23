@@ -218,9 +218,16 @@ export const updateAccountStatusValidation = z.object({
     userId: z.string().uuid('Invalid user ID format'),
   }),
   query: z.object({}).optional(),
-  body: z.object({
-    accountStatus: accountStatusEnum,
-  }),
+  body: z
+    .object({
+      accountStatus: accountStatusEnum,
+      reason: z.string().trim().min(5).max(500).optional(),
+    })
+    // She will see this on her "seat cancelled" page, so it must exist
+    .refine((b) => b.accountStatus !== 'SEAT_CANCELLED' || b.reason, {
+      message: 'A reason is required when cancelling a seat',
+      path: ['reason'],
+    }),
 });
 
 /**

@@ -13,6 +13,11 @@ class AuthRepository {
     });
   }
 
+  /** Login only: also finds removed accounts so she can be told why. */
+  async findByUniversityIdForLogin(universityId: string): Promise<User | null> {
+    return await prisma.user.findUnique({ where: { universityId } });
+  }
+
   /**
    * Find user by ID
    */

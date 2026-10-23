@@ -1,12 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken } from '../utils/crypto/jwt.util';
-import { ForbiddenError, TokenError, UnauthorizedError } from '@/shared/errors';
+import { TokenError, UnauthorizedError } from '@/shared/errors';
 import prisma from '@/config/database.config';
 import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
-
-// Statuses that must be refused even with a valid token
-const BLOCKED_STATUSES = ['LOCKED', 'SUSPENDED', 'SEAT_CANCELLED', 'INACTIVE', 'GRADUATED'] as const;
+import { accountBlock } from '@/shared/utils/account-status.util';
 
 export const authenticate = async (
   req: Request,
@@ -41,11 +38,12 @@ export const authenticate = async (
         isDeleted: true,
         passwordChangedAt: true,
         assignedFloor: true,
+        cancellationReason: true,
+        cancelledAt: true,
       },
     });
 
-    // Account deleted after token was issued
-    if (!user || user.isDeleted) {
+    if (!user) {
       throw new UnauthorizedError('Account no longer exists');
     }
 
@@ -55,10 +53,10 @@ export const authenticate = async (
         throw new UnauthorizedError('Password recently changed. Please log in again.');
       }
     }
-    // Account status changed after token was issued — single check, all statuses
-    if (BLOCKED_STATUSES.includes(user.accountStatus as any)) {
-      throw new ForbiddenError('Your account is not active. Please contact the hall office.');
-    }
+    // Removed, cancelled, suspended... after the token was issued: the
+    // coded error lets the web app sign her out onto the right page.
+    const blocked = accountBlock(user);
+    if (blocked) throw blocked;
 
     // Attach user to request
     req.user = {
