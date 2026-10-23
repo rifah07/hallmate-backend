@@ -3,9 +3,9 @@
     /* Language and Environment */
     "target": "ES2022",
     "lib": ["ES2022"],
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "ignoreDeprecations": "5.0",
+    "module": "node16",
+    "moduleResolution": "node16",
+    "types": ["node", "jest"],
 
     /* Emit */
     "outDir": "./dist",
@@ -41,12 +41,8 @@
     "declarationMap": true,
 
     /* Path Mapping */
-    "baseUrl": "./src",
     "paths": {
-      "@/*": ["./*"],
-      "@/config/*": ["./config/*"],
-      "@/modules/*": ["./modules/*"],
-      "@/shared/*": ["./shared/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src/**/*", "src/shared/types/**/*"],

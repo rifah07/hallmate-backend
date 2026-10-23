@@ -1,4 +1,4 @@
-import { prisma } from '@/database/prisma/client';
+import { prisma } from '@/config/database.config';
 import { RoomType, Prisma, RoomStatus } from '@prisma/client';
 import { RoomFilters, PaginationParams } from '../types/room.types';
 

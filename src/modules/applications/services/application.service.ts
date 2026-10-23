@@ -1,4 +1,4 @@
-import prisma from '@/database/prisma/client';
+import prisma from '@/config/database.config';
 import applicationRepository from '../repositories/application.repository';
 import {
   CreateApplicationInput,
