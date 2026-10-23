@@ -6,6 +6,7 @@
     "module": "node16",
     "moduleResolution": "node16",
     "types": ["node", "jest"],
+    "isolatedModules": true,
 
     /* Emit */
     "outDir": "./dist",

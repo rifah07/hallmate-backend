@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
 import { env } from '@/config/env.config';
 import logger from '../logger.util';
+import { escapeHtml } from '../escape-html.util';
 
 // No key = no client: Resend 6 throws on an empty key at construction.
 const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
@@ -67,7 +68,7 @@ class EmailService {
               <h1>Password Reset Request</h1>
             </div>
             <div class="content">
-              <p>Dear <strong>${name}</strong>,</p>
+              <p>Dear <strong>${escapeHtml(name)}</strong>,</p>
               <p>We received a request to reset your password for your HallMate account.</p>
               
               <p><strong>Your Password Reset OTP:</strong></p>
@@ -127,7 +128,7 @@ class EmailService {
               <h1>✅ Password Changed Successfully</h1>
             </div>
             <div class="content">
-              <p>Dear <strong>${name}</strong>,</p>
+              <p>Dear <strong>${escapeHtml(name)}</strong>,</p>
               
               <div class="alert">
                 <p><strong>Your password has been changed successfully.</strong></p>
@@ -187,7 +188,7 @@ class EmailService {
               <h1>🎉 Welcome to HallMate!</h1>
             </div>
             <div class="content">
-              <p>Dear <strong>${name}</strong>,</p>
+              <p>Dear <strong>${escapeHtml(name)}</strong>,</p>
               
               <p>Your HallMate account has been created successfully by the hall administration.</p>
               
@@ -242,6 +243,26 @@ class EmailService {
   /**
    * Send account deletion notification (USER MODULE)
    */
+  /** In-app notifications that also matter by email (decisions, bills, account changes). */
+  async sendNotificationEmail(
+    email: string,
+    name: string,
+    title: string,
+    message: string,
+  ): Promise<void> {
+    await this.sendEmail({
+      to: email,
+      subject: `HallMate: ${title}`,
+      html: `<!DOCTYPE html><html><body style="font-family: Arial, sans-serif; line-height: 1.6; color: #2d2a32;">
+        <div style="max-width: 560px; margin: 0 auto; padding: 24px;">
+          <p>Dear <strong>${escapeHtml(name)}</strong>,</p>
+          <h2 style="font-size: 18px; color: #4a3b5c;">${escapeHtml(title)}</h2>
+          <p>${escapeHtml(message)}</p>
+          <p style="font-size: 12px; color: #777;">Sign in to HallMate to see the details.</p>
+        </div></body></html>`,
+    });
+  }
+
   async sendAccountDeletionEmail(email: string, name: string): Promise<void> {
     const html = `
       <!DOCTYPE html>
@@ -263,7 +284,7 @@ class EmailService {
               <h1>⚠️ Account Deletion Notice</h1>
             </div>
             <div class="content">
-              <p>Dear <strong>${name}</strong>,</p>
+              <p>Dear <strong>${escapeHtml(name)}</strong>,</p>
               
               <div class="alert">
                 <p><strong>Your HallMate account has been deleted by a hall administrator.</strong></p>

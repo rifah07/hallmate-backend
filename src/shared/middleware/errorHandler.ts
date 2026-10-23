@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
 import logger from '../utils/logger.util';
-import { AppError, ValidationError } from '../errors';
+import { AppError } from '../errors';
 
 /**
  * Global error handler middleware
@@ -22,7 +22,8 @@ export const errorHandler = (err: Error, req: Request, res: Response, _next: Nex
       success: false,
       error: {
         message: err.message,
-        ...(err instanceof ValidationError && err.details && { details: err.details }),
+        ...(err.code && { code: err.code }),
+        ...(err.details && { details: err.details }),
       },
     });
   }

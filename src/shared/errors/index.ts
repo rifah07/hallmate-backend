@@ -5,10 +5,20 @@
 export class AppError extends Error {
   statusCode: number;
   isOperational: boolean;
+  // Machine-readable reason for the web app (e.g. which page to show)
+  code?: string;
+  details?: Record<string, unknown>;
 
-  constructor(message: string, statusCode: number = 500) {
+  constructor(
+    message: string,
+    statusCode: number = 500,
+    code?: string,
+    details?: Record<string, unknown>,
+  ) {
     super(message);
     this.statusCode = statusCode;
+    this.code = code;
+    this.details = details;
     this.isOperational = true;
     this.name = this.constructor.name;
     Error.captureStackTrace(this, this.constructor);
@@ -156,4 +166,15 @@ export function isOperationalError(error: Error): boolean {
     return error.isOperational;
   }
   return false;
+}
+
+/**
+ * 403 for an account that may not be used (seat cancelled, removed, ...).
+ * `code` lets the web app show a dedicated page instead of a toast.
+ * Only thrown after identity is proven (right password or a valid token).
+ */
+export class AccountBlockedError extends AppError {
+  constructor(state: string, message: string, details?: Record<string, unknown>) {
+    super(message, 403, `ACCOUNT_${state}`, details);
+  }
 }

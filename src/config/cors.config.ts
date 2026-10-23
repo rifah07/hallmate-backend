@@ -8,13 +8,10 @@ const whitelist = env.ALLOWED_ORIGINS.split(',')
   .filter(Boolean);
 
 export const corsOptions: CorsOptions = {
-  origin: (origin, callback) => {
-    if (!origin || whitelist.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  // Unknown origin: no CORS headers, so the browser won't let that page read
+  // the response. Not an error: the payment gateway's return is a plain
+  // cross-site form post and must still reach the API.
+  origin: (origin, callback) => callback(null, !origin || whitelist.includes(origin)),
   credentials: true,
   optionsSuccessStatus: 200,
 };
