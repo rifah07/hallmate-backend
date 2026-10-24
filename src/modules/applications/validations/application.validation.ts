@@ -25,10 +25,16 @@ const seatTransferDataSchema = z.object({
   reason: z.string().min(10, 'Reason must be at least 10 characters'),
 });
 
+// A student knows her friend's university ID, not internal IDs: either form
+// works, and the service fills in the rest from the university ID
 const seatSwapDataSchema = z.object({
-  currentRoomId: z.string().uuid('Invalid room ID'),
-  targetStudentId: z.string().uuid('Invalid student ID'),
-  targetRoomId: z.string().uuid('Invalid room ID'),
+  currentRoomId: z.string().uuid('Invalid room ID').optional(),
+  targetStudentId: z.string().uuid('Invalid student ID').optional(),
+  targetRoomId: z.string().uuid('Invalid room ID').optional(),
+  targetUniversityId: z
+    .string()
+    .regex(/^\d{10}$/, 'University ID must be 10 digits')
+    .optional(),
   reason: z.string().min(10, 'Reason must be at least 10 characters'),
 });
 

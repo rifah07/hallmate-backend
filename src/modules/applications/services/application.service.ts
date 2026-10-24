@@ -16,6 +16,8 @@ import { roomRepository, roomService } from '@/modules/rooms';
 import userService from '@/modules/users/services/user.service';
 import userRepository from '@/modules/users/repositories/user.repository';
 
+const SUPPORT_STAFF = ['OFFICE_STAFF', 'MAINTENANCE_STAFF', 'DINING_STAFF', 'GUARD'];
+
 // "COMPLAINT" → "complaint", "SEAT_TRANSFER" → "seat transfer application"
 const LABELS: Partial<Record<string, string>> = {
   COMPLAINT: 'complaint',
@@ -45,6 +47,9 @@ class ApplicationService {
       );
     }
 
+    if (input.type === 'SEAT_SWAP') {
+      input = { ...input, data: await this.resolveSwapTarget(input.data, userContext.userId) };
+    }
     await this.validateApplicationRules(input.type, input.data, userContext.userId);
 
     const application = await applicationRepository.create({
@@ -141,7 +146,7 @@ class ApplicationService {
     const limit = pagination.limit || 20;
 
     return {
-      applications: applications.map((app) => this.transformApplication(app)),
+      applications: applications.map((app) => this.transformApplication(app, userContext.role)),
       pagination: {
         page,
         limit,
@@ -161,7 +166,7 @@ class ApplicationService {
     // Check access
     this.checkAccess(application, userContext);
 
-    return this.transformApplication(application);
+    return this.transformApplication(application, userContext.role);
   }
 
   async updateApplication(
@@ -267,7 +272,7 @@ class ApplicationService {
       { email: true }, // a decision is worth an email
     );
 
-    return this.transformApplication(responded);
+    return this.transformApplication(responded, userContext.role);
   }
 
   async cancelApplication(id: string, userContext: UserContext): Promise<ApplicationResponse> {
@@ -352,13 +357,19 @@ class ApplicationService {
   // HELPER METHODS
   // ============================================================================
 
-  private transformApplication(application: any): ApplicationResponse {
+  // Support staff fixing a tap need the location (in `data`) and a name,
+  // never a resident's phone, email or room.
+  private transformApplication(application: any, viewerRole?: string): ApplicationResponse {
+    const seesContact = !viewerRole || !SUPPORT_STAFF.includes(viewerRole);
     return {
       id: application.id,
       type: application.type,
       status: application.status,
       studentId: application.studentId,
-      student: application.student,
+      student:
+        seesContact || !application.student
+          ? application.student
+          : { name: application.student.name },
       data: application.data,
       attachments: application.attachments,
       assignedTo: application.assignedTo,
@@ -629,6 +640,28 @@ class ApplicationService {
       throw new ConflictError('You already have a pending seat transfer application');
     }
   }
+  private async resolveSwapTarget(
+    data: { targetUniversityId?: string; [key: string]: unknown },
+    studentId: string,
+  ) {
+    const { targetUniversityId, ...rest } = data;
+    const resolved = { ...rest };
+    if (targetUniversityId) {
+      const [mine, target] = await Promise.all([
+        roomRepository.findUserCurrentRoom(studentId),
+        userRepository.findByUniversityId(targetUniversityId),
+      ]);
+      if (!target) throw new NotFoundError('Target student not found');
+      resolved.currentRoomId ??= mine?.roomId;
+      resolved.targetStudentId = target.id;
+      resolved.targetRoomId = target.currentRoomId ?? undefined;
+    }
+    if (!resolved.targetStudentId || !resolved.currentRoomId) {
+      throw new BadRequestError('Enter the university ID of the student you want to swap with');
+    }
+    return resolved as CreateApplicationInput['data'];
+  }
+
   private async validateSeatSwap(data: any, studentId: string): Promise<void> {
     /*  // Check if student has a current room
    const student = await prisma.user.findUnique({
