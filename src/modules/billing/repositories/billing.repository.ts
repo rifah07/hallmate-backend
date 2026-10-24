@@ -13,6 +13,7 @@ const billSelect = {
   paidAt: true,
   createdAt: true,
   studentId: true,
+  student: { select: { name: true, universityId: true } },
 } satisfies Prisma.BillSelect;
 
 class BillingRepository {
