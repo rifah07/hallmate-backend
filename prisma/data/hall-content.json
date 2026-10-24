@@ -71,13 +71,13 @@
   ],
   "facilities": [
     {
-      "name": "ডাইনিং সিস্টেম",
+      "name": "Dining hall",
       "slug": "dining",
       "category": "DINING",
       "description": "The hall's dining service for residents."
     },
     {
-      "name": "হল লাইব্রেরী",
+      "name": "Hall library",
       "slug": "library",
       "category": "ACADEMIC",
       "description": "The hall library for residents."
@@ -113,13 +113,13 @@
       "description": "A guest room on the ground floor for visiting family."
     },
     {
-      "name": "ডিবেটিং ক্লাব",
+      "name": "Debating club",
       "slug": "debating-club",
       "category": "RECREATION",
       "description": "The residents' debating club."
     },
     {
-      "name": "ল্যাঙ্গুয়েজ ক্লাব",
+      "name": "Language club",
       "slug": "language-club",
       "category": "RECREATION",
       "description": "The residents' language club."
