@@ -5,6 +5,7 @@ import { authenticate } from '@/shared/middleware/authenticate';
 import { authorize } from '@/shared/middleware/authorize';
 import {
   getUserByIdValidation,
+  getOptimizedProfilePictureValidation,
   getUserByUniversityIdValidation,
   getAllUsersValidation,
   createUserValidation,
@@ -190,7 +191,7 @@ router.delete(
  */
 router.get(
   '/:userId/profile-picture/optimized',
-  validate(getUserByIdValidation),
+  validate(getOptimizedProfilePictureValidation),
   userController.getOptimizedProfilePicture,
 );
 

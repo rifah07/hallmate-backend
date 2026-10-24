@@ -50,6 +50,20 @@ export const getUserByIdValidation = z.object({
   body: z.object({}).optional(),
 });
 
+export const getOptimizedProfilePictureValidation = z.object({
+  params: z.object({
+    userId: z.string().uuid('Invalid user ID format'),
+  }),
+  query: z.object({
+    width: z.string().regex(/^\d+$/).optional(),
+    height: z.string().regex(/^\d+$/).optional(),
+    quality: z.string().optional(),
+  }),
+  body: z.object({
+    profilePictureUrl: z.string().url('profilePictureUrl must be a URL'),
+  }),
+});
+
 export const getUserByUniversityIdValidation = z.object({
   params: z.object({
     universityId: z.string().min(1, 'University ID is required'),
