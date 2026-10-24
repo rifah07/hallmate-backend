@@ -80,7 +80,7 @@ router.get(
 
 router.get(
   '/role/:role',
-  authorize('SUPER_ADMIN', 'PROVOST', 'HOUSE_TUTOR'),
+  authorize('SUPER_ADMIN', 'PROVOST'),
   validate(getUsersByRoleValidation),
   userController.getUsersByRole,
 );

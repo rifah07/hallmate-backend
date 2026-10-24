@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import userService from '../services/user.service';
-import { sendSuccess, sendPaginatedSuccess } from '@/shared/utils/response.util';
+import { sendSuccess, sendPaginatedSuccess, sendError } from '@/shared/utils/response.util';
 import { AppError, BadRequestError, UnauthorizedError } from '@/shared/errors';
 import { UserRole } from '@prisma/client';
 import {
@@ -40,7 +40,7 @@ class UserController {
   ): Promise<void> {
     try {
       const { userId } = req.params;
-      const user = await userService.getUserById(userId);
+      const user = await userService.getUserById(userId, req.user!);
       sendSuccess(res, user, 'User retrieved successfully');
     } catch (error) {
       next(error);
@@ -57,7 +57,7 @@ class UserController {
   ): Promise<void> {
     try {
       const { universityId } = req.params;
-      const user = await userService.getUserByUniversityId(universityId);
+      const user = await userService.getUserByUniversityId(universityId, req.user!);
       sendSuccess(res, user, 'User retrieved successfully');
     } catch (error) {
       next(error);
@@ -78,6 +78,7 @@ class UserController {
         year,
         program,
         assignedFloor,
+        floor,
         search,
         page,
         limit,
@@ -92,6 +93,7 @@ class UserController {
         year: year ? parseInt(year as string) : undefined,
         program: program as any,
         assignedFloor: assignedFloor ? parseInt(assignedFloor as string) : undefined,
+        roomFloor: floor ? parseInt(floor as string) : undefined,
         search: search as string | undefined,
       };
 
@@ -102,7 +104,7 @@ class UserController {
         sortOrder: (sortOrder as 'asc' | 'desc') || 'desc',
       };
 
-      const result = await userService.getAllUsers(filters, pagination);
+      const result = await userService.getAllUsers(filters, pagination, req.user!);
       sendPaginatedSuccess(res, result.users, result.pagination);
     } catch (error) {
       next(error);
@@ -122,7 +124,7 @@ class UserController {
         limit: limit ? parseInt(limit as string) : 10,
       };
 
-      const result = await userService.getAllUsers({ search: q as string }, pagination);
+      const result = await userService.getAllUsers({ search: q as string }, pagination, req.user!);
 
       res.status(200).json({
         success: true,
@@ -142,7 +144,10 @@ class UserController {
   async createUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = await userService.createUser(req.body);
-      sendSuccess(res, user, 'User created successfully. One-time password sent to email.', 201);
+      const how = user.emailSent
+        ? 'sent to their email'
+        : 'could not be emailed: give it to them in person';
+      sendSuccess(res, user, `User created. One-time password ${how}.`, 201);
     } catch (error) {
       next(error);
     }
@@ -242,7 +247,13 @@ class UserController {
     try {
       if (!req.user) throw new AppError('User not authenticated', 401);
       const user = await userService.reissueOneTimePassword(req.params.userId, req.user.userId);
-      sendSuccess(res, user, 'A new one-time password was emailed to the user.');
+      sendSuccess(
+        res,
+        user,
+        user.emailSent
+          ? 'A new one-time password was emailed to the user.'
+          : 'Email failed: give this one-time password to the user in person.',
+      );
     } catch (error) {
       next(error);
     }
@@ -312,14 +323,9 @@ class UserController {
       }
 
       if (parseResult.users.length === 0) {
-        res.status(400).json({
-          success: false,
-          message: 'No valid users found in the file',
-          data: {
-            totalRows: parseResult.totalRows,
-            validRows: 0,
-            errors: parseResult.errors,
-          },
+        sendError(res, 'No valid rows in the file', 400, 'NO_VALID_ROWS', {
+          totalRows: parseResult.totalRows,
+          errors: parseResult.errors,
         });
         return;
       }
@@ -347,6 +353,8 @@ class UserController {
           totalRows: parseResult.totalRows,
           validRows: parseResult.users.length,
           created: result.created,
+          skipped: result.skipped,
+          undelivered: result.undelivered,
           failed: parseResult.errors.length,
           errors: parseResult.errors,
           warning:
@@ -407,7 +415,7 @@ class UserController {
   ): Promise<void> {
     try {
       const floorNumber = parseInt(req.params.floor, 10); //string → decimal number
-      const users = await userService.getUsersByFloor(floorNumber);
+      const users = await userService.getUsersByFloor(floorNumber, req.user!);
       sendSuccess(res, users, 'Users retrieved successfully');
     } catch (error) {
       next(error);
