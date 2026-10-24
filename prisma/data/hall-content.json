@@ -20,20 +20,17 @@
       "tenureStart": "2024-09-20",
       "_tenureStartNote": "assumed: the day after the previous provost's tenure ended",
       "isCurrent": true,
-      "photo": "https://hall.jnu.ac.bd/images/Mada1.jpg",
       "bio": "Professor, Department of Physics. Email: anjueara@phy.jnu.ac.bd"
     },
     {
       "name": "Professor Dr. Dipika Rani Sarker",
       "tenureStart": "2023-03-04",
-      "tenureEnd": "2024-09-19",
-      "photo": "https://hall.jnu.ac.bd/images/nn_(1).jpg"
+      "tenureEnd": "2024-09-19"
     },
     {
       "name": "Professor Dr. Shamima Begum",
       "tenureStart": "2021-03-04",
-      "tenureEnd": "2023-03-03",
-      "photo": "https://hall.jnu.ac.bd/images/post-1.jpg"
+      "tenureEnd": "2023-03-03"
     }
   ],
   "houseTutors": [
@@ -68,8 +65,7 @@
       "designation": "Section Officer",
       "category": "ADMINISTRATIVE",
       "phone": "01719297661",
-      "email": "anwartroffice@gmail.com",
-      "photo": "https://hall.jnu.ac.bd/images/FB_IMG_1689844213155.jpg"
+      "email": "anwartroffice@gmail.com"
     }
   ],
   "facilities": [
@@ -77,15 +73,13 @@
       "name": "ডাইনিং সিস্টেম",
       "slug": "dining",
       "category": "DINING",
-      "description": "The hall's dining service for residents.",
-      "image": "https://hall.jnu.ac.bd/images/activity2.jpg"
+      "description": "The hall's dining service for residents."
     },
     {
       "name": "হল লাইব্রেরী",
       "slug": "library",
       "category": "ACADEMIC",
-      "description": "The hall library for residents.",
-      "image": "https://hall.jnu.ac.bd/images/activity1.jpg"
+      "description": "The hall library for residents."
     },
     {
       "name": "Reading room",
@@ -149,118 +143,6 @@
       "slug": "hall-notice-2022",
       "date": "2022-03-16",
       "pdf": "https://hall.jnu.ac.bd/notice_document/hall05.pdf",
-      "category": "GENERAL"
-    }
-  ],
-  "gallery": [
-    {
-      "title": "আবাসিক ছাত্রীদের অগ্নিকান্ড উদ্ধার ও প্রাথমিক চিকিৎসা বিষয়ক মহড়া বাস্তবায়ন",
-      "image": "https://hall.jnu.ac.bd/images/A1.jpg",
-      "category": "EVENTS"
-    },
-    {
-      "title": "হলের আবাসিক ছাত্রীদের স্বাস্থ্য সচেতনতা বিষয়ক ক্যাম্পেইন",
-      "image": "https://hall.jnu.ac.bd/images/N-12.jpg",
-      "category": "EVENTS"
-    },
-    {
-      "title": "হলের আবাসিক ছাত্রীদের স্বাস্থ্য সচেতনতা বিষয়ক কাম্পেইন",
-      "image": "https://hall.jnu.ac.bd/images/N2.jpg",
-      "category": "EVENTS"
-    },
-    {
-      "title": "হলের আবাসিক ছাত্রীদের অগ্নিকান্ড উদ্ধার ও প্রাথমিক চিকিৎসা মহড়া বাস্তবায়ন",
-      "image": "https://hall.jnu.ac.bd/images/H4.jpg",
-      "category": "EVENTS"
-    },
-    {
-      "title": "হলের আবাসিক ছাত্রীদের অগ্নিকান্ড উদ্ধার ও প্রাথমিক চিকিৎসা মহড়া বাস্তবায়ন",
-      "image": "https://hall.jnu.ac.bd/images/D1.jpg",
-      "category": "EVENTS"
-    },
-    {
-      "title": "জগন্নাথ বিশ্ববিদ্যালয়ের ছাত্রী হলের আবাসিক ছাত্রীদের অগ্নিকান্ড উদ্ধার ও প্রাথমিক চিকিৎসা মহড়া বাস্তবায়ন",
-      "image": "https://hall.jnu.ac.bd/images/K.jpg",
-      "category": "EVENTS"
-    },
-    {
-      "title": "হলের আবাসিক ছাত্রীদের অগ্নিকান্ড উদ্ধার ও প্রাথমিক চিকিৎসা বিষয়ক মহড়া বাস্তবায়ন",
-      "image": "https://hall.jnu.ac.bd/images/H3.jpg",
-      "category": "EVENTS"
-    },
-    {
-      "title": "হলের আবাসিক ছাত্রীদের অগ্নিকান্ড উদ্ধার ও প্রাথমিক চিকিৎসা বিষয়ক মহড়া বাস্তবায়ন",
-      "image": "https://hall.jnu.ac.bd/images/C1.jpg",
-      "category": "EVENTS"
-    },
-    {
-      "title": "হলের ছাত্রীদের স্বাস্থ্য সচেতনতা বিষয়ক ক্যাম্পেইন",
-      "image": "https://hall.jnu.ac.bd/images/N.jpg",
-      "category": "EVENTS"
-    },
-    {
-      "title": "হলের ছাত্রীদের স্বাস্থ্য সচেতনতা বিষয়ক ক্যাম্পেইন",
-      "image": "https://hall.jnu.ac.bd/images/N-1.jpg",
-      "category": "EVENTS"
-    },
-    {
-      "title": "অগ্নিকান্ড উদ্ধার ও প্রাথমিক চিকিৎসা বিষয়ক মহড়া বাস্তবায়ন",
-      "image": "https://hall.jnu.ac.bd/images/IMG-20241118-WA0023.jpg",
-      "category": "EVENTS"
-    },
-    {
-      "title": "বর্ষ বরণ উৎসব ১৪২৯",
-      "image": "https://hall.jnu.ac.bd/images/04c7fa78-9eb1-4c54-945c-5f69e8e82822.jpg",
-      "category": "EVENTS"
-    },
-    {
-      "title": "Hall life",
-      "image": "https://hall.jnu.ac.bd/images/H2.jpg",
-      "category": "GENERAL"
-    },
-    {
-      "title": "Hall life",
-      "image": "https://hall.jnu.ac.bd/images/J.jpg",
-      "category": "GENERAL"
-    },
-    {
-      "title": "Hall life",
-      "image": "https://hall.jnu.ac.bd/images/N-11.jpg",
-      "category": "GENERAL"
-    },
-    {
-      "title": "Hall life",
-      "image": "https://hall.jnu.ac.bd/images/N1.jpg",
-      "category": "GENERAL"
-    },
-    {
-      "title": "Hall life",
-      "image": "https://hall.jnu.ac.bd/images/H1.jpg",
-      "category": "GENERAL"
-    },
-    {
-      "title": "Hall life",
-      "image": "https://hall.jnu.ac.bd/images/E.jpg",
-      "category": "GENERAL"
-    },
-    {
-      "title": "Hall life",
-      "image": "https://hall.jnu.ac.bd/images/D.jpg",
-      "category": "GENERAL"
-    },
-    {
-      "title": "Hall life",
-      "image": "https://hall.jnu.ac.bd/images/C2.jpg",
-      "category": "GENERAL"
-    },
-    {
-      "title": "Hall life",
-      "image": "https://hall.jnu.ac.bd/images/B1.jpg",
-      "category": "GENERAL"
-    },
-    {
-      "title": "Hall life",
-      "image": "https://hall.jnu.ac.bd/images/B.jpg",
       "category": "GENERAL"
     }
   ]
