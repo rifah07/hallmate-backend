@@ -1,4 +1,28 @@
 import request from 'supertest';
+
+// Uploads never leave the machine; cloudinary.url still builds real URLs offline
+jest.mock('cloudinary', () => {
+  const actual = jest.requireActual('cloudinary');
+  const { Writable } = jest.requireActual('stream');
+  actual.v2.uploader.upload_stream = (_options: unknown, done: (e: unknown, r: object) => void) =>
+    new Writable({
+      write: (_chunk: unknown, _enc: unknown, next: () => void) => next(),
+      final(next: () => void) {
+        done(undefined, {
+          secure_url: 'https://res.cloudinary.com/test/image/upload/v1/hallmate/profile-pictures/avatar.png',
+          public_id: 'hallmate/profile-pictures/avatar',
+          width: 1,
+          height: 1,
+          format: 'png',
+          resource_type: 'image',
+        });
+        next();
+      },
+    });
+  actual.v2.uploader.destroy = async () => ({ result: 'ok' });
+  return actual;
+});
+
 import app from '@/app';
 import prisma from '@/config/database.config';
 import { hashPassword } from '@/shared/utils/crypto/password.util';

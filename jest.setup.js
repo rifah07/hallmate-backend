@@ -1,6 +1,7 @@
 // Tests create and delete users, so they must never reach a real database.
 // .env.test wins over .env; anything but a local database stops the run.
 require('dotenv').config({ path: '.env.test', override: true, quiet: true });
+process.env.RESEND_API_KEY = ''; // tests never send real email, even if .env has a key
 
 const hostOf = (url) => (URL.canParse(url ?? '') ? new URL(url).hostname : '');
 const host = hostOf(process.env.DATABASE_URL);
