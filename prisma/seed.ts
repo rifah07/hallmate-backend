@@ -85,7 +85,9 @@ async function seedHallContent() {
     return;
   }
   console.log(`🏛️  Seeding hall content${mirroring ? ' (copying files to Cloudinary)' : ''}...`);
-  const { hallInfo, provosts, houseTutors, staff, facilities, notices, gallery } = content;
+  // No photos of people: profiles show an initial and the gallery starts empty
+  // until the hall uploads pictures it has permission to publish.
+  const { hallInfo, provosts, houseTutors, staff, facilities, notices } = content;
 
   await prisma.hallInfo.create({
     data: { ...hallInfo, logoUrl: await mirror(hallInfo.logoUrl, 'site') },
@@ -100,7 +102,6 @@ async function seedHallContent() {
         tenureStart: new Date(p.tenureStart),
         tenureEnd: p.tenureEnd ? new Date(p.tenureEnd) : null,
         isCurrent: Boolean(p.isCurrent),
-        photoUrl: await mirror(p.photo, 'provosts'),
         sortOrder: i,
       },
     });
@@ -111,24 +112,20 @@ async function seedHallContent() {
   });
 
   for (const [i, s] of staff.entries()) {
-    const { photo, ...profile } = s;
     await prisma.staffProfile.create({
       data: {
-        ...profile,
+        ...s,
         category: s.category as 'ADMINISTRATIVE',
-        photoUrl: await mirror(photo, 'staff'),
         sortOrder: i,
       },
     });
   }
 
   for (const [i, f] of facilities.entries()) {
-    const { image, ...facility } = f;
     await prisma.facility.create({
       data: {
-        ...facility,
+        ...f,
         category: f.category as 'DINING',
-        imageUrl: await mirror(image, 'facilities'),
         sortOrder: i,
       },
     });
@@ -149,17 +146,9 @@ async function seedHallContent() {
     });
   }
 
-  for (const [i, g] of gallery.entries()) {
-    const imageUrl = (await mirror(g.image, 'gallery')) as string;
-    await prisma.galleryItem.create({
-      data: { title: g.title, imageUrl, category: g.category as 'EVENTS', sortOrder: i },
-    });
-  }
-
   console.log(
-    `✅ Hall content: ${provosts.length} provosts, ${houseTutors.length} house tutors, ` +
-      `${staff.length} staff, ${facilities.length} facilities, ${notices.length} notices, ` +
-      `${gallery.length} photos`,
+    `✅ Hall content: 1 current provost + ${provosts.length - 1} former, ${houseTutors.length} house tutors, ` +
+      `${staff.length} staff, ${facilities.length} facilities, ${notices.length} notices`,
   );
 }
 

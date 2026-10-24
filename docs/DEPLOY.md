@@ -50,13 +50,13 @@ npx prisma migrate deploy     # only if status lists migrations not applied yet
 
 > All 11 migrations were already applied to Neon on 2026-10-23 (by accident, while preparing the test database; see the note at the end). `migrate status` should confirm it, so this step is a check.
 
-4. Seed the first super admin and the hall's public content. In your local `.env`, set `SUPER_ADMIN_EMAIL` and a strong `SUPER_ADMIN_PASSWORD` (12+ characters). Keep your real Cloudinary keys in `.env` too: the seed copies the hall's photos and notice PDFs from hall.jnu.ac.bd into your Cloudinary, so the new site doesn't depend on the old server.
+4. Seed the first super admin and the hall's public content. In your local `.env`, set `SUPER_ADMIN_EMAIL` and a strong `SUPER_ADMIN_PASSWORD` (12+ characters). Keep your real Cloudinary keys in `.env` too: the seed copies the hall logo and notice PDFs from hall.jnu.ac.bd (no photos of people) into your Cloudinary, so the new site doesn't depend on the old server.
 
 ```bash
 npm run db:seed
 ```
 
-**Check:** it prints `Super Admin created successfully` (university ID `0000000000`) and `Hall content: 3 provosts, 4 house tutors, 1 staff, 9 facilities, 3 notices, 22 photos`. Running it again is safe: both parts skip themselves. Remove `SUPER_ADMIN_PASSWORD` from `.env` afterwards.
+**Check:** it prints `Super Admin created successfully` (university ID `0000000000`) and `Hall content: 1 current provost + 2 former, 4 house tutors, 1 staff, 9 facilities, 3 notices`. Running it again is safe: both parts skip themselves. Remove `SUPER_ADMIN_PASSWORD` from `.env` afterwards.
 
 The content comes from `prisma/data/hall-content.json` (sources listed at its top). After seeding, the hall edits it through the admin API, never through the file.
 
