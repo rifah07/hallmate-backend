@@ -1,3 +1,4 @@
+import { TOP_FLOOR } from '@/shared/constants/hall.constants';
 import { z } from 'zod';
 
 /**
@@ -81,7 +82,11 @@ export const getAllUsersValidation = z.object({
     program: programEnum.optional(),
     floor: z
       .string()
-      .regex(/^([1-9]|1[0-4])$/)
+      .regex(/^\d{1,2}$/)
+      .refine(
+        (f) => Number(f) >= 1 && Number(f) <= TOP_FLOOR,
+        `Floor must be between 1 and ${TOP_FLOOR}`,
+      )
       .optional(),
     search: z.string().optional(),
   }),
@@ -121,7 +126,7 @@ export const createUserValidation = z.object({
       tenureEnd: z.coerce.date().optional(),
 
       // House Tutor-specific (optional)
-      assignedFloor: z.number().int().min(1).max(14).optional(),
+      assignedFloor: z.number().int().min(1).max(TOP_FLOOR).optional(),
 
       // Staff-specific (optional)
       designation: z.string().optional(),
@@ -187,7 +192,7 @@ export const updateUserValidation = z.object({
       provostMessage: z.string().optional(),
 
       // House Tutor-specific
-      assignedFloor: z.number().int().min(1).max(14).optional(),
+      assignedFloor: z.number().int().min(1).max(TOP_FLOOR).optional(),
 
       // Staff-specific
       designation: z.string().optional(),
@@ -285,7 +290,13 @@ export const getUsersByRoleValidation = z.object({
  */
 export const getUsersByFloorValidation = z.object({
   params: z.object({
-    floor: z.string().regex(/^([1-9]|1[0-4])$/, 'Floor must be between 1 and 14'),
+    floor: z
+      .string()
+      .regex(/^\d{1,2}$/)
+      .refine(
+        (f) => Number(f) >= 1 && Number(f) <= TOP_FLOOR,
+        `Floor must be between 1 and ${TOP_FLOOR}`,
+      ),
   }),
   query: z.object({}).optional(),
   body: z.object({}).optional(),
@@ -305,7 +316,7 @@ export const bulkCreateUsersValidation = z.object({
           role: userRoleEnum,
           name: z.string().min(2).max(100),
           email: z.string().email(),
-          phone: z.string().regex(bdPhoneRegex).optional(),
+          phone: z.string().regex(bdPhoneRegex, 'Invalid Bangladeshi phone number'),
 
           // Optional fields
           department: z.string().optional(),
@@ -319,7 +330,7 @@ export const bulkCreateUsersValidation = z.object({
           provostMessage: z.string().optional(),
           tenureStart: z.coerce.date().optional(),
           tenureEnd: z.coerce.date().optional(),
-          assignedFloor: z.number().int().min(1).max(14).optional(),
+          assignedFloor: z.number().int().min(1).max(TOP_FLOOR).optional(),
           designation: z.string().optional(),
           joiningDate: z.coerce.date().optional(),
         }),
