@@ -6,6 +6,11 @@ import {
   StudentMealStatus,
 } from '../types/meal.types';
 import { BadRequestError } from '@/shared/errors';
+import { addDays, dhakaToday } from '@/shared/utils/dhaka-date.util';
+
+const HOUR = 60 * 60 * 1000;
+const DHAKA_UTC_OFFSET = 6; // hours; Bangladesh has no daylight saving
+const MAX_STATUS_DAYS = 31;
 
 class MealCancellationService {
   private readonly MEAL_TIMES = {
@@ -37,7 +42,6 @@ class MealCancellationService {
 
     for (const dateStr of input.dates) {
       const date = new Date(dateStr);
-      date.setHours(0, 0, 0, 0);
 
       try {
         this.validateCancellation(date, input.mealTypes, now);
@@ -83,7 +87,6 @@ class MealCancellationService {
 
     for (const dateStr of dates) {
       const date = new Date(dateStr);
-      date.setHours(0, 0, 0, 0);
 
       for (const meal of mealTypes) {
         if (now > this.getDeadline(date, meal)) {
@@ -119,6 +122,10 @@ class MealCancellationService {
     dateFrom: Date,
     dateTo: Date,
   ): Promise<StudentMealStatus[]> {
+    const days = (dateTo.getTime() - dateFrom.getTime()) / (24 * HOUR) + 1;
+    if (!(days >= 1 && days <= MAX_STATUS_DAYS)) {
+      throw new BadRequestError(`Choose a range of 1 to ${MAX_STATUS_DAYS} days`);
+    }
     const student = await repository.findStudent(studentId);
     if (!student) throw new BadRequestError('Student not found');
 
@@ -155,7 +162,7 @@ class MealCancellationService {
         },
       });
 
-      cur.setDate(cur.getDate() + 1);
+      cur.setTime(addDays(cur, 1).getTime());
     }
 
     return result;
@@ -167,7 +174,6 @@ class MealCancellationService {
 
   async getMealPlanningReport(date: Date): Promise<MealPlanningReport> {
     const mealDate = new Date(date);
-    mealDate.setHours(0, 0, 0, 0);
 
     const totalStudents = await repository.countActiveStudentsWithRooms();
     const cancellations = await repository.findByDate(mealDate);
@@ -182,19 +188,19 @@ class MealCancellationService {
         totalStudents,
         activeMeals: totalStudents - breakfastCancelled,
         cancelled: breakfastCancelled,
-        cancellationRate: (breakfastCancelled / totalStudents) * 100,
+        cancellationRate: totalStudents ? (breakfastCancelled / totalStudents) * 100 : 0,
       },
       lunch: {
         totalStudents,
         activeMeals: totalStudents - lunchCancelled,
         cancelled: lunchCancelled,
-        cancellationRate: (lunchCancelled / totalStudents) * 100,
+        cancellationRate: totalStudents ? (lunchCancelled / totalStudents) * 100 : 0,
       },
       dinner: {
         totalStudents,
         activeMeals: totalStudents - dinnerCancelled,
         cancelled: dinnerCancelled,
-        cancellationRate: (dinnerCancelled / totalStudents) * 100,
+        cancellationRate: totalStudents ? (dinnerCancelled / totalStudents) * 100 : 0,
       },
       byFloor: [],
     };
@@ -215,7 +221,6 @@ class MealCancellationService {
     for (const studentId of studentIds) {
       for (const dateStr of dates) {
         const date = new Date(dateStr);
-        date.setHours(0, 0, 0, 0);
 
         operations.push(
           repository.buildUpsertQuery({
@@ -239,10 +244,7 @@ class MealCancellationService {
   // ============================================================================
 
   private validateCancellation(date: Date, mealTypes: string[], now: Date) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (date < today) {
+    if (date < dhakaToday()) {
       throw new BadRequestError('Cannot cancel past dates');
     }
 
@@ -253,13 +255,12 @@ class MealCancellationService {
     }
   }
 
+  // Meal times are Dhaka clock hours; `date` is that day at UTC midnight.
+  // Computed in UTC so the answer doesn't depend on the server's time zone.
   private getDeadline(date: Date, meal: 'breakfast' | 'lunch' | 'dinner') {
-    const d = new Date(date);
-    d.setHours(this.MEAL_TIMES[meal], 0, 0, 0);
-    d.setHours(d.getHours() - this.DEADLINE_HOURS);
-    return d;
+    const mealAt = date.getTime() + (this.MEAL_TIMES[meal] - DHAKA_UTC_OFFSET) * HOUR;
+    return new Date(mealAt - this.DEADLINE_HOURS * HOUR);
   }
-
 }
 
 export default new MealCancellationService();

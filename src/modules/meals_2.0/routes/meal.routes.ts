@@ -79,7 +79,13 @@ router.post(
  * Get meal calendar status for student
  * Shows which meals are active vs cancelled
  */
-router.get('/my-status', authorize('STUDENT'), mealCancellationController.getMyMealStatus);
+const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+router.get(
+  '/my-status',
+  authorize('STUDENT'),
+  validate(z.object({ dateFrom: day, dateTo: day }), 'query'),
+  mealCancellationController.getMyMealStatus,
+);
 
 /**
  * GET /api/meals/planning/:date
