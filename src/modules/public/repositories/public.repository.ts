@@ -61,7 +61,8 @@ export const publicRepository = {
 
   findCurrentProvostUser() {
     return prisma.user.findFirst({
-      where: { role: 'PROVOST', accountStatus: 'ACTIVE', isDeleted: false },
+      // isDemo: a public demo login must never appear as the hall's provost
+      where: { role: 'PROVOST', accountStatus: 'ACTIVE', isDeleted: false, isDemo: false },
       select: {
         name: true,
         photo: true,
@@ -79,6 +80,7 @@ export const publicRepository = {
       where: { isActive: true },
       orderBy: [{ sortOrder: 'asc' }, { floor: 'asc' }],
       select: {
+        isSample: true,
         id: true,
         name: true,
         designation: true,
@@ -154,6 +156,7 @@ export const publicRepository = {
     return prisma.diningInfo.findFirst({
       where: { isActive: true },
       select: {
+        isSample: true,
         id: true,
         mealPlan: true,
         weeklyMenu: true,
@@ -181,6 +184,7 @@ export const publicRepository = {
         skip: skip(params.page, params.limit),
         take: params.limit,
         select: {
+          isSample: true,
           id: true,
           title: true,
           description: true,
@@ -221,6 +225,7 @@ export const publicRepository = {
         skip: skip(params.page, params.limit),
         take: params.limit,
         select: {
+          isSample: true,
           id: true,
           title: true,
           slug: true,
@@ -266,6 +271,7 @@ export const publicRepository = {
         skip: skip(params.page, params.limit),
         take: params.limit,
         select: {
+          isSample: true,
           id: true,
           title: true,
           slug: true,
@@ -292,6 +298,7 @@ export const publicRepository = {
         OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
       },
       select: {
+        isSample: true,
         id: true,
         title: true,
         slug: true,
@@ -336,6 +343,7 @@ export const publicRepository = {
         skip: skip(params.page, params.limit),
         take: params.limit,
         select: {
+          isSample: true,
           id: true,
           title: true,
           description: true,
@@ -363,7 +371,7 @@ export const publicRepository = {
         }),
       },
       orderBy: [{ category: 'asc' }, { sortOrder: 'asc' }],
-      select: { id: true, question: true, answer: true, category: true },
+      select: { id: true, question: true, answer: true, category: true, isSample: true },
     });
   },
 
@@ -371,6 +379,7 @@ export const publicRepository = {
     return prisma.admissionInfo.findFirst({
       where: { isActive: true, isCurrent: true },
       select: {
+        isSample: true,
         id: true,
         session: true,
         eligibility: true,

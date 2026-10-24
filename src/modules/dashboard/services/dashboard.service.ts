@@ -43,7 +43,9 @@ class DashboardService {
       dashboardRepository.myPendingApplications(studentId),
       dashboardRepository.myUpcomingVisitors(studentId, dhakaToday()),
     ]);
+    const houseTutor = bed && (await dashboardRepository.floorTutor(bed.room.floor, bed.user.isDemo));
     return {
+      houseTutor,
       room: bed && {
         roomNumber: bed.room.roomNumber,
         floor: bed.room.floor,

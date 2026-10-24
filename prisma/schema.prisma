@@ -291,6 +291,9 @@ model User {
   createdBy String?
   isDeleted Boolean   @default(false)
   deletedAt DateTime?
+  // Public demo login: the API refuses any change (see authenticate middleware)
+  isDemo Boolean @default(false)
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -739,6 +742,9 @@ model FAQ {
   isActive Boolean @default(true)
   sortOrder Int    @default(0)
 
+  // Demo content: badged "Sample" on the site, removed by npm run db:demo:remove
+  isSample Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -756,6 +762,9 @@ model GalleryItem {
   isActive    Boolean         @default(true)
   sortOrder   Int             @default(0)
   capturedAt  DateTime?
+
+  // Demo content: badged "Sample" on the site, removed by npm run db:demo:remove
+  isSample Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -781,6 +790,9 @@ model PublicNotice {
   publishedAt DateTime?
   expiresAt   DateTime?
   views       Int       @default(0)
+
+  // Demo content: badged "Sample" on the site, removed by npm run db:demo:remove
+  isSample Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -808,6 +820,9 @@ model PublicEvent {
   isPublished Boolean  @default(false)
   isFeatured  Boolean  @default(false)
 
+  // Demo content: badged "Sample" on the site, removed by npm run db:demo:remove
+  isSample Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -826,6 +841,9 @@ model Achievement {
   isActive    Boolean  @default(true)
   isFeatured  Boolean  @default(false)
   sortOrder   Int      @default(0)
+
+  // Demo content: badged "Sample" on the site, removed by npm run db:demo:remove
+  isSample Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -870,6 +888,9 @@ model HouseTutorProfile {
   isActive    Boolean  @default(true)
   sortOrder   Int      @default(0)
 
+  // Demo content: badged "Sample" on the site, removed by npm run db:demo:remove
+  isSample Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -889,6 +910,9 @@ model DiningInfo {
   notice       String? @db.Text
   isActive     Boolean @default(true)
 
+  // Demo content: badged "Sample" on the site, removed by npm run db:demo:remove
+  isSample Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -907,6 +931,9 @@ model AdmissionInfo {
   faqItems         Json?
   isActive         Boolean  @default(true)
   isCurrent        Boolean  @default(false)
+
+  // Demo content: badged "Sample" on the site, removed by npm run db:demo:remove
+  isSample Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

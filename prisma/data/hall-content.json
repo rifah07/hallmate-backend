@@ -7,11 +7,12 @@
     "description": "Nawab Faizunnesa Chowdhurani Hall is the residential hall for women students of Jagannath University, Dhaka. It first opened on 20 October 2020, reopened on 16 March 2022, and took its present name on 24 June 2025. The 16-storey building has 163 rooms; bedrooms are on floors 5 to 16, and the floors below hold the canteen, the provost's office, the guest room, the house tutors' rooms, an auditorium, a common room and a reading room. It is named after Nawab Faizunnesa Choudhurani, a pioneer of women's education who founded a girls' high school in Comilla in 1873.",
     "capacity": 600,
     "totalRooms": 163,
-    "email": "hall@jnu.ac.bd",
     "logoUrl": "https://hall.jnu.ac.bd/assets/images/halllogo.jpg",
     "socialLinks": {
       "university": "https://jnu.ac.bd/"
-    }
+    },
+    "phone": "017XXXXXXXX",
+    "email": "demo@example.com"
   },
   "provosts": [
     {
@@ -20,7 +21,7 @@
       "tenureStart": "2024-09-20",
       "_tenureStartNote": "assumed: the day after the previous provost's tenure ended",
       "isCurrent": true,
-      "bio": "Professor, Department of Physics. Email: anjueara@phy.jnu.ac.bd"
+      "bio": "Professor, Department of Physics."
     },
     {
       "name": "Professor Dr. Dipika Rani Sarker",
@@ -64,8 +65,8 @@
       "name": "Mohammad Anwar Hossain",
       "designation": "Section Officer",
       "category": "ADMINISTRATIVE",
-      "phone": "01719297661",
-      "email": "anwartroffice@gmail.com"
+      "phone": "017XXXXXXXX",
+      "email": "demo@example.com"
     }
   ],
   "facilities": [

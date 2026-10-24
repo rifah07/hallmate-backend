@@ -19,6 +19,7 @@ const IDS = {
   cleaner: '7700000009',
   noMail: '7700000010',
   bulkNew: '7700000011',
+  demo: '7700000012',
 };
 const ALL = Object.values(IDS);
 const PASSWORD = 'Secret@123';
@@ -404,6 +405,28 @@ describe('#12 bulk upload never emails people who already exist', () => {
     expect(res.body.data.undelivered).toEqual([
       expect.objectContaining({ universityId: IDS.bulkNew, oneTimePassword: expect.any(String) }),
     ]);
+  });
+});
+
+describe('#13 public demo accounts can read but not change anything', () => {
+  let token: string;
+  beforeAll(async () => {
+    await create(IDS.demo, 'STUDENT', { isDemo: true });
+    token = (await login(IDS.demo)).body.data.accessToken;
+  });
+
+  it('reads like any account', async () => {
+    const res = await request(app).get('/api/notifications/unread-count').set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+  });
+
+  it('is refused any change, with a message that says why', async () => {
+    const res = await request(app)
+      .post('/api/auth/change-password')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ currentPassword: PASSWORD, newPassword: 'Taken@Over1', confirmPassword: 'Taken@Over1' });
+    expect(res.status).toBe(403);
+    expect(res.body.error.message).toMatch(/demo accounts/i);
   });
 });
 

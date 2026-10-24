@@ -1,9 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken } from '../utils/crypto/jwt.util';
-import { TokenError, UnauthorizedError } from '@/shared/errors';
+import { ForbiddenError, TokenError, UnauthorizedError } from '@/shared/errors';
 import prisma from '@/config/database.config';
 import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 import { accountBlock } from '@/shared/utils/account-status.util';
+
+// Demo logins are public (docs/DEMO_ACCOUNTS.md), so they may only read.
+// The card check is a POST that changes nothing, so the demo guard keeps it.
+const READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+const READ_ONLY_POSTS = new Set(['/api/id-card/verify']);
+const isDemoWrite = (req: Request) =>
+  !READ_METHODS.has(req.method) && !READ_ONLY_POSTS.has(req.baseUrl + req.path);
 
 export const authenticate = async (
   req: Request,
@@ -40,6 +47,7 @@ export const authenticate = async (
         assignedFloor: true,
         cancellationReason: true,
         cancelledAt: true,
+        isDemo: true,
       },
     });
 
@@ -57,6 +65,10 @@ export const authenticate = async (
     // coded error lets the web app sign her out onto the right page.
     const blocked = accountBlock(user);
     if (blocked) throw blocked;
+
+    if (user.isDemo && isDemoWrite(req)) {
+      throw new ForbiddenError('Demo accounts can look around but not change anything.');
+    }
 
     // Attach user to request
     req.user = {

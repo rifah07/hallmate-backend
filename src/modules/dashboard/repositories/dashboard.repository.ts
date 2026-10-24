@@ -61,6 +61,7 @@ class DashboardRepository {
       where: { userId: studentId },
       select: {
         bedNumber: true,
+        user: { select: { isDemo: true } },
         room: {
           select: {
             roomNumber: true,
@@ -74,6 +75,15 @@ class DashboardRepository {
           },
         },
       },
+    });
+  }
+
+  // Whoever looks after the floor right now, so a move or a new tutor needs no edit.
+  // Demo residents see the demo tutor; real residents never do.
+  async floorTutor(floor: number, isDemo: boolean) {
+    return prisma.user.findFirst({
+      where: { role: 'HOUSE_TUTOR', assignedFloor: floor, accountStatus: 'ACTIVE', isDeleted: false, isDemo },
+      select: { name: true, email: true, phone: true, photo: true },
     });
   }
 
