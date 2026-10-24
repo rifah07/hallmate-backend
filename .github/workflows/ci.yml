@@ -1,0 +1,50 @@
+# Lint and the full test suite on every push and pull request, against a
+# throwaway Postgres, so master only ever receives code that passes.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: hallmate_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    # Test-only values for a database that lives for this one job: not secrets
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:test@localhost:5432/hallmate_test
+      DIRECT_URL: postgresql://postgres:test@localhost:5432/hallmate_test
+      JWT_SECRET: ci-access-secret-0123456789abcdef0123456789
+      JWT_REFRESH_SECRET: ci-refresh-secret-0123456789abcdef01234567
+      INTERNAL_API_KEY: ci-internal-key-0123456789abcdef0123456789
+      BCRYPT_ROUNDS: '4'
+      # Uploads are faked in tests; image URLs still need a cloud name
+      CLOUDINARY_CLOUD_NAME: ci-test
+      CLOUDINARY_API_KEY: ci-test
+      CLOUDINARY_API_SECRET: ci-test
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx prisma migrate deploy
+      - run: npm run lint
+      - run: npm test

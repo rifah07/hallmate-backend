@@ -1,5 +1,7 @@
 # HallMate API
 
+[![CI](https://github.com/rifah07/hallmate-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/rifah07/hallmate-backend/actions/workflows/ci.yml)
+
 A REST API for running a university women's residential hall in Bangladesh: seats and rooms, applications (seat, transfer, swap, leave), complaints and maintenance, billing with online payment, visitors, a digital ID card, meals, notifications, and the hall's public website. Built for **Nawab Faizunnesa Chowdhurani Hall, Jagannath University**, where the current site only publishes notices as PDFs.
 
 **Stack:** Node.js 24 · Express 5 · TypeScript 6 · PostgreSQL · Prisma 7 (pg driver adapter) · Zod · JWT with rotating refresh tokens · Cloudinary · Resend email · Jest + Supertest
@@ -137,6 +139,7 @@ docker stop hallmate-test-db
 | `npm run lint` | ESLint with auto-fix |
 | `npx prisma migrate deploy` | Apply migrations to the database in `.env` |
 | `npx prisma studio` | Browse the database |
+| `docker build -t hallmate-api .` | Build the API image ([`Dockerfile`](Dockerfile)); run it with `docker run --env-file .env -p 5000:5000 hallmate-api` |
 
 ## Status
 
