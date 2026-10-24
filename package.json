@@ -17,6 +17,8 @@
     "prisma:studio": "prisma studio",
     "prisma:seed": "ts-node prisma/seed.ts",
     "db:seed": "npx prisma db seed",
+    "db:demo": "ts-node -r tsconfig-paths/register prisma/demo.ts",
+    "db:demo:remove": "ts-node -r tsconfig-paths/register prisma/demo.ts remove",
     "test:db": "docker run -d --rm --name hallmate-test-db -e POSTGRES_PASSWORD=test -e POSTGRES_DB=hallmate_test -p 55432:5432 --tmpfs /var/lib/postgresql/data postgres:17-alpine && until docker exec hallmate-test-db pg_isready -U postgres -q; do sleep 1; done && DATABASE_URL=postgresql://postgres:test@localhost:55432/hallmate_test DIRECT_URL=postgresql://postgres:test@localhost:55432/hallmate_test prisma migrate deploy"
   },
   "repository": {
