@@ -1,3 +1,4 @@
+import { TOP_FLOOR } from '@/shared/constants/hall.constants';
 import ExcelJS from 'exceljs';
 import { BadRequestError, ValidationError } from '@/shared/errors';
 import { UserRole, Program, BloodGroup } from '@prisma/client';
@@ -197,9 +198,9 @@ export async function parseUserExcelFile(buffer: Buffer): Promise<ExcelParseResu
       const assignedFloorStr = getCellValue('assignedFloor');
       if (assignedFloorStr) {
         const floor = parseInt(assignedFloorStr);
-        if (isNaN(floor) || floor < 1 || floor > 14) {
+        if (isNaN(floor) || floor < 1 || floor > TOP_FLOOR) {
           errors.push(
-            `Row ${rowNumber}: Invalid assigned floor '${assignedFloorStr}' (must be 1-14)`,
+            `Row ${rowNumber}: Invalid assigned floor '${assignedFloorStr}' (must be 1-${TOP_FLOOR})`,
           );
           return;
         }

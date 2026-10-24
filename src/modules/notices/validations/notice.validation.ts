@@ -1,3 +1,4 @@
+import { TOP_FLOOR } from '@/shared/constants/hall.constants';
 import { z } from 'zod';
 
 // Bodies arrive as multipart/form-data (optional PDF), so numbers and dates
@@ -6,7 +7,7 @@ const noticeFields = {
   title: z.string().trim().min(3).max(200),
   content: z.string().trim().min(1).max(10000),
   audience: z.enum(['ALL', 'FLOOR']).default('ALL'),
-  targetFloor: z.coerce.number().int().min(1).max(14).optional(),
+  targetFloor: z.coerce.number().int().min(1).max(TOP_FLOOR).optional(),
   priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']).default('NORMAL'),
   expiresAt: z.coerce.date().optional(),
 };

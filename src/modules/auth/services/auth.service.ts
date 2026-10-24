@@ -12,6 +12,7 @@ import {
 import emailService from '@/shared/utils/email/email.service';
 import authRepository from '../repositories/auth.repository';
 import { accountBlock } from '@/shared/utils/account-status.util';
+import logger from '@/shared/utils/logger.util';
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOGIN_LOCK_MS = 15 * 60 * 1000;
@@ -267,8 +268,11 @@ class AuthService {
     // Store OTP with 15-minute expiry
     await authRepository.setPasswordResetToken(user.id, hashedOTP, expiresAt);
 
-    // Send OTP via email
-    await emailService.sendPasswordResetOTP(user.email, user.name, otp);
+    // A failed send must look like every other answer, or a 500 would reveal
+    // which university IDs exist
+    await emailService
+      .sendPasswordResetOTP(user.email, user.name, otp)
+      .catch((error) => logger.error(`Reset code email to ${user.email} failed`, { error }));
 
     return { message: 'If this account exists, an OTP has been sent to your email' };
   }

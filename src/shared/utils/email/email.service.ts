@@ -1,10 +1,6 @@
-import { Resend } from 'resend';
 import { env } from '@/config/env.config';
 import logger from '../logger.util';
 import { escapeHtml } from '../escape-html.util';
-
-// No key = no client: Resend 6 throws on an empty key at construction.
-const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
 
 interface EmailOptions {
   to: string;
@@ -14,34 +10,40 @@ interface EmailOptions {
 
 class EmailService {
   /**
-   * Send email
+   * Sends through Resend's HTTP API (free, no card). Until a domain is
+   * verified in Resend, it only delivers to the Resend account's own address.
    */
   async sendEmail(options: EmailOptions): Promise<void> {
-    try {
-      // Without a key, outside production, log instead of sending
-      if (!resend) {
-        if (env.NODE_ENV === 'production') throw new Error('RESEND_API_KEY is not set');
-        logger.info('📧 Email would be sent (dev mode):');
-        logger.info(`To: ${options.to}`);
-        logger.info(`Subject: ${options.subject}`);
-        logger.info(`Body: ${options.html.substring(0, 100)}...`);
-        return;
-      }
+    // Without a key, outside production, log instead of sending
+    if (!env.RESEND_API_KEY) {
+      if (env.NODE_ENV === 'production') throw new Error('RESEND_API_KEY is not set');
+      logger.info(`📧 Email (not sent, no RESEND_API_KEY) to ${options.to}: ${options.subject}`);
+      logger.debug(options.html);
+      return;
+    }
 
-      const response = await resend.emails.send({
-        from: env.FROM_EMAIL || 'onboarding@resend.dev',
-        to: env.NODE_ENV === 'development' ? 'rifahsajida7@gmail.com' : options.to,
+    // In development, all mail can go to one inbox instead of real people
+    const to = env.NODE_ENV === 'development' && env.DEV_EMAIL_TO ? env.DEV_EMAIL_TO : options.to;
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${env.RESEND_API_KEY}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
+        to: [to],
         subject: options.subject,
         html: options.html,
-      });
-
-      logger.info('📧 Email sent successfully:', response);
-      logger.info(`✅ Email sent to ${options.to}`);
-    } catch (error: any) {
-      console.error('FULL ERROR:', error);
-      logger.error('❌ Email sending failed:', error?.message || error);
-      throw error; // DO NOT overwrite
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) {
+      // The body explains (unverified domain, quota...); never log the key
+      logger.error(`Email to ${to} failed: ${res.status} ${await res.text()}`);
+      throw new Error('Email could not be sent');
     }
+    logger.info(`📧 Email sent to ${to}: ${options.subject}`);
   }
 
   /**

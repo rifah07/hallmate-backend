@@ -9,14 +9,16 @@ import definition from '../src/config/openapi-definition.json' with { type: 'jso
 
 rmSync('dist', { recursive: true, force: true }); // no stale files from older builds
 
+// server.js listens on a port (npm start, any VPS); app.js only exports the
+// Express app, which Vercel's function (api/index.js) calls per request.
 await build({
-  entryPoints: ['src/server.ts'],
+  entryPoints: ['src/server.ts', 'src/app.ts'],
   bundle: true,
   platform: 'node',
   target: 'node20',
   packages: 'external',
   sourcemap: true, // stack traces point at the .ts lines (node --enable-source-maps)
-  outfile: 'dist/server.js',
+  outdir: 'dist',
   logLevel: 'info',
 });
 

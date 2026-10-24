@@ -94,6 +94,7 @@ class UserRepository {
       ...(filters.year && { year: filters.year }),
       ...(filters.program && { program: filters.program }),
       ...(filters.assignedFloor && { assignedFloor: filters.assignedFloor }),
+      ...(filters.roomFloor !== undefined && { currentRoom: { floor: filters.roomFloor } }),
       ...(filters.search && {
         OR: [
           { name: { contains: filters.search, mode: 'insensitive' } },
@@ -405,6 +406,15 @@ class UserRepository {
   /**
    * Bulk create users (for admin/seeding)
    */
+  /** University IDs and emails among these that already belong to someone. */
+  async findTaken(universityIds: string[], emails: string[]): Promise<Set<string>> {
+    const rows = await prisma.user.findMany({
+      where: { OR: [{ universityId: { in: universityIds } }, { email: { in: emails } }] },
+      select: { universityId: true, email: true },
+    });
+    return new Set(rows.flatMap((r) => [r.universityId, r.email]));
+  }
+
   async bulkCreate(
     users: CreateUserInput[],
     hashedPasswords: string[],

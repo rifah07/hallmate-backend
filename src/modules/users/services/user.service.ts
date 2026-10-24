@@ -18,7 +18,31 @@ import { cloudinaryService } from '@/shared/services/cloudinary.service';
 import { UserRole } from '@prisma/client';
 import logger from '@/shared/utils/logger.util';
 
+type Viewer = { role: string; assignedFloor?: number | null };
+type OtpDelivery = { emailSent: boolean; oneTimePassword?: string };
+
 class UserService {
+  // A house tutor looks after the students living on her floor and sees nobody else
+  private scopeFor(viewer: Viewer, filters: UserFilterOptions): UserFilterOptions {
+    if (viewer.role !== 'HOUSE_TUTOR') return filters;
+    return { ...filters, role: 'STUDENT', roomFloor: viewer.assignedFloor ?? -1 };
+  }
+
+  // 404, not 403, so a tutor can't probe which university IDs exist
+  private assertVisible(
+    viewer: Viewer,
+    user: { role: string; currentRoom?: { floor: number } | null },
+  ) {
+    if (
+      viewer.role === 'HOUSE_TUTOR' &&
+      (user.role !== 'STUDENT' ||
+        viewer.assignedFloor == null ||
+        user.currentRoom?.floor !== viewer.assignedFloor)
+    ) {
+      throw new NotFoundError('User not found');
+    }
+  }
+
   private editableFields(
     requester: { id: string; role: string; assignedFloor: number | null },
     target: { id: string; role: string; currentRoom: { floor: number } | null },
@@ -91,22 +115,26 @@ class UserService {
     } as UserResponse;
   }
 
-  async getUserById(userId: string): Promise<UserResponse> {
+  async getUserById(userId: string, viewer: Viewer): Promise<UserResponse> {
     const user = await userRepository.findById(userId);
     if (!user) throw new NotFoundError('User not found');
+    this.assertVisible(viewer, user);
     return this.toUserResponse(user);
   }
 
-  async getUserByUniversityId(universityId: string): Promise<UserResponse> {
+  async getUserByUniversityId(universityId: string, viewer: Viewer): Promise<UserResponse> {
     const user = await userRepository.findByUniversityId(universityId);
     if (!user) throw new NotFoundError('User not found');
+    this.assertVisible(viewer, user);
     return this.toUserResponse(user);
   }
 
   async getAllUsers(
     filters: UserFilterOptions,
     pagination: PaginationOptions,
+    viewer: Viewer,
   ): Promise<UserListResponse> {
+    filters = this.scopeFor(viewer, filters);
     const page = pagination.page ?? 1;
     const limit = Math.min(pagination.limit ?? 20, 100); // enforce max 100
 
@@ -123,7 +151,20 @@ class UserService {
     };
   }
 
-  async createUser(data: CreateUserInput): Promise<UserResponse> {
+  // Without a verified email domain the send can fail. The account is already
+  // saved, so the office gets the code to hand over in person rather than it
+  // being lost. Only SUPER_ADMIN and PROVOST can reach the two callers.
+  private async deliverOneTimePassword(user: { email: string; name: string }, otp: string) {
+    try {
+      await emailService.sendWelcomeEmail(user.email, user.name, otp);
+      return { emailSent: true as const };
+    } catch (error) {
+      logger.error(`One-time password email to ${user.email} failed`, { error });
+      return { emailSent: false as const, oneTimePassword: otp };
+    }
+  }
+
+  async createUser(data: CreateUserInput): Promise<UserResponse & OtpDelivery> {
     // Check for duplicates
     const [uniIdExists, emailExists] = await Promise.all([
       userRepository.universityIdExists(data.universityId),
@@ -144,9 +185,7 @@ class UserService {
 
     const user = await userRepository.create(data, hashedPassword, hashedOTP, otpExpiresAt);
 
-    // Send OTP via email
-    await emailService.sendWelcomeEmail(user.email, user.name, otp);
-    return this.toUserResponse(user);
+    return { ...this.toUserResponse(user), ...(await this.deliverOneTimePassword(user, otp)) };
   }
 
   async updateUser(
@@ -353,7 +392,10 @@ class UserService {
     await userRepository.softDelete(userId, deletedBy);
   }
 
-  async reissueOneTimePassword(userId: string, actorId: string): Promise<UserResponse> {
+  async reissueOneTimePassword(
+    userId: string,
+    actorId: string,
+  ): Promise<UserResponse & OtpDelivery> {
     const existing = await userRepository.findById(userId);
     if (!existing) throw new NotFoundError('User not found');
     // Activated accounts recover through "forgot password" instead
@@ -369,8 +411,7 @@ class UserService {
       otpExpiresAt,
       actorId,
     );
-    await emailService.sendWelcomeEmail(user.email, user.name, otp);
-    return this.toUserResponse(user);
+    return { ...this.toUserResponse(user), ...(await this.deliverOneTimePassword(user, otp)) };
   }
 
   async restoreUser(userId: string): Promise<UserResponse> {
@@ -382,7 +423,20 @@ class UserService {
     return await userRepository.getStatistics();
   }
 
-  async bulkCreateUsers(usersData: CreateUserInput[]): Promise<{ created: number }> {
+  async bulkCreateUsers(rows: CreateUserInput[]) {
+    // Existing people (and repeated rows) are skipped *before* any email goes
+    // out: otherwise they'd get a welcome code that doesn't work
+    const taken = await userRepository.findTaken(
+      rows.map((u) => u.universityId),
+      rows.map((u) => u.email),
+    );
+    const usersData = rows.filter((u) => {
+      if (taken.has(u.universityId) || taken.has(u.email)) return false;
+      taken.add(u.universityId).add(u.email);
+      return true;
+    });
+    if (usersData.length === 0) return { created: 0, skipped: rows.length, undelivered: [] };
+
     const otps = usersData.map(() => generateOTP());
     const [hashedPasswords, hashedOTPs] = await Promise.all([
       Promise.all(usersData.map(() => hashPassword(randomBytes(32).toString('hex')))),
@@ -391,15 +445,16 @@ class UserService {
 
     const count = await userRepository.bulkCreate(usersData, hashedPasswords, hashedOTPs);
 
-    // SEND EMAILS
-    for (let i = 0; i < usersData.length; i++) {
-      try {
-        await emailService.sendWelcomeEmail(usersData[i].email, usersData[i].name, otps[i]);
-      } catch (err) {
-        logger.error(`Failed email for ${usersData[i].email}`, err);
-      }
-    }
-    return { created: count };
+    // In parallel so a big file fits in one serverless call. A send that fails
+    // (unverified domain, rate limit) returns its code for the office to hand out.
+    const sent = await Promise.allSettled(
+      usersData.map((u, i) => emailService.sendWelcomeEmail(u.email, u.name, otps[i])),
+    );
+    const undelivered = usersData
+      .map((u, i) => ({ universityId: u.universityId, name: u.name, oneTimePassword: otps[i] }))
+      .filter((_, i) => sent[i].status === 'rejected');
+    if (undelivered.length) logger.error(`${undelivered.length} welcome email(s) failed`);
+    return { created: count, skipped: rows.length - usersData.length, undelivered };
   }
 
   async getUsersByRole(role: string): Promise<UserResponse[]> {
@@ -407,7 +462,10 @@ class UserService {
     return users.map((u) => this.toUserResponse(u));
   }
 
-  async getUsersByFloor(floor: number): Promise<UserResponse[]> {
+  async getUsersByFloor(floor: number, viewer: Viewer): Promise<UserResponse[]> {
+    if (viewer.role === 'HOUSE_TUTOR' && floor !== viewer.assignedFloor) {
+      throw new ForbiddenError('You can only view students on your floor');
+    }
     const users = await userRepository.findByFloor(floor);
     return users.map((u) => this.toUserResponse(u));
   }

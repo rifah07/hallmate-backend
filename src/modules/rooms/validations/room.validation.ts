@@ -1,3 +1,4 @@
+import { TOP_FLOOR } from '@/shared/constants/hall.constants';
 import { z } from 'zod';
 import { RoomType, RoomStatus, Wing } from '@prisma/client';
 
@@ -18,8 +19,8 @@ export const createRoomValidation = z.object({
     floor: z
       .number()
       .int('Floor must be an integer')
-      .min(1, 'Floor must be between 1 and 14')
-      .max(14, 'Floor must be between 1 and 14'),
+      .min(1, `Floor must be between 1 and ${TOP_FLOOR}`)
+      .max(TOP_FLOOR, `Floor must be between 1 and ${TOP_FLOOR}`),
     wing: z.nativeEnum(Wing, {
       message: 'Wing must be A or B',
     }),
@@ -55,8 +56,8 @@ export const updateRoomValidation = z.object({
     floor: z
       .number()
       .int('Floor must be an integer')
-      .min(1, 'Floor must be between 1 and 14')
-      .max(14, 'Floor must be between 1 and 14')
+      .min(1, `Floor must be between 1 and ${TOP_FLOOR}`)
+      .max(TOP_FLOOR, `Floor must be between 1 and ${TOP_FLOOR}`)
       .optional(),
     wing: z
       .nativeEnum(Wing, {
@@ -95,13 +96,8 @@ export const deleteRoomValidation = z.object({
 
 export const getRoomsByFloorValidation = z.object({
   params: z.object({
-    floor: z.string().transform((val) => {
-      const num = parseInt(val, 10);
-      if (isNaN(num) || num < 1 || num > 14) {
-        throw new Error('Floor must be between 1 and 14');
-      }
-      return num;
-    }),
+    // coerce + min/max: a bad floor is a 400, not a thrown Error (500)
+    floor: z.coerce.number().int().min(1).max(TOP_FLOOR),
   }),
 });
 
@@ -115,13 +111,8 @@ export const getRoomsByTypeValidation = z.object({
 
 export const getVacantRoomsByFloorValidation = z.object({
   params: z.object({
-    floor: z.string().transform((val) => {
-      const num = parseInt(val, 10);
-      if (isNaN(num) || num < 1 || num > 14) {
-        throw new Error('Floor must be between 1 and 14');
-      }
-      return num;
-    }),
+    // coerce + min/max: a bad floor is a 400, not a thrown Error (500)
+    floor: z.coerce.number().int().min(1).max(TOP_FLOOR),
   }),
 });
 

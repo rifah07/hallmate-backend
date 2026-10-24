@@ -159,6 +159,7 @@ export interface UserFilterOptions {
   year?: number;
   program?: Program;
   assignedFloor?: number;
+  roomFloor?: number; // where she lives, not the floor a tutor looks after
   search?: string; // Search by name, email, universityId
 }
 

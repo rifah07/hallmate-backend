@@ -196,3 +196,27 @@ describe('Seat swap consent', () => {
     expect(await occupantOf(users.swapB)).toMatchObject({ roomId: rooms['AP-701'], bedNumber: 3 });
   });
 });
+
+describe('Seat swap by university ID', () => {
+  it('a student names her friend by university ID; the server finds the rooms', async () => {
+    // After the swap above, swapA lives in AP-702
+    const res = await apply('swapB', 'SEAT_SWAP', {
+      targetUniversityId: IDS.swapA,
+      reason: 'We would like our old beds back',
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.data.data).toMatchObject({
+      targetStudentId: users.swapA,
+      targetRoomId: rooms['AP-702'],
+      currentRoomId: rooms['AP-701'],
+    });
+  });
+
+  it('an unknown university ID is refused', async () => {
+    const res = await apply('newcomer', 'SEAT_SWAP', {
+      targetUniversityId: '8999999999',
+      reason: 'Swap with someone who does not exist',
+    });
+    expect(res.status).toBe(404);
+  });
+});

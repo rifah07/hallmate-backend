@@ -1,0 +1,267 @@
+{
+  "_source": "hall.jnu.ac.bd (fetched 2026-10-23) and Prothom Alo, 'Jagannath University female hall: Eight students live in four-bed rooms'. Edit through the admin API; the seed runs only on an empty database.",
+  "hallInfo": {
+    "name": "Nawab Faizunnesa Chowdhurani Hall",
+    "established": 2020,
+    "location": "Jagannath University, Dhaka",
+    "description": "Nawab Faizunnesa Chowdhurani Hall is the residential hall for women students of Jagannath University, Dhaka. It first opened on 20 October 2020, reopened on 16 March 2022, and took its present name on 24 June 2025. The 16-storey building has 163 rooms; bedrooms are on floors 5 to 16, and the floors below hold the canteen, the provost's office, the guest room, the house tutors' rooms, an auditorium, a common room and a reading room. It is named after Nawab Faizunnesa Choudhurani, a pioneer of women's education who founded a girls' high school in Comilla in 1873.",
+    "capacity": 600,
+    "totalRooms": 163,
+    "email": "hall@jnu.ac.bd",
+    "logoUrl": "https://hall.jnu.ac.bd/assets/images/halllogo.jpg",
+    "socialLinks": {
+      "university": "https://jnu.ac.bd/"
+    }
+  },
+  "provosts": [
+    {
+      "name": "Professor Dr. Anjue Mane Ara",
+      "department": "Department of Physics",
+      "tenureStart": "2024-09-20",
+      "_tenureStartNote": "assumed: the day after the previous provost's tenure ended",
+      "isCurrent": true,
+      "photo": "https://hall.jnu.ac.bd/images/Mada1.jpg",
+      "bio": "Professor, Department of Physics. Email: anjueara@phy.jnu.ac.bd"
+    },
+    {
+      "name": "Professor Dr. Dipika Rani Sarker",
+      "tenureStart": "2023-03-04",
+      "tenureEnd": "2024-09-19",
+      "photo": "https://hall.jnu.ac.bd/images/nn_(1).jpg"
+    },
+    {
+      "name": "Professor Dr. Shamima Begum",
+      "tenureStart": "2021-03-04",
+      "tenureEnd": "2023-03-03",
+      "photo": "https://hall.jnu.ac.bd/images/post-1.jpg"
+    }
+  ],
+  "houseTutors": [
+    {
+      "name": "ড. নিপা দেবনাথ",
+      "designation": "House Tutor",
+      "department": "পদার্থ বিজ্ঞান বিভাগ",
+      "bio": "সহযোগী অধ্যাপক"
+    },
+    {
+      "name": "ড. নিগার সুলতানা",
+      "designation": "House Tutor",
+      "department": "ভূগোল ও পরিবেশ বিভাগ",
+      "bio": "সহযোগী অধ্যাপক"
+    },
+    {
+      "name": "ড. আনোয়ারা আক্তার",
+      "designation": "House Tutor",
+      "department": "ইসলামের ইতিহাস ও সংস্কৃতি বিভাগ",
+      "bio": "সহযোগী অধ্যাপক"
+    },
+    {
+      "name": "ড. তাসলিমা ইসলাম",
+      "designation": "Assistant House Tutor",
+      "department": "ইসলামের ইতিহাস ও সংস্কৃতি বিভাগ",
+      "bio": "সহযোগী অধ্যাপক"
+    }
+  ],
+  "staff": [
+    {
+      "name": "Mohammad Anwar Hossain",
+      "designation": "Section Officer",
+      "category": "ADMINISTRATIVE",
+      "phone": "01719297661",
+      "email": "anwartroffice@gmail.com",
+      "photo": "https://hall.jnu.ac.bd/images/FB_IMG_1689844213155.jpg"
+    }
+  ],
+  "facilities": [
+    {
+      "name": "ডাইনিং সিস্টেম",
+      "slug": "dining",
+      "category": "DINING",
+      "description": "The hall's dining service for residents.",
+      "image": "https://hall.jnu.ac.bd/images/activity2.jpg"
+    },
+    {
+      "name": "হল লাইব্রেরী",
+      "slug": "library",
+      "category": "ACADEMIC",
+      "description": "The hall library for residents.",
+      "image": "https://hall.jnu.ac.bd/images/activity1.jpg"
+    },
+    {
+      "name": "Reading room",
+      "slug": "reading-room",
+      "category": "ACADEMIC",
+      "description": "A reading room on the fourth floor with 90 seats."
+    },
+    {
+      "name": "Canteen",
+      "slug": "canteen",
+      "category": "DINING",
+      "description": "A canteen on the ground floor."
+    },
+    {
+      "name": "Common room",
+      "slug": "common-room",
+      "category": "RECREATION",
+      "description": "A common room on the third floor."
+    },
+    {
+      "name": "Auditorium",
+      "slug": "auditorium",
+      "category": "RECREATION",
+      "description": "An auditorium on the second floor."
+    },
+    {
+      "name": "Guest room",
+      "slug": "guest-room",
+      "category": "ACCOMMODATION",
+      "description": "A guest room on the ground floor for visiting family."
+    },
+    {
+      "name": "ডিবেটিং ক্লাব",
+      "slug": "debating-club",
+      "category": "RECREATION",
+      "description": "The residents' debating club."
+    },
+    {
+      "name": "ল্যাঙ্গুয়েজ ক্লাব",
+      "slug": "language-club",
+      "category": "RECREATION",
+      "description": "The residents' language club."
+    }
+  ],
+  "notices": [
+    {
+      "title": "নওয়াব ফয়জুন্নেসা চৌধুরানী হলে আবাসিকতা লাভ ও বসবাসের শর্তাবলী এবং অঙ্গিকারনামা",
+      "slug": "residency-terms-2026",
+      "date": "2026-05-06",
+      "pdf": "https://hall.jnu.ac.bd/notice_document/আবাসিকতা_লাভ_ও_বসবাসের_শর্তাবলী.pdf",
+      "category": "ADMISSION"
+    },
+    {
+      "title": "জগন্নাথ বিশ্ববিদ্যালয়ের ছাত্রীদের নিকট থেকে সিটের জন্য অনলাইনের মাধ্যমে আবেদন আহ্বান",
+      "slug": "seat-applications-2024",
+      "date": "2024-11-19",
+      "category": "ADMISSION"
+    },
+    {
+      "title": "ছাত্রী হল সংক্রান্ত বিজ্ঞপ্তি",
+      "slug": "hall-notice-2022",
+      "date": "2022-03-16",
+      "pdf": "https://hall.jnu.ac.bd/notice_document/hall05.pdf",
+      "category": "GENERAL"
+    }
+  ],
+  "gallery": [
+    {
+      "title": "আবাসিক ছাত্রীদের অগ্নিকান্ড উদ্ধার ও প্রাথমিক চিকিৎসা বিষয়ক মহড়া বাস্তবায়ন",
+      "image": "https://hall.jnu.ac.bd/images/A1.jpg",
+      "category": "EVENTS"
+    },
+    {
+      "title": "হলের আবাসিক ছাত্রীদের স্বাস্থ্য সচেতনতা বিষয়ক ক্যাম্পেইন",
+      "image": "https://hall.jnu.ac.bd/images/N-12.jpg",
+      "category": "EVENTS"
+    },
+    {
+      "title": "হলের আবাসিক ছাত্রীদের স্বাস্থ্য সচেতনতা বিষয়ক কাম্পেইন",
+      "image": "https://hall.jnu.ac.bd/images/N2.jpg",
+      "category": "EVENTS"
+    },
+    {
+      "title": "হলের আবাসিক ছাত্রীদের অগ্নিকান্ড উদ্ধার ও প্রাথমিক চিকিৎসা মহড়া বাস্তবায়ন",
+      "image": "https://hall.jnu.ac.bd/images/H4.jpg",
+      "category": "EVENTS"
+    },
+    {
+      "title": "হলের আবাসিক ছাত্রীদের অগ্নিকান্ড উদ্ধার ও প্রাথমিক চিকিৎসা মহড়া বাস্তবায়ন",
+      "image": "https://hall.jnu.ac.bd/images/D1.jpg",
+      "category": "EVENTS"
+    },
+    {
+      "title": "জগন্নাথ বিশ্ববিদ্যালয়ের ছাত্রী হলের আবাসিক ছাত্রীদের অগ্নিকান্ড উদ্ধার ও প্রাথমিক চিকিৎসা মহড়া বাস্তবায়ন",
+      "image": "https://hall.jnu.ac.bd/images/K.jpg",
+      "category": "EVENTS"
+    },
+    {
+      "title": "হলের আবাসিক ছাত্রীদের অগ্নিকান্ড উদ্ধার ও প্রাথমিক চিকিৎসা বিষয়ক মহড়া বাস্তবায়ন",
+      "image": "https://hall.jnu.ac.bd/images/H3.jpg",
+      "category": "EVENTS"
+    },
+    {
+      "title": "হলের আবাসিক ছাত্রীদের অগ্নিকান্ড উদ্ধার ও প্রাথমিক চিকিৎসা বিষয়ক মহড়া বাস্তবায়ন",
+      "image": "https://hall.jnu.ac.bd/images/C1.jpg",
+      "category": "EVENTS"
+    },
+    {
+      "title": "হলের ছাত্রীদের স্বাস্থ্য সচেতনতা বিষয়ক ক্যাম্পেইন",
+      "image": "https://hall.jnu.ac.bd/images/N.jpg",
+      "category": "EVENTS"
+    },
+    {
+      "title": "হলের ছাত্রীদের স্বাস্থ্য সচেতনতা বিষয়ক ক্যাম্পেইন",
+      "image": "https://hall.jnu.ac.bd/images/N-1.jpg",
+      "category": "EVENTS"
+    },
+    {
+      "title": "অগ্নিকান্ড উদ্ধার ও প্রাথমিক চিকিৎসা বিষয়ক মহড়া বাস্তবায়ন",
+      "image": "https://hall.jnu.ac.bd/images/IMG-20241118-WA0023.jpg",
+      "category": "EVENTS"
+    },
+    {
+      "title": "বর্ষ বরণ উৎসব ১৪২৯",
+      "image": "https://hall.jnu.ac.bd/images/04c7fa78-9eb1-4c54-945c-5f69e8e82822.jpg",
+      "category": "EVENTS"
+    },
+    {
+      "title": "Hall life",
+      "image": "https://hall.jnu.ac.bd/images/H2.jpg",
+      "category": "GENERAL"
+    },
+    {
+      "title": "Hall life",
+      "image": "https://hall.jnu.ac.bd/images/J.jpg",
+      "category": "GENERAL"
+    },
+    {
+      "title": "Hall life",
+      "image": "https://hall.jnu.ac.bd/images/N-11.jpg",
+      "category": "GENERAL"
+    },
+    {
+      "title": "Hall life",
+      "image": "https://hall.jnu.ac.bd/images/N1.jpg",
+      "category": "GENERAL"
+    },
+    {
+      "title": "Hall life",
+      "image": "https://hall.jnu.ac.bd/images/H1.jpg",
+      "category": "GENERAL"
+    },
+    {
+      "title": "Hall life",
+      "image": "https://hall.jnu.ac.bd/images/E.jpg",
+      "category": "GENERAL"
+    },
+    {
+      "title": "Hall life",
+      "image": "https://hall.jnu.ac.bd/images/D.jpg",
+      "category": "GENERAL"
+    },
+    {
+      "title": "Hall life",
+      "image": "https://hall.jnu.ac.bd/images/C2.jpg",
+      "category": "GENERAL"
+    },
+    {
+      "title": "Hall life",
+      "image": "https://hall.jnu.ac.bd/images/B1.jpg",
+      "category": "GENERAL"
+    },
+    {
+      "title": "Hall life",
+      "image": "https://hall.jnu.ac.bd/images/B.jpg",
+      "category": "GENERAL"
+    }
+  ]
+}

@@ -1,18 +1,20 @@
 # HallMate API
 
-A REST API for running a university women's residential hall in Bangladesh: seats and rooms, applications (seat, transfer, swap, leave), complaints and maintenance, meals, notifications, and the hall's public website. Built for **Nawab Faizunnesa Chowdhurani Hall, Jagannath University**, where the current site only publishes notices as PDFs.
+A REST API for running a university women's residential hall in Bangladesh: seats and rooms, applications (seat, transfer, swap, leave), complaints and maintenance, billing with online payment, visitors, a digital ID card, meals, notifications, and the hall's public website. Built for **Nawab Faizunnesa Chowdhurani Hall, Jagannath University**, where the current site only publishes notices as PDFs.
 
-**Stack:** Node.js 24 · Express 5 · TypeScript 6 · PostgreSQL · Prisma 7 (pg driver adapter) · Zod · JWT with rotating refresh tokens · Cloudinary · Resend · Jest + Supertest
+**Stack:** Node.js 24 · Express 5 · TypeScript 6 · PostgreSQL · Prisma 7 (pg driver adapter) · Zod · JWT with rotating refresh tokens · Cloudinary · Resend email · Jest + Supertest
 
-**API docs:** Swagger UI at `/api-docs` · **Web app:** `hallmate-web` (Next.js, in progress)
+**Web app:** [hallmate-frontend](https://github.com/rifah07/hallmate-frontend) (Next.js, with screenshots) · **API docs:** Swagger UI at `/api-docs` · **Deploy:** [docs/DEPLOY.md](docs/DEPLOY.md) (free, no card: Vercel + Neon + Cloudinary + Resend)
 
 ---
 
 ## Why it's interesting
 
-- **Security-first, and tested.** A full audit found and fixed 15 issues, from a shared placeholder password on every new account to a house tutor being able to take over the super admin through an email change. Each fix is pinned by a regression test in [`src/shared/tests/security.test.ts`](src/shared/tests/security.test.ts).
+- **Security-first, and tested.** Two audits found and fixed issues from a shared placeholder password on every new account, to a house tutor being able to take over the super admin through an email change, to tutors reading every resident's phone number. Each fix is pinned by a regression test in [`src/shared/tests/security.test.ts`](src/shared/tests/security.test.ts).
+- **Approvals change the real world.** Approving a transfer moves the student; a cancellation frees the bed; a swap trades beds only after the other student agrees from her own account. Each change is atomic.
+- **Money handled carefully.** Whole taka in integers, payments counted only after a server-to-server check with SSLCommerz, and marking a bill paid is idempotent.
 - **Role-based access that matches the real hall.** Ten roles (provost, house tutors per floor, assistant warden, office, dining, maintenance, guard, student, parent, super admin). A house tutor sees only her floor; support staff see no resident data at all.
-- **Designed for free serverless hosting.** Stateless JWT auth, in-app notifications by polling instead of WebSockets, logs to stdout, one Prisma client per process.
+- **Designed for free serverless hosting.** Stateless JWT auth, in-app notifications by polling instead of WebSockets, logs to stdout, one Prisma client per process, and email that degrades gracefully: a code that can't be emailed is handed to the provost instead of lost.
 
 ## Features
 
@@ -20,14 +22,14 @@ A REST API for running a university women's residential hall in Bangladesh: seat
 |---|---|
 | Accounts | University-ID login, first login with a one-time password, forgot/reset by emailed code, change password, rotating refresh tokens, temporary lockout |
 | People | Bulk create from Excel/CSV, profiles with per-role editable fields, roles and account states (active, suspended, seat cancelled, graduated...) with reasons |
-| Rooms | 14 floors × 2 wings, assign / unassign / transfer with bed numbers, occupancy and vacancy views, floor-scoped access for house tutors |
+| Rooms | A 16-storey building (bedrooms on floors 5 to 16), assign / unassign / transfer with bed numbers, occupancy and vacancy views, floor-scoped access for house tutors |
 | Applications | Seat, cancellation, transfer, swap, leave, complaint, maintenance; assign to staff; **approving changes the real world**: a seat is allocated, a transfer moves her, a cancellation frees the bed, a swap trades beds (only after the other student consents herself) |
 | Billing | Yearly seat-renewal bills for every resident in one action (safe to run twice), fines, online payment through **SSLCommerz** (bKash, Nagad, Rocket, cards), cash and bank payments recorded by the provost, receipts, overdue status |
 | Notices | Hall-wide or per-floor notices with PDF attachments, expiry and withdrawal; house tutors post to their own floor |
 | Visitors | Student pre-registers a visitor, her floor's tutor approves, the guard sees today's list and checks them in and out; the student is told when her visitor arrives |
 | ID card | Digital hall ID with a signed QR code; guards scan it to see the photo and room; a cancelled seat stops the card immediately |
 | Dashboards | One endpoint, shaped per role: a student's room, roommates, bills and requests; a tutor's floor; the provost's occupancy and renewal collection; the guard's day |
-| Meals | Daily logs, cancellations with a deadline, planning counts for the dining staff |
+| Meals | Daily logs, cancellations up to 24 hours ahead (computed in Dhaka time, whatever the server's zone), planning counts for the dining staff |
 | Notifications | In-app inbox with unread badge and cursor pagination; emails for decisions, receipts, account and room changes |
 | Public site | Hall info, provost history, house tutors, staff, notices, events, facilities, dining, gallery, achievements, FAQ, admissions, contact form, public applications with tracking |
 
@@ -70,7 +72,8 @@ The payment gateway sits behind an interface (`billing/gateways/payment-gateway.
 |---|---|
 | Account takeover | Only the provost or super admin can change an email (the password-reset channel); the user is emailed when someone else edits her record |
 | Broken access control | Per-role allow-list of editable fields; house tutors limited to their floor; ownership enforced inside queries (`where: { id, userId }`) |
-| Leaking resident data | Resident search is staff-only and capped; support staff have no access to resident records |
+| Leaking resident data | Resident search is staff-only and capped; a house tutor sees only students living on her floor (others answer 404, so IDs can't be probed); support staff see a task's location and the resident's name, never her phone, email or room |
+| Lost or misdirected codes | If a one-time-password email fails, the provost gets the code to hand over; bulk upload skips existing people before emailing; a failed reset email answers exactly like an unknown ID |
 | Brute force | 10 auth attempts per 15 min per IP; 15-minute lock after 5 wrong passwords; one-time and reset codes die after 5 wrong tries (atomic counters) |
 | User enumeration | Same message and timing for unknown ID and wrong password (bcrypt against a dummy hash); status revealed only after a correct password |
 | Stolen sessions | 15-min access tokens; refresh tokens hashed (SHA-256), single-use, reuse revokes all; password change ends every session; locked or cancelled accounts lose access on the next request |
@@ -93,7 +96,7 @@ Requires Node 20.19+, Docker (for tests) and a PostgreSQL database ([Neon](https
 npm install
 cp .env.example .env          # DATABASE_URL, JWT secrets, Cloudinary, Resend
 npx prisma migrate deploy     # create the tables
-npm run db:seed               # optional sample data
+npm run db:seed               # first super admin (SUPER_ADMIN_* in .env) and the hall's public content
 npm run dev                   # http://localhost:5000 · docs at /api-docs
 ```
 
@@ -122,6 +125,7 @@ docker stop hallmate-test-db
 | `visitors` | Date window, floor approval, guard list, check-in once and only on the day |
 | `id-card` | Genuine vs tampered cards, card and login tokens not interchangeable, cancellation |
 | `dashboard` | Each role sees its own shape and nothing more |
+| `meals` | Cancel and status, Dhaka-time deadlines, range limits, planning counts |
 | `security` | One test per audit finding |
 
 ## Commands
@@ -134,13 +138,13 @@ docker stop hallmate-test-db
 | `npx prisma migrate deploy` | Apply migrations to the database in `.env` |
 | `npx prisma studio` | Browse the database |
 
-## Roadmap
+## Status
 
-| Status | Item |
+| | |
 |---|---|
-| Done | Auth, users, rooms, applications with approval effects, meals, notices, billing with SSLCommerz, visitors, QR ID card, dashboards, notifications, public site, security audit |
-| Next | Next.js web app · Vercel deployment · seed data from the hall's current website |
-| Left out on purpose | Parent portal, SOS button, study-room and guest-room booking, gate scanners, provost fund: each needs a policy decision or hardware the hall doesn't have yet |
+| Done | Auth, users, rooms, applications with approval effects, meals, notices, billing with SSLCommerz, visitors, QR ID card, dashboards, notifications, public site, two security audits, the [web app](https://github.com/rifah07/hallmate-frontend) |
+| Next | Deployment · a verified email domain so residents receive codes by email |
+| Left out on purpose | Parent portal, SOS button, study-room and guest-room booking, gate hardware, provost fund: each needs a policy decision or hardware the hall doesn't have yet |
 
 ## Author
 

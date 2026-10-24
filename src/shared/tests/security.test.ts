@@ -3,6 +3,7 @@ import app from '@/app';
 import prisma from '@/config/database.config';
 import { hashPassword } from '@/shared/utils/crypto/password.util';
 import { UserRole } from '@prisma/client';
+import emailService from '@/shared/utils/email/email.service';
 
 // One test per audit finding (2026-10-23), so a regression fails loudly.
 
@@ -15,6 +16,9 @@ const IDS = {
   fresh: '7700000006',
   reset: '7700000007',
   locked: '7700000008',
+  cleaner: '7700000009',
+  noMail: '7700000010',
+  bulkNew: '7700000011',
 };
 const ALL = Object.values(IDS);
 const PASSWORD = 'Secret@123';
@@ -49,6 +53,7 @@ const create = async (
 
 const cleanup = async () => {
   await prisma.auditLog.deleteMany({ where: { action: 'REISSUE_OTP' } });
+  await prisma.application.deleteMany({ where: { student: { universityId: { in: ALL } } } });
   await prisma.refreshToken.deleteMany({ where: { user: { universityId: { in: ALL } } } });
   await prisma.user.deleteMany({ where: { universityId: { in: ALL } } });
   await prisma.room.deleteMany({ where: { roomNumber: { in: ROOMS } } });
@@ -75,8 +80,9 @@ beforeAll(async () => {
   });
   users.reset = await create(IDS.reset, 'STUDENT');
   users.locked = await create(IDS.locked, 'STUDENT');
+  users.cleaner = await create(IDS.cleaner, 'OFFICE_STAFF');
 
-  for (const key of ['admin', 'provost', 'tutor', 'student']) {
+  for (const key of ['admin', 'provost', 'tutor', 'student', 'cleaner']) {
     tokens[key] = (await login(IDS[key as keyof typeof IDS])).body.data.accessToken;
   }
 }, 60000);
@@ -257,6 +263,147 @@ describe('#8 students cannot rewrite meal logs', () => {
       .set('Authorization', `Bearer ${tokens.student}`)
       .send({ lunch: false });
     expect(res.status).toBe(403);
+  });
+});
+
+describe('#9 support staff see the job, not the resident', () => {
+  it('an assigned task shows her name but no phone, email or room', async () => {
+    await prisma.application.create({
+      data: {
+        type: 'MAINTENANCE',
+        studentId: users.student,
+        assignedTo: users.cleaner,
+        assignedToRole: 'OFFICE_STAFF',
+        data: {
+          category: 'Plumbing',
+          priority: 'NORMAL',
+          location: 'S-501 bathroom',
+          description: 'Tap leaks all night long, please fix',
+        },
+      },
+    });
+    const res = await request(app)
+      .get('/api/applications/assigned')
+      .set('Authorization', `Bearer ${tokens.cleaner}`);
+    expect(res.status).toBe(200);
+    const [task] = res.body.data.applications;
+    expect(task.data.location).toBe('S-501 bathroom');
+    expect(task.student).toEqual({ name: 'Sec STUDENT' });
+  });
+});
+
+describe('#10 a house tutor sees only the students on her floor', () => {
+  const get = (path: string) =>
+    request(app).get(path).set('Authorization', `Bearer ${tokens.tutor}`);
+
+  it("the user list holds only her floor's students", async () => {
+    const res = await get('/api/users?limit=100');
+    expect(res.status).toBe(200);
+    const ids = res.body.data.map((u: { id: string }) => u.id);
+    expect(ids).toContain(users.student);
+    expect(ids).not.toContain(users.otherFloor);
+    expect(ids).not.toContain(users.admin);
+  });
+
+  it('search is scoped the same way', async () => {
+    const res = await get(`/api/users/search?q=${IDS.otherFloor}`);
+    expect(res.body.data).toHaveLength(0);
+  });
+
+  it('a student on another floor, or staff, look like they do not exist', async () => {
+    expect((await get(`/api/users/${users.otherFloor}`)).status).toBe(404);
+    expect((await get(`/api/users/university/${IDS.admin}`)).status).toBe(404);
+    expect((await get(`/api/users/${users.student}`)).status).toBe(200);
+  });
+
+  it('cannot list another floor or staff by role', async () => {
+    expect((await get('/api/users/floor/6')).status).toBe(403);
+    expect((await get('/api/users/role/GUARD')).status).toBe(403);
+  });
+});
+
+describe('#11 a failed email never loses a code or reveals an account', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it('creating a user hands the one-time password to the provost when email fails', async () => {
+    jest
+      .spyOn(emailService, 'sendWelcomeEmail')
+      .mockRejectedValueOnce(new Error('domain not verified'));
+    const res = await request(app)
+      .post('/api/users')
+      .set('Authorization', `Bearer ${tokens.provost}`)
+      .send({
+        universityId: IDS.noMail,
+        role: 'OFFICE_STAFF',
+        name: 'No Mail',
+        email: 'nomail@sec.test',
+        phone: '01712345678',
+      });
+    expect(res.status).toBe(201);
+    expect(res.body.data.emailSent).toBe(false);
+    expect(res.body.data.oneTimePassword).toMatch(/\S{6,}/);
+  });
+
+  it('a sent email keeps the code out of the response', async () => {
+    jest.spyOn(emailService, 'sendWelcomeEmail').mockResolvedValueOnce(undefined);
+    const user = await prisma.user.findUniqueOrThrow({ where: { universityId: IDS.noMail } });
+    const res = await request(app)
+      .post(`/api/users/${user.id}/reissue-otp`)
+      .set('Authorization', `Bearer ${tokens.provost}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.emailSent).toBe(true);
+    expect(res.body.data.oneTimePassword).toBeUndefined();
+  });
+
+  it('forgot password answers the same when the reset email fails', async () => {
+    jest.spyOn(emailService, 'sendPasswordResetOTP').mockRejectedValueOnce(new Error('down'));
+    const real = await request(app)
+      .post('/api/auth/forgot-password')
+      .send({ universityId: IDS.reset });
+    const unknown = await request(app)
+      .post('/api/auth/forgot-password')
+      .send({ universityId: '7799999998' });
+    expect(real.status).toBe(200);
+    expect(real.body).toEqual(unknown.body);
+  });
+});
+
+describe('#12 bulk upload never emails people who already exist', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it('skips the existing resident and emails only the new one', async () => {
+    const send = jest
+      .spyOn(emailService, 'sendWelcomeEmail')
+      .mockRejectedValue(new Error('no domain'));
+    const res = await request(app)
+      .post('/api/users/bulk')
+      .set('Authorization', `Bearer ${tokens.provost}`)
+      .send({
+        users: [
+          {
+            universityId: IDS.student,
+            role: 'STUDENT',
+            name: 'Already Here',
+            email: 'other@sec.test',
+            phone: '01712345678',
+          },
+          {
+            universityId: IDS.bulkNew,
+            role: 'OFFICE_STAFF',
+            name: 'Bulk New',
+            email: 'bulknew@sec.test',
+            phone: '01712345678',
+          },
+        ],
+      });
+    expect(res.status).toBe(201);
+    expect(res.body.data).toMatchObject({ created: 1, skipped: 1 });
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(send.mock.calls[0][0]).toBe('bulknew@sec.test');
+    // the email failed, so the office gets the code instead of losing it
+    expect(res.body.data.undelivered).toEqual([
+      expect.objectContaining({ universityId: IDS.bulkNew, oneTimePassword: expect.any(String) }),
+    ]);
   });
 });
 
