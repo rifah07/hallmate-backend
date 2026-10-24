@@ -87,6 +87,14 @@ describe('Dashboard', () => {
     expect(d).not.toHaveProperty('occupancy');
   });
 
+  it("a student sees her floor's house tutor, and a reassignment needs no edit", async () => {
+    expect((await dashboard('mim')).houseTutor).toMatchObject({ name: 'Dash tutor', email: 'tutor@dash.test' });
+
+    await prisma.user.update({ where: { id: users.tutor }, data: { assignedFloor: 11 } });
+    expect((await dashboard('mim')).houseTutor).toBeNull();
+    await prisma.user.update({ where: { id: users.tutor }, data: { assignedFloor: 12 } });
+  });
+
   it('a house tutor sees her floor', async () => {
     const d = await dashboard('tutor');
     expect(d.scope).toEqual({ floor: 12 });
