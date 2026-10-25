@@ -120,9 +120,9 @@ export class ServiceUnavailableError extends AppError {
  * Used for validation failures (can be extended with details)
  */
 export class ValidationError extends BadRequestError {
-  details?: any;
+  details?: Record<string, unknown>;
 
-  constructor(message: string = 'Validation failed', details?: any) {
+  constructor(message: string = 'Validation failed', details?: Record<string, unknown>) {
     super(message);
     this.details = details;
   }

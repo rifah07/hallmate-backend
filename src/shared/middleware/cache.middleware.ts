@@ -25,7 +25,7 @@
 import { Request, Response, NextFunction } from 'express';
 
 interface CacheEntry {
-  data: any;
+  data: unknown;
   expiresAt: number;
 }
 
@@ -70,7 +70,7 @@ export const cacheResponse = (ttlSeconds: number) => {
     const originalJson = res.json.bind(res);
 
     // Override json method to cache response
-    res.json = function (data: any) {
+    res.json = function (data: unknown) {
       // Only successes: a cached 500 would keep failing after the DB recovers
       if (res.statusCode >= 200 && res.statusCode < 300) {
         cache.set(cacheKey, {

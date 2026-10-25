@@ -1,5 +1,6 @@
 import { clientIp } from '@/shared/utils/client-ip.util';
 import { Request, Response, NextFunction } from 'express';
+import { ZodError } from 'zod';
 import { sendSuccess, sendError, sendPaginatedSuccess } from '@/shared/utils/response.util';
 import * as service from '../services/public.service';
 import {
@@ -22,7 +23,7 @@ import {
  * The caller checks `if (!query) return;` — clean and explicit.
  */
 function parseOrFail<T>(
-  schema: { safeParse: (v: unknown) => { success: boolean; data?: T; error?: any } },
+  schema: { safeParse: (v: unknown) => { success: boolean; data?: T; error?: ZodError } },
   input: unknown,
   res: Response,
 ): T | null {

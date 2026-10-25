@@ -7,7 +7,8 @@
                                             if no throw → clearCache()
  */
 
-import { Router } from 'express';
+import { Router, RequestHandler } from 'express';
+import { UserRole } from '@prisma/client';
 import { authenticate } from '@/shared/middleware/authenticate';
 import { authorize } from '@/shared/middleware/authorize';
 import { uploadImage, handleMulterError } from '@/shared/middleware/upload.middleware';
@@ -63,16 +64,16 @@ router.use(strictRateLimiter);
 
 function registerContentRoutes(options: {
   path: string;
-  handlers: { create: any; update: any; delete: any };
-  schema: z.ZodObject<any>;
-  roles?: string[];
+  handlers: { create: RequestHandler; update: RequestHandler; delete: RequestHandler };
+  schema: z.ZodObject;
+  roles?: UserRole[];
   hasImage?: boolean;
 }) {
   const { path, handlers, schema, roles = ['SUPER_ADMIN', 'PROVOST'], hasImage = false } = options;
 
   const uploadMiddleware = hasImage ? [uploadImage.single('image'), handleMulterError] : [];
 
-  const authMiddleware = authorize(...(roles as any[]));
+  const authMiddleware = authorize(...roles);
 
   // POST — full schema validation
   router.post(path, authMiddleware, ...uploadMiddleware, validate(schema, 'body'), handlers.create);

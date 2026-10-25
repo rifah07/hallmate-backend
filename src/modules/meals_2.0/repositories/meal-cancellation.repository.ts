@@ -1,4 +1,5 @@
 import prisma from '@/config/database.config';
+import { Prisma } from '@prisma/client';
 
 class MealCancellationRepository {
   async findStudent(studentId: string) {
@@ -61,7 +62,11 @@ class MealCancellationRepository {
     });
   }
 
-  async updateCancellation(studentId: string, date: Date, data: any) {
+  async updateCancellation(
+    studentId: string,
+    date: Date,
+    data: Prisma.MealCancellationUpdateInput,
+  ) {
     return prisma.mealCancellation.update({
       where: {
         studentId_date: { studentId, date },
@@ -115,7 +120,7 @@ class MealCancellationRepository {
     });
   }
 
-  async bulkUpsert(operations: any[]) {
+  async bulkUpsert(operations: Prisma.PrismaPromise<unknown>[]) {
     const batchSize = 50;
     let count = 0;
 

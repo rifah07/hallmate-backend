@@ -65,8 +65,8 @@ class MealCancellationService {
         });
 
         result.successful.push({ date: dateStr, meals: input.mealTypes });
-      } catch (err: any) {
-        result.failed.push({ date: dateStr, reason: err.message });
+      } catch (err) {
+        result.failed.push({ date: dateStr, reason: (err as Error).message });
       }
     }
 
@@ -216,7 +216,7 @@ class MealCancellationService {
     mealTypes: ('breakfast' | 'lunch' | 'dinner')[],
     reason: string,
   ): Promise<{ cancelledCount: number }> {
-    const operations: any[] = [];
+    const operations: ReturnType<typeof repository.buildUpsertQuery>[] = [];
 
     for (const studentId of studentIds) {
       for (const dateStr of dates) {
@@ -243,13 +243,17 @@ class MealCancellationService {
   // HELPERS
   // ============================================================================
 
-  private validateCancellation(date: Date, mealTypes: string[], now: Date) {
+  private validateCancellation(
+    date: Date,
+    mealTypes: ('breakfast' | 'lunch' | 'dinner')[],
+    now: Date,
+  ) {
     if (date < dhakaToday()) {
       throw new BadRequestError('Cannot cancel past dates');
     }
 
     for (const meal of mealTypes) {
-      if (now > this.getDeadline(date, meal as any)) {
+      if (now > this.getDeadline(date, meal)) {
         throw new BadRequestError(`Deadline passed for ${meal}`);
       }
     }

@@ -41,12 +41,12 @@ import type {
 // cacheKeys: cleared ONLY after a successful write
 // ─────────────────────────────────────────────
 
-function makeContentService<TBody extends Record<string, any>>(
+function makeContentService<TBody extends Record<string, unknown>>(
   repo: {
-    findById: (id: string) => Promise<any>;
-    create: (data: any) => Promise<any>;
-    update: (id: string, data: any) => Promise<any>;
-    delete: (id: string) => Promise<any>;
+    findById: (id: string) => Promise<Record<string, unknown> | null>;
+    create: (data: Record<string, unknown>) => Promise<unknown>;
+    update: (id: string, data: Record<string, unknown>) => Promise<unknown>;
+    delete: (id: string) => Promise<unknown>;
   },
   options: {
     folder?: string;
@@ -75,7 +75,7 @@ function makeContentService<TBody extends Record<string, any>>(
 
   return {
     async create(body: TBody, file?: Express.Multer.File) {
-      const data: any = { ...body };
+      const data: Record<string, unknown> = { ...body };
 
       if (file) {
         const uploaded = await uploadImage(file);
@@ -92,8 +92,8 @@ function makeContentService<TBody extends Record<string, any>>(
       const existing = await repo.findById(id);
       if (!existing) throw new NotFoundError('Record not found');
 
-      const data: any = { ...body };
-      const oldPublicId: string | undefined = existing[publicIdField] ?? undefined;
+      const data: Record<string, unknown> = { ...body };
+      const oldPublicId = (existing[publicIdField] as string | null) ?? undefined;
 
       if (file) {
         // Upload new asset FIRST — if DB fails, new asset orphaned (non-fatal).
@@ -123,8 +123,9 @@ function makeContentService<TBody extends Record<string, any>>(
       const result = await repo.delete(id);
       bustCache(); // ← only fires if delete() didn't throw
 
-      if (existing[publicIdField]) {
-        await cloudinaryService.deleteImage(existing[publicIdField]).catch(() => {});
+      const publicId = existing[publicIdField] as string | null;
+      if (publicId) {
+        await cloudinaryService.deleteImage(publicId).catch(() => {});
       }
 
       return result;

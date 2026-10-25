@@ -9,7 +9,8 @@ jest.mock('cloudinary', () => {
       write: (_chunk: unknown, _enc: unknown, next: () => void) => next(),
       final(next: () => void) {
         done(undefined, {
-          secure_url: 'https://res.cloudinary.com/test/image/upload/v1/hallmate/profile-pictures/avatar.png',
+          secure_url:
+            'https://res.cloudinary.com/test/image/upload/v1/hallmate/profile-pictures/avatar.png',
           public_id: 'hallmate/profile-pictures/avatar',
           width: 1,
           height: 1,
@@ -265,7 +266,7 @@ describe('User Module', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
-      res.body.data.forEach((u: any) => {
+      res.body.data.forEach((u: { role: string }) => {
         expect(u.role).toBe('STUDENT');
       });
     }, 15000);

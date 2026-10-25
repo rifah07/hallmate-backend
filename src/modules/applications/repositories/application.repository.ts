@@ -6,14 +6,14 @@ class ApplicationRepository {
   async create(data: {
     type: ApplicationType;
     studentId: string;
-    data: any;
+    data: Record<string, unknown>;
     attachments?: string[];
   }) {
     return await prisma.application.create({
       data: {
         type: data.type,
         studentId: data.studentId,
-        data: data.data,
+        data: data.data as Prisma.InputJsonValue,
         attachments: data.attachments || [],
       },
       include: {
@@ -217,27 +217,28 @@ class ApplicationRepository {
     };
   }
 
-  async countOverlappingApplications(studentId: string, data: { startDate: Date; endDate: Date }) {
-    return await prisma.application.count({
-      where: {
-        studentId,
-        type: 'LEAVE',
-        status: {
-          in: ['PENDING', 'APPROVED'],
-        },
-        data: {
-          path: ['startDate'],
-          lte: data.endDate,
-        },
-      },
+  async countOverlappingApplications(
+    studentId: string,
+    data: { startDate: string | Date; endDate: string | Date },
+  ) {
+    const leaves = await prisma.application.findMany({
+      where: { studentId, type: 'LEAVE', status: { in: ['PENDING', 'APPROVED'] } },
+      select: { data: true },
     });
+    // Compared as Dates: the JSON keeps whatever date format the student sent
+    const start = new Date(data.startDate);
+    const end = new Date(data.endDate);
+    return leaves.filter(({ data: leave }) => {
+      const { startDate, endDate } = leave as { startDate: string; endDate: string };
+      return new Date(startDate) <= end && new Date(endDate) >= start;
+    }).length;
   }
 
-  async update(id: string, data: { data?: any; attachments?: string[] }) {
+  async update(id: string, data: { data?: Record<string, unknown>; attachments?: string[] }) {
     return await prisma.application.update({
       where: { id },
       data: {
-        ...(data.data && { data: data.data }),
+        ...(data.data && { data: data.data as Prisma.InputJsonValue }),
         ...(data.attachments && { attachments: data.attachments }),
       },
       include: {

@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import applicationService from '../services/application.service';
 import { sendSuccess } from '@/shared/utils/response.util';
 import { UserContext } from '../types/application.types';
-import { UserRole } from '@prisma/client';
+import { ApplicationStatus, ApplicationType, UserRole } from '@prisma/client';
 
 class ApplicationController {
   async createApplication(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -23,8 +23,8 @@ class ApplicationController {
   async getAllApplications(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const filters = {
-        type: req.query.type as any,
-        status: req.query.status as any,
+        type: req.query.type as ApplicationType | undefined,
+        status: req.query.status as ApplicationStatus | undefined,
         studentId: req.query.studentId as string | undefined,
         assignedTo: req.query.assignedTo as string | undefined,
         assignedToRole: req.query.assignedToRole as UserRole,

@@ -99,7 +99,9 @@ export const publicRepository = {
   findStaff(params: { page: number; limit: number; category?: string; search?: string }) {
     const where: Prisma.StaffProfileWhereInput = {
       isPublic: true,
-      ...(params.category && { category: params.category as any }),
+      ...(params.category && {
+        category: params.category as Prisma.StaffProfileWhereInput['category'],
+      }),
       ...(params.search && {
         OR: [
           { name: { contains: params.search, mode: 'insensitive' } },
@@ -137,7 +139,9 @@ export const publicRepository = {
     return prisma.facility.findMany({
       where: {
         isActive: true,
-        ...(params.category && { category: params.category as any }),
+        ...(params.category && {
+          category: params.category as Prisma.FacilityWhereInput['category'],
+        }),
       },
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
       select: {
@@ -255,7 +259,9 @@ export const publicRepository = {
       isPublished: true,
       OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
       ...(params.category && { category: params.category }),
-      ...(params.priority && { priority: params.priority as any }),
+      ...(params.priority && {
+        priority: params.priority as Prisma.PublicNoticeWhereInput['priority'],
+      }),
       ...(params.search && {
         OR: [
           { title: { contains: params.search, mode: 'insensitive' } },
@@ -327,7 +333,9 @@ export const publicRepository = {
   findGallery(params: { page: number; limit: number; category?: string; search?: string }) {
     const where: Prisma.GalleryItemWhereInput = {
       isActive: true,
-      ...(params.category && { category: params.category as any }),
+      ...(params.category && {
+        category: params.category as Prisma.GalleryItemWhereInput['category'],
+      }),
       ...(params.search && {
         OR: [
           { title: { contains: params.search, mode: 'insensitive' } },
@@ -410,7 +418,7 @@ export const publicRepository = {
   },
 
   createPublicApplication(data: {
-    type: any;
+    type: Prisma.PublicApplicationCreateInput['type'];
     status: 'PENDING';
     applicantName: string;
     applicantEmail: string;
@@ -471,7 +479,7 @@ export const publicRepository = {
     });
   },
 
-  createProvostRecord(data: Prisma.ProvostHistoryCreateInput) {
+  createProvostRecord(data: Prisma.ProvostHistoryUncheckedCreateInput) {
     return prisma.provostHistory.create({
       data,
       select: provostPublicSelect,

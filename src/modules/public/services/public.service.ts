@@ -284,7 +284,7 @@ export async function createProvostRecord(body: ProvostHistoryBody, file?: Expre
     userId: body.userId ?? null,
     photoUrl: photo?.url,
     photoPublicId: photo?.publicId,
-  } as any);
+  });
 }
 
 export async function updateProvostRecord(

@@ -76,6 +76,13 @@ const maintenanceApplicationDataSchema = z.object({
   preferredDate: z.string().or(z.date()).optional(),
 });
 
+export type SeatCancellationData = z.infer<typeof seatCancellationDataSchema>;
+export type SeatTransferData = z.infer<typeof seatTransferDataSchema>;
+export type SeatSwapData = z.infer<typeof seatSwapDataSchema>;
+export type LeaveApplicationData = z.infer<typeof leaveApplicationDataSchema>;
+export type ComplaintData = z.infer<typeof complaintApplicationDataSchema>;
+export type MaintenanceData = z.infer<typeof maintenanceApplicationDataSchema>;
+
 // ============================================================================
 // CREATE APPLICATION (FINAL - DISCRIMINATED UNION)
 // ============================================================================

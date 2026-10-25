@@ -1,5 +1,6 @@
 import prisma from '@/config/database.config';
 
+/* eslint-disable @typescript-eslint/no-explicit-any -- Prisma model delegates share no common type */
 function makeCRUD<
   TDelegate extends {
     findUnique: (args: any) => Promise<any>;
@@ -22,6 +23,7 @@ function makeCRUD<
     delete: (id: string) => delegate.delete({ where: { id } }) as ReturnType<TDelegate['delete']>,
   };
 }
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 // ─────────────────────────────────────────────
 // Per-model CRUD instances — one line each
@@ -63,6 +65,7 @@ export const adminRepository = {
     slug: string,
     excludeId?: string,
   ): Promise<boolean> => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- a union of delegates is not callable
     const record = await (prisma[model] as any).findFirst({
       where: { slug, ...(excludeId && { id: { not: excludeId } }) },
       select: { id: true },

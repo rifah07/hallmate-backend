@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import userService from '../services/user.service';
 import { sendSuccess, sendPaginatedSuccess, sendError } from '@/shared/utils/response.util';
 import { AppError, BadRequestError, UnauthorizedError } from '@/shared/errors';
-import { UserRole } from '@prisma/client';
+import { AccountStatus, Program, UserRole } from '@prisma/client';
 import {
   parseUserExcelFile,
   parseUserCSVFile,
@@ -88,10 +88,10 @@ class UserController {
 
       const filters = {
         role: role as UserRole,
-        accountStatus: accountStatus as any,
+        accountStatus: accountStatus as AccountStatus | undefined,
         department: department as string | undefined,
         year: year ? parseInt(year as string) : undefined,
-        program: program as any,
+        program: program as Program | undefined,
         assignedFloor: assignedFloor ? parseInt(assignedFloor as string) : undefined,
         roomFloor: floor ? parseInt(floor as string) : undefined,
         search: search as string | undefined,
@@ -312,7 +312,7 @@ class UserController {
     try {
       if (!req.user) throw new UnauthorizedError('User not authenticated');
 
-      const file = (req as any).file;
+      const file = req.file;
       if (!file) throw new BadRequestError('No file uploaded');
 
       let parseResult;
@@ -434,7 +434,7 @@ class UserController {
       if (!req.user) throw new AppError('User not authenticated', 401);
 
       const { userId } = req.params;
-      const file = (req as any).file as Express.Multer.File | undefined;
+      const file = req.file;
 
       if (!file) throw new AppError('No file uploaded', 400);
 

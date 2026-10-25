@@ -11,11 +11,11 @@ export const validate =
       const dataToValidate =
         source === 'all' ? { body: req.body, query: req.query, params: req.params } : req[source];
 
-      const parsed = (await schema.parseAsync(dataToValidate)) as Record<string, any>;
+      const parsed = (await schema.parseAsync(dataToValidate)) as Record<string, unknown>;
 
       if (source === 'all') {
         req.body = parsed.body;
-        req.params = parsed.params;
+        req.params = parsed.params as Request['params'];
         Object.defineProperty(req, 'query', {
           value: parsed.query,
           writable: true,
@@ -28,7 +28,7 @@ export const validate =
           configurable: true,
         });
       } else {
-        (req as any)[source] = parsed;
+        Object.assign(req, { [source]: parsed });
       }
 
       return next();
