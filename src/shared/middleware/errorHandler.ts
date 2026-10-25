@@ -8,8 +8,11 @@ import { AppError } from '../errors';
  * Handles all errors thrown in the application
  */
 export const errorHandler = (err: Error, req: Request, res: Response, _next: NextFunction) => {
+  // body-parser marks its own client errors (bad JSON, body too large) with expose + a 4xx status
+  const httpErr = err as Error & { expose?: boolean; status?: number };
+  const parserError = httpErr.expose === true && !!httpErr.status;
   // Server faults with stack; client mistakes (4xx) as one short line
-  const status = err instanceof AppError ? err.statusCode : 500;
+  const status = err instanceof AppError ? err.statusCode : (parserError && httpErr.status) || 500;
   if (status >= 500) {
     logger.error(`${req.method} ${req.path} ${err.message}`, { name: err.name, stack: err.stack });
   } else {
@@ -25,6 +28,13 @@ export const errorHandler = (err: Error, req: Request, res: Response, _next: Nex
         ...(err.code && { code: err.code }),
         ...(err.details && { details: err.details }),
       },
+    });
+  }
+
+  if (parserError) {
+    return res.status(status).json({
+      success: false,
+      error: { message: status === 413 ? 'Request body is too large' : 'Malformed request body' },
     });
   }
 

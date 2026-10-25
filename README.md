@@ -6,7 +6,9 @@ A REST API for running a university women's residential hall in Bangladesh: seat
 
 **Stack:** Node.js 24 · Express 5 · TypeScript 6 · PostgreSQL · Prisma 7 (pg driver adapter) · Zod · JWT with rotating refresh tokens · Cloudinary · Resend email · Jest + Supertest
 
-**Web app:** [hallmate-frontend](https://github.com/rifah07/hallmate-frontend) (Next.js, with screenshots) · **API docs:** Swagger UI at `/api-docs` · **Deploy:** [docs/DEPLOY.md](docs/DEPLOY.md) (free, no card: Vercel + Neon + Cloudinary + Resend)
+**Live:** [hallmate.vercel.app](https://hallmate.vercel.app) · [demo accounts](docs/DEMO_ACCOUNTS.md) · **Web app:** [hallmate-frontend](https://github.com/rifah07/hallmate-frontend) (Next.js, with screenshots) · **API docs:** Swagger UI at `/api-docs` · **Deploy:** [docs/DEPLOY.md](docs/DEPLOY.md) (free, no card: Vercel + Neon + Cloudinary + Resend)
+
+▶ **[Watch the 2-minute demo](https://github.com/rifah07/hallmate-frontend/blob/master/docs/demo.mp4)**: every role this API serves, with captions explaining which rule protects what.
 
 ---
 
