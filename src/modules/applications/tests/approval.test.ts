@@ -220,3 +220,41 @@ describe('Seat swap by university ID', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('Leave overlap', () => {
+  const day = (offset: number) =>
+    new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
+  const leave = (start: number, end: number) =>
+    apply('mover', 'LEAVE', {
+      leaveType: 'SHORT_LEAVE',
+      startDate: day(start),
+      endDate: day(end),
+      destination: 'Home in Khulna',
+      reason: 'Family visit for the weekend',
+      emergencyContact: { name: 'Her mother', phone: '01712345678', relation: 'Mother' },
+    });
+
+  it('an old approved leave does not block a new one', async () => {
+    await prisma.application.create({
+      data: {
+        type: 'LEAVE',
+        status: 'APPROVED',
+        studentId: users.mover,
+        data: { startDate: day(-40), endDate: day(-38) },
+      },
+    });
+    const first = await leave(10, 12);
+    expect(first.status).toBe(201);
+    expect((await respond(first.body.data.id, { status: 'APPROVED' })).status).toBe(200);
+  });
+
+  it('a leave that overlaps an approved one is refused', async () => {
+    const res = await leave(11, 13);
+    expect(res.status).toBe(409);
+    expect(res.body.error.message).toMatch(/overlapping/);
+  });
+
+  it('a later leave that does not overlap is accepted', async () => {
+    expect((await leave(20, 21)).status).toBe(201);
+  });
+});
