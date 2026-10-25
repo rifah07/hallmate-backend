@@ -451,3 +451,14 @@ describe('#5 rate limits follow the reader, not a spoofable header', () => {
     expect(last).toBe(429);
   }, 30000);
 });
+
+describe('malformed JSON is a client error, not a server fault', () => {
+  it('answers 400 without echoing the parser message', async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .set('content-type', 'application/json')
+      .send('{bad');
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toBe('Malformed request body');
+  });
+});
