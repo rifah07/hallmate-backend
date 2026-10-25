@@ -40,7 +40,7 @@ export async function parseUserExcelFile(buffer: Buffer): Promise<ExcelParseResu
   const workbook = new ExcelJS.Workbook();
 
   try {
-    await workbook.xlsx.load(buffer as any);
+    await workbook.xlsx.load(buffer as unknown as Parameters<typeof workbook.xlsx.load>[0]);
   } catch {
     throw new BadRequestError('Invalid Excel file format');
   }

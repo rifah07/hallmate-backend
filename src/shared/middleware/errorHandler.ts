@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
+import { ZodError } from 'zod';
+import { MulterError } from 'multer';
 import logger from '../utils/logger.util';
 import { AppError } from '../errors';
 
@@ -78,14 +80,14 @@ export const errorHandler = (err: Error, req: Request, res: Response, _next: Nex
       success: false,
       error: {
         message: 'Validation failed',
-        details: (err as any).errors,
+        details: (err as ZodError).issues,
       },
     });
   }
 
   // Handle Multer errors (file upload)
   if (err.name === 'MulterError') {
-    const multerErr = err as any;
+    const multerErr = err as MulterError;
     let message = 'File upload error';
 
     if (multerErr.code === 'LIMIT_FILE_SIZE') {

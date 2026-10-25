@@ -96,8 +96,8 @@ class MealManagementService {
           });
         }
       });
-    } catch (error: any) {
-      throw new BadRequestError(`Batch operation failed: ${error.message}`);
+    } catch (error) {
+      throw new BadRequestError(`Batch operation failed: ${(error as Error).message}`);
     }
 
     return result;

@@ -163,10 +163,11 @@ class MealRepository {
     }
 
     if (filters.roomNumber) {
+      const student = where.student as Prisma.UserWhereInput | undefined;
       where.student = {
-        ...where.student,
+        ...student,
         currentRoom: {
-          ...(where.student as any)?.currentRoom,
+          ...(student?.currentRoom as Prisma.RoomWhereInput | undefined),
           roomNumber: filters.roomNumber,
         },
       };

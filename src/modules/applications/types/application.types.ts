@@ -2,12 +2,12 @@ import { ApplicationType, ApplicationStatus, UserRole } from '@prisma/client';
 
 export interface CreateApplicationInput {
   type: ApplicationType;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   attachments?: string[];
 }
 
 export interface UpdateApplicationInput {
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   attachments?: string[];
 }
 
@@ -54,7 +54,7 @@ export interface ApplicationResponse {
     year?: number;
     currentRoomId?: string;
   };
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   attachments: string[];
   assignedTo?: string;
   assignedToRole?: UserRole;

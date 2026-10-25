@@ -15,7 +15,7 @@ import {
   TypeStatistics,
 } from '../types/room.types';
 import { NotFoundError, ConflictError, ForbiddenError, BadRequestError } from '@/shared/errors';
-import { RoomStatus, RoomType } from '@prisma/client';
+import { Room, RoomOccupant, RoomStatus, RoomType } from '@prisma/client';
 
 class RoomService {
   // ============================================================================
@@ -52,10 +52,16 @@ class RoomService {
   // HELPER: Transform room to include occupants and vacancy info
   // ============================================================================
 
-  private transformRoom(room: any): RoomWithOccupants {
+  private transformRoom(
+    room: Room & {
+      occupants: (Pick<RoomOccupant, 'userId' | 'bedNumber' | 'assignedDate'> & {
+        user: Omit<OccupantInfo, 'bedNumber' | 'assignedDate'>;
+      })[];
+    },
+  ): RoomWithOccupants {
     const occupants: OccupantInfo[] = room.occupants
-      .filter((o: any) => o.userId !== null)
-      .map((o: any) => ({
+      .filter((o) => o.userId !== null)
+      .map((o) => ({
         id: o.user.id,
         name: o.user.name,
         universityId: o.user.universityId,

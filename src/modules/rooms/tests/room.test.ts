@@ -358,7 +358,7 @@ describe('Rooms Module', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.data.rooms.every((r: any) => r.floor === 3)).toBe(true);
+      expect(res.body.data.rooms.every((r: { floor: number }) => r.floor === 3)).toBe(true);
     }, 15000);
 
     it('should auto-filter to floor 3 for House Tutor', async () => {
@@ -367,7 +367,7 @@ describe('Rooms Module', () => {
         .set('Authorization', `Bearer ${tutorFloor3Token}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.data.rooms.every((r: any) => r.floor === 3)).toBe(true);
+      expect(res.body.data.rooms.every((r: { floor: number }) => r.floor === 3)).toBe(true);
     }, 15000);
 
     it('should reject student access', async () => {
@@ -441,7 +441,7 @@ describe('Rooms Module', () => {
         .set('Authorization', `Bearer ${tutorFloor3Token}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.data.rooms.every((r: any) => r.floor === 3)).toBe(true);
+      expect(res.body.data.rooms.every((r: { floor: number }) => r.floor === 3)).toBe(true);
     }, 15000);
   });
 
@@ -453,7 +453,7 @@ describe('Rooms Module', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.floor).toBe(3);
-      expect(res.body.data.rooms.every((r: any) => r.floor === 3)).toBe(true);
+      expect(res.body.data.rooms.every((r: { floor: number }) => r.floor === 3)).toBe(true);
     }, 15000);
 
     it('should reject non-house-tutor access', async () => {
@@ -604,7 +604,7 @@ describe('Rooms Module', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.id).toBe(room302Id);
-      expect(res.body.data.occupants.some((o: any) => o.id === student1Id)).toBe(true);
+      expect(res.body.data.occupants.some((o: { id: string }) => o.id === student1Id)).toBe(true);
     }, 15000);
 
     it('should reject transfer to occupied bed', async () => {
@@ -676,7 +676,7 @@ describe('Rooms Module', () => {
         .set('Authorization', `Bearer ${tutorFloor3Token}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.data.byFloor.every((f: any) => f.floor === 3)).toBe(true);
+      expect(res.body.data.byFloor.every((f: { floor: number }) => f.floor === 3)).toBe(true);
     }, 15000);
   });
 

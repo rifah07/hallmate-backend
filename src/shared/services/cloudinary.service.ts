@@ -1,4 +1,4 @@
-import { v2 as cloudinary } from 'cloudinary';
+import { v2 as cloudinary, UploadApiOptions } from 'cloudinary';
 import { Readable } from 'stream';
 
 cloudinary.config({
@@ -24,7 +24,7 @@ export class CloudinaryService {
     buffer: Buffer,
     folder: string = 'hallmate/profile-pictures',
     options: {
-      transformation?: any;
+      transformation?: UploadApiOptions['transformation'];
       public_id?: string;
     } = {},
   ): Promise<UploadResult> {
@@ -69,7 +69,7 @@ export class CloudinaryService {
     filePath: string,
     folder: string = 'hallmate/profile-pictures',
     options: {
-      transformation?: any;
+      transformation?: UploadApiOptions['transformation'];
       public_id?: string;
     } = {},
   ): Promise<UploadResult> {

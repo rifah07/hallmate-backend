@@ -6,19 +6,15 @@ import * as adminService from '../services/admin.service';
 // Generic handler factory
 // ─────────────────────────────────────────────
 
-type ServiceCreate = (body: any, file?: Express.Multer.File) => Promise<any>;
-type ServiceUpdate = (id: string, body: any, file?: Express.Multer.File) => Promise<any>;
-type ServiceDelete = (id: string) => Promise<any>;
-
 /**
  * Produces three Express handlers for a content resource.
  * hasImage: true  → passes req.file to service (multipart routes)
  * hasImage: false → no file handling (JSON routes)
  */
-function makeHandlers(
-  createFn: ServiceCreate,
-  updateFn: ServiceUpdate,
-  deleteFn: ServiceDelete,
+function makeHandlers<TCreate, TUpdate>(
+  createFn: (body: TCreate, file?: Express.Multer.File) => Promise<unknown>,
+  updateFn: (id: string, body: TUpdate, file?: Express.Multer.File) => Promise<unknown>,
+  deleteFn: (id: string) => Promise<unknown>,
   messages: { created: string; updated: string; deleted: string },
   hasImage = false,
 ) {

@@ -1,5 +1,5 @@
 import multer from 'multer';
-import { Request } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { BadRequestError } from '@/shared/errors';
 
 // Storage configuration - use memory storage for Cloudinary
@@ -69,7 +69,12 @@ export const uploadPdf = multer({
 });
 
 // Multer error handler middleware
-export const handleMulterError = (err: any, _req: Request, _res: any, next: any) => {
+export const handleMulterError = (
+  err: unknown,
+  _req: Request,
+  _res: Response,
+  next: NextFunction,
+) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return next(new BadRequestError('File is too large'));

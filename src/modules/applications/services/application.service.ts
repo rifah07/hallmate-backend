@@ -11,7 +11,15 @@ import {
 } from '../types/application.types';
 import { BadRequestError, NotFoundError, ForbiddenError, ConflictError } from '@/shared/errors/';
 import { notificationService } from '@/modules/notifications';
-import { ApplicationType } from '@prisma/client';
+import { Application, ApplicationType } from '@prisma/client';
+import type {
+  SeatCancellationData,
+  SeatTransferData,
+  SeatSwapData,
+  LeaveApplicationData,
+  ComplaintData,
+  MaintenanceData,
+} from '../validations/application.validation';
 import { roomRepository, roomService } from '@/modules/rooms';
 import userService from '@/modules/users/services/user.service';
 import userRepository from '@/modules/users/repositories/user.repository';
@@ -359,7 +367,10 @@ class ApplicationService {
 
   // Support staff fixing a tap need the location (in `data`) and a name,
   // never a resident's phone, email or room.
-  private transformApplication(application: any, viewerRole?: string): ApplicationResponse {
+  private transformApplication(
+    application: Application & { student?: { name: string } | null },
+    viewerRole?: string,
+  ): ApplicationResponse {
     const seesContact = !viewerRole || !SUPPORT_STAFF.includes(viewerRole);
     return {
       id: application.id,
@@ -378,10 +389,13 @@ class ApplicationService {
       respondedAt: application.respondedAt,
       createdAt: application.createdAt,
       updatedAt: application.updatedAt,
-    };
+    } as ApplicationResponse;
   }
 
-  private checkAccess(application: any, userContext: UserContext): void {
+  private checkAccess(
+    application: Pick<Application, 'studentId' | 'assignedTo'>,
+    userContext: UserContext,
+  ): void {
     if (userContext.role === 'STUDENT') {
       if (application.studentId !== userContext.userId) {
         throw new ForbiddenError('You can only view your own applications');
@@ -399,7 +413,10 @@ class ApplicationService {
     }
   }
 
-  private checkRespondPermission(application: any, userContext: UserContext): void {
+  private checkRespondPermission(
+    application: Pick<Application, 'assignedTo'>,
+    userContext: UserContext,
+  ): void {
     // Admins and provost can respond to any application
     if (userContext.role === 'SUPER_ADMIN' || userContext.role === 'PROVOST') {
       return;
@@ -515,7 +532,7 @@ class ApplicationService {
 
   private async validateApplicationRules(
     type: ApplicationType,
-    data: any,
+    data: Record<string, unknown>,
     studentId: string,
   ): Promise<void> {
     switch (type) {
@@ -524,27 +541,27 @@ class ApplicationService {
         break;
 
       case 'SEAT_CANCELLATION':
-        await this.validateSeatCancellation(data, studentId);
+        await this.validateSeatCancellation(data as SeatCancellationData, studentId);
         break;
 
       case 'SEAT_TRANSFER':
-        await this.validateSeatTransfer(data, studentId);
+        await this.validateSeatTransfer(data as SeatTransferData, studentId);
         break;
 
       case 'SEAT_SWAP':
-        await this.validateSeatSwap(data, studentId);
+        await this.validateSeatSwap(data as SeatSwapData, studentId);
         break;
 
       case 'LEAVE':
-        await this.validateLeaveApplication(data, studentId);
+        await this.validateLeaveApplication(data as LeaveApplicationData, studentId);
         break;
 
       case 'COMPLAINT':
-        await this.validateComplaint(data, studentId);
+        await this.validateComplaint(data as ComplaintData, studentId);
         break;
 
       case 'MAINTENANCE':
-        await this.validateMaintenance(data, studentId);
+        await this.validateMaintenance(data as MaintenanceData, studentId);
         break;
 
       default:
@@ -556,7 +573,10 @@ class ApplicationService {
   // TYPE-SPECIFIC VALIDATIONS
   // ============================================================================
 
-  private async validateSeatApplication(_data: any, studentId: string): Promise<void> {
+  private async validateSeatApplication(
+    _data: Record<string, unknown>,
+    studentId: string,
+  ): Promise<void> {
     const currentRoom = await roomRepository.findUserCurrentRoom(studentId);
 
     if (currentRoom) {
@@ -575,7 +595,10 @@ class ApplicationService {
     }
   }
 
-  private async validateSeatCancellation(data: any, studentId: string): Promise<void> {
+  private async validateSeatCancellation(
+    data: SeatCancellationData,
+    studentId: string,
+  ): Promise<void> {
     const currentRoom = await roomRepository.findUserCurrentRoom(studentId);
 
     if (!currentRoom) {
@@ -597,7 +620,7 @@ class ApplicationService {
       throw new BadRequestError('Effective date cannot be more than 3 months in the future');
     }
   }
-  private async validateSeatTransfer(data: any, studentId: string): Promise<void> {
+  private async validateSeatTransfer(data: SeatTransferData, studentId: string): Promise<void> {
     const currentRoom = await roomRepository.findUserCurrentRoom(studentId);
     if (!currentRoom) {
       throw new BadRequestError('You do not have a room assigned to transfer from');
@@ -662,7 +685,7 @@ class ApplicationService {
     return resolved as CreateApplicationInput['data'];
   }
 
-  private async validateSeatSwap(data: any, studentId: string): Promise<void> {
+  private async validateSeatSwap(data: SeatSwapData, studentId: string): Promise<void> {
     /*  // Check if student has a current room
    const student = await prisma.user.findUnique({
      where: { id: studentId },
@@ -685,7 +708,7 @@ class ApplicationService {
     }
 
     const targetStudent = await userRepository.findByIdWithAccountStatusAndRoom(
-      data.targetStudentId,
+      data.targetStudentId as string,
     );
 
     if (!targetStudent) {
@@ -732,7 +755,10 @@ class ApplicationService {
     // Consent is given later by the other student herself (POST .../consent);
     // a flag typed in by the requester proves nothing.
   }
-  private async validateLeaveApplication(data: any, studentId: string): Promise<void> {
+  private async validateLeaveApplication(
+    data: LeaveApplicationData,
+    studentId: string,
+  ): Promise<void> {
     const currentRoom = await roomRepository.findUserCurrentRoom(studentId);
     if (!currentRoom) {
       throw new BadRequestError('You must have a room assigned to apply for leave');
@@ -777,7 +803,7 @@ class ApplicationService {
       throw new ConflictError('You have overlapping leave applications');
     }
   }
-  private async validateComplaint(data: any, studentId: string): Promise<void> {
+  private async validateComplaint(data: ComplaintData, studentId: string): Promise<void> {
     if (data.roomId) {
       const room = await roomRepository.findRoomWithFilteredOccupant(data.roomId, studentId);
 
@@ -805,7 +831,7 @@ class ApplicationService {
     }
   }
 
-  private async validateMaintenance(data: any, studentId: string): Promise<void> {
+  private async validateMaintenance(data: MaintenanceData, studentId: string): Promise<void> {
     if (data.roomId) {
       const room = await roomRepository.findRoomWithFilteredOccupant(data.roomId, studentId);
 

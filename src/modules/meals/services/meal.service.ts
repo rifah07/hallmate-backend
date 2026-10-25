@@ -11,6 +11,9 @@ import {
   MonthlyMealSummary,
 } from '../types/meal.types';
 import { BadRequestError, ForbiddenError, NotFoundError } from '@/shared/errors';
+import { MealLog } from '@prisma/client';
+
+type FloorStudent = { currentRoom?: { floor: number } | null };
 
 class MealService {
   async updateMealLog(
@@ -336,11 +339,11 @@ class MealService {
   // HELPER METHODS
   // ============================================================================
 
-  private transformMealLog(mealLog: any): MealLogResponse {
+  private transformMealLog(mealLog: MealLog & { student: unknown }): MealLogResponse {
     return {
       id: mealLog.id,
       studentId: mealLog.studentId,
-      student: mealLog.student,
+      student: mealLog.student as MealLogResponse['student'],
       date: mealLog.date,
       breakfast: mealLog.breakfast,
       lunch: mealLog.lunch,
@@ -349,7 +352,10 @@ class MealService {
     };
   }
 
-  private checkMealLogAccess(student: any, userContext: UserContext): void {
+  private checkMealLogAccess(
+    student: { id: string; currentRoom?: { floor: number } | null },
+    userContext: UserContext,
+  ): void {
     // Admins and dining staff can update any meal log
     if (
       userContext.role === 'SUPER_ADMIN' ||
@@ -381,7 +387,9 @@ class MealService {
     throw new ForbiddenError('You do not have permission to update meal logs');
   }
 
-  private calculateFloorStatistics(logs: any[]) {
+  private calculateFloorStatistics(
+    logs: Array<Pick<MealLog, 'breakfast' | 'lunch' | 'dinner'> & { student: FloorStudent }>,
+  ) {
     const floorStats = new Map<number, { breakfast: number; lunch: number; dinner: number }>();
 
     logs.forEach((log) => {
